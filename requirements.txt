@@ -1,0 +1,20 @@
+# 项目依赖
+
+# 本地LLM
+ollama
+
+# 安全过滤
+detect-secrets
+
+# 配置管理
+python-dotenv
+
+# 日志
+logging
+
+# YAML解析
+pyyaml
+
+# PyQt6 UI框架
+PyQt6
+PyQt6-Qt6

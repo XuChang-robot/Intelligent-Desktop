@@ -1,0 +1,39 @@
+# 系统配置
+
+# MCP 配置
+mcp:
+  server:
+    host: "localhost"
+    port: 8000
+    max_connections: 10
+  client:
+    retry_attempts: 3
+
+# LLM 配置
+llm:
+  model: "qwen3:8b"
+  base_url: "http://localhost:11434"
+  temperature: 0.6
+  max_tokens: 2000
+  repeat_penalty: 1.1
+  top_p: 0.9
+  top_k: 40
+
+# 安全配置
+security:
+  enable_sandbox: true
+  dangerous_commands: ["rm -rf", "format", "shutdown", "reboot"]
+  allow_network: true
+  allow_file_system: true
+
+# UI 配置
+ui:
+  title: "智能桌面系统"
+  width: 800
+  height: 600
+  theme: "light"
+
+# 日志配置
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"

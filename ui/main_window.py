@@ -103,8 +103,8 @@ class MainWindow(QMainWindow):
         
         # 输入框
         self.input_text = QTextEdit()
-        self.input_text.setMaximumHeight(80)
-        self.input_text.setMinimumHeight(40)
+        self.input_text.setMaximumHeight(120)
+        self.input_text.setMinimumHeight(60)
         self.input_text.setFont(QFont("Microsoft YaHei", 12))
         self.input_text.setPlaceholderText("请输入您的指令...")
         self.input_text.setStyleSheet("""

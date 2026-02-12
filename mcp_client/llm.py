@@ -80,9 +80,104 @@ class LLMClient:
             traceback.print_exc()
             return ""
     
+    def validate_and_fix_json(self, json_str: str) -> str:
+        """验证并修复JSON格式问题
+        
+        Args:
+            json_str: 要验证和修复的JSON字符串
+            
+        Returns:
+            修复后的JSON字符串
+        """
+        import json
+        import re
+        
+        # 首先尝试直接解析
+        try:
+            json.loads(json_str)
+            return json_str
+        except json.JSONDecodeError as e:
+            self.logger.warning(f"JSON格式错误: {e}")
+        
+        # 开始修复过程
+        fixed_json = json_str
+        
+        # 1. 移除控制字符，并处理因控制字符导致的格式问题
+        import re
+        control_char_pattern = re.compile(r'[\x00-\x1F\x7F]')
+        
+        # 先移除控制字符
+        fixed_json = control_char_pattern.sub('', fixed_json)
+        
+        # 检查是否有字符串未闭合的情况（因为控制字符可能打断了字符串）
+        # 查找所有键值对，检查值是否正确闭合
+        # 修复模式: "key": "value" (未闭合的字符串)
+        # 检查是否有 "key": "value 这样的模式（后面没有闭合引号）
+        # 这种情况通常是因为控制字符打断了字符串
+        
+        # 修复: "key": "value 后面直接是另一个键的情况
+        fixed_json = re.sub(r'("[^"]+":\s*)"([^"]*)(\s*"[^"]+":)', r'\1"\2", \3', fixed_json)
+        
+        # 2. 修复多余的逗号
+        # 修复对象开头的多余逗号: { , "key":
+        fixed_json = re.sub(r'\{\s*,\s*"[^"]+":', '{ "', fixed_json)
+        # 修复对象中间的多余逗号: "key": "value", , "key":
+        fixed_json = re.sub(r'("[^"]+":\s*"[^"]+")(,\s*)(,\s*)("[^"]+":)', r'\1, \4', fixed_json)
+        
+        # 3. 修复缺少逗号的问题
+        # 修复: "key": "value""key":
+        fixed_json = re.sub(r'("[^"]+":\s*"[^"]+")("[^"]+":)', r'\1, \2', fixed_json)
+        
+        # 4. 修复引号不匹配的问题
+        # 计算引号数量
+        quote_count = fixed_json.count('"')
+        if quote_count % 2 != 0:
+            # 如果引号数量为奇数，尝试在适当位置添加引号
+            # 查找最后一个冒号后的内容，确保字符串闭合
+            last_colon = fixed_json.rfind(':')
+            if last_colon != -1:
+                # 在最后一个引号后添加引号
+                last_quote = fixed_json.rfind('"')
+                if last_quote != -1 and last_quote > last_colon:
+                    fixed_json = fixed_json[:last_quote+1] + '"' + fixed_json[last_quote+1:]
+        
+        # 5. 修复括号不匹配的问题
+        open_braces = fixed_json.count('{')
+        close_braces = fixed_json.count('}')
+        if open_braces > close_braces:
+            fixed_json += '}' * (open_braces - close_braces)
+        elif close_braces > open_braces:
+            fixed_json = '{' * (close_braces - open_braces) + fixed_json
+        
+        open_brackets = fixed_json.count('[')
+        close_brackets = fixed_json.count(']')
+        if open_brackets > close_brackets:
+            fixed_json += ']' * (open_brackets - close_brackets)
+        elif close_brackets > open_brackets:
+            fixed_json = '[' * (close_brackets - open_brackets) + fixed_json
+        
+        # 尝试再次解析修复后的JSON
+        try:
+            json.loads(fixed_json)
+            self.logger.info("JSON格式修复成功")
+            return fixed_json
+        except json.JSONDecodeError as e:
+            self.logger.error(f"JSON格式修复失败: {e}")
+            # 如果修复失败，返回原始字符串
+            return json_str
+    
     def clean_json_response(self, response: str) -> str:
         """清理JSON响应，移除markdown代码块标记和其他无关内容"""
         response = response.strip()
+        
+        # 首先验证JSON格式，如果已经是正确的格式，直接返回
+        try:
+            import json
+            json.loads(response)
+            return response
+        except json.JSONDecodeError:
+            # 如果JSON格式不正确，继续清理
+            pass
         
         # 移除markdown代码块标记
         if response.startswith("```json"):
@@ -92,16 +187,25 @@ class LLMClient:
         if response.endswith("```"):
             response = response[:-3]
         
-        # 移除注释
+        # 移除注释（但要避免误删URL中的//）
         lines = response.split('\n')
         cleaned_lines = []
+        in_string = False
         for line in lines:
-            # 移除行尾的注释
-            if '//' in line:
+            # 检查是否在JSON字符串内
+            quote_count = line.count('"')
+            if quote_count % 2 != 0:
+                in_string = not in_string
+            
+            # 只在不在字符串内时才移除注释
+            if not in_string and '//' in line:
                 line = line[:line.index('//')]
             cleaned_lines.append(line)
         
         response = '\n'.join(cleaned_lines).strip()
+        
+        # 验证并修复JSON格式
+        response = self.validate_and_fix_json(response)
         
         return response
     
@@ -205,7 +309,15 @@ class LLMClient:
             intent: 用户意图
             tools: 可用工具列表（从server获取）
         """
-        system_prompt = "你是一个智能桌面系统的任务规划器，负责根据用户的意图生成详细的任务执行计划。你必须只返回有效的JSON格式，不要包含任何其他文字、解释或markdown标记。"
+        system_prompt = """
+                            你是一个智能桌面系统的任务规划器，负责根据用户的意图生成详细的任务执行计划。
+                            你必须只返回有效的JSON格式，不要包含任何其他文字、解释或markdown标记。
+                            注意，须符合以下要求：
+                            1. 不要任何解释、注释、代码块标记
+                            2. 键名必须使用双引号
+                            3. 字符串值必须使用双引号
+                            4. 不要尾随逗号
+                        """
         
         # 格式化工具列表
         available_tools = self.format_tools_for_llm(tools) if tools else "没有可用的工具"

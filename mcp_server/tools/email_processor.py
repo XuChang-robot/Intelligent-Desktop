@@ -5,6 +5,7 @@ import smtplib
 import imaplib
 import email
 import socket
+import re
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
@@ -76,22 +77,47 @@ def register_email_processor_tools(mcp, security_checker=None, output_callback=N
             - 接收邮件: email_processor("receive", "sender@example.com")
         """
         try:
+            # 验证邮箱地址格式
+            def validate_email(email_address: str) -> bool:
+                """验证邮箱地址格式是否正确"""
+                pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+                return bool(re.match(pattern, email_address))
+            
+            # 验证收件人邮箱地址格式
+            if not validate_email(recipient):
+                return {"success": False, "error": f"收件人邮箱地址格式不正确: {recipient}"}
+            
             # 从配置文件读取默认值
             smtp_server = smtp_server or get_config("email.smtp.server", "smtp.example.com")
-            # 优先从环境变量读取SMTP端口
-            try:
-                smtp_port = smtp_port or (int(os.getenv('SMTP_PORT', '')) if os.getenv('SMTP_PORT', '') else None) or get_config("email.smtp.port", 587)
-            except ValueError:
-                smtp_port = smtp_port or get_config("email.smtp.port", 587)
             
-            # 优先从环境变量读取SMTP用户名和密码
-            smtp_username = smtp_username or os.getenv('SMTP_USERNAME', '') or get_config("email.smtp.username", "")
-            smtp_password = smtp_password or os.getenv('SMTP_PASSWORD', '') or get_config("email.smtp.password", "")
+            # 根据SMTP服务器域名确定邮箱服务商
+            email_provider = "unknown"
+            if "163.com" in smtp_server:
+                email_provider = "163"
+            elif "qq.com" in smtp_server:
+                email_provider = "qq"
+            
+            # 优先从配置文件读取SMTP端口，环境变量作为备选
+            try:
+                smtp_port = smtp_port or get_config("email.smtp.port", 465) or (int(os.getenv('SMTP_PORT', '')) if os.getenv('SMTP_PORT', '') else None)
+            except ValueError:
+                smtp_port = smtp_port or get_config("email.smtp.port", 465)
+            
+            # 根据邮箱服务商从配置文件读取SMTP用户名和密码，环境变量作为备选
+            if email_provider == "163":
+                smtp_username = smtp_username or get_config("email.smtp.username", "") or os.getenv('SMTP_163_USERNAME', '') or os.getenv('SMTP_USERNAME', '')
+                smtp_password = smtp_password or get_config("email.smtp.password", "") or os.getenv('SMTP_163_PASSWORD', '') or os.getenv('SMTP_PASSWORD', '')
+            elif email_provider == "qq":
+                smtp_username = smtp_username or get_config("email.smtp.username", "") or os.getenv('SMTP_QQ_USERNAME', '') or os.getenv('SMTP_USERNAME', '')
+                smtp_password = smtp_password or get_config("email.smtp.password", "") or os.getenv('SMTP_QQ_PASSWORD', '') or os.getenv('SMTP_PASSWORD', '')
+            else:
+                smtp_username = smtp_username or get_config("email.smtp.username", "") or os.getenv('SMTP_USERNAME', '')
+                smtp_password = smtp_password or get_config("email.smtp.password", "") or os.getenv('SMTP_PASSWORD', '')
             
             imap_server = imap_server or get_config("email.imap.server", "")
-            # 优先从环境变量读取IMAP端口
+            # 优先从配置文件读取IMAP端口，环境变量作为备选
             try:
-                imap_port = imap_port or (int(os.getenv('IMAP_PORT', '')) if os.getenv('IMAP_PORT', '') else None) or get_config("email.imap.port", 993)
+                imap_port = imap_port or get_config("email.imap.port", 993) or (int(os.getenv('IMAP_PORT', '')) if os.getenv('IMAP_PORT', '') else None)
             except ValueError:
                 imap_port = imap_port or get_config("email.imap.port", 993)
             
@@ -137,15 +163,40 @@ def register_email_processor_tools(mcp, security_checker=None, output_callback=N
                                     msg.attach(part)
                     
                     # 连接SMTP服务器并发送邮件
-                    with smtplib.SMTP(smtp_server, smtp_port) as server:
-                        server.starttls()
+                    try:
+                        # 根据邮箱服务商选择正确的连接方式
+                        if email_provider == "163":
+                            # 163邮箱使用SMTP_SSL和465端口
+                            server = smtplib.SMTP_SSL(smtp_server, 465, timeout=30)
+                        else:
+                            # 其他邮箱根据端口选择连接方式
+                            if smtp_port == 465:
+                                server = smtplib.SMTP_SSL(smtp_server, smtp_port, timeout=30)
+                            else:
+                                server = smtplib.SMTP(smtp_server, smtp_port, timeout=30)
+                                server.starttls()
+                        
+                        # 设置调试模式，捕获详细的SMTP通信信息
+                        server.set_debuglevel(2)
+                        
+                        # 登录并发送邮件
                         server.login(smtp_username, smtp_password)
-                        server.send_message(msg)
+                        server.sendmail(smtp_username, recipient, msg.as_string())
+                        server.quit()
+                    finally:
+                        # 确保服务器连接被关闭
+                        try:
+                            server.quit()
+                        except:
+                            pass
                     
                     return {"success": True, "result": f"邮件发送成功，收件人: {recipient}"}
                 except socket.gaierror as e:
                     # DNS 解析错误
                     return {"success": False, "error": f"DNS 解析错误: {str(e)} - 请检查 SMTP 服务器地址是否正确: {smtp_server}"}
+                except socket.timeout as e:
+                    # 连接超时错误
+                    return {"success": False, "error": f"连接超时错误: {str(e)} - 请检查网络连接和防火墙设置，确保能访问 SMTP 服务器: {smtp_server}:{smtp_port}"}
                 except smtplib.SMTPAuthenticationError:
                     # 认证错误
                     return {"success": False, "error": "SMTP 认证失败 - 请检查用户名和密码是否正确"}

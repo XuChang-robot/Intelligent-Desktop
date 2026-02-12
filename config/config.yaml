@@ -14,7 +14,7 @@ llm:
   model: "qwen3:8b"
   base_url: "http://localhost:11434"
   temperature: 0.6
-  max_tokens: 2000
+  max_tokens: 4000
   repeat_penalty: 1.1
   top_p: 0.9
   top_k: 40
@@ -41,7 +41,7 @@ logging:
 # 邮件服务配置
 email:
   smtp:
-    server: "smtp.qq.com"
-    port: 587
+    server: "smtp.163.com"
+    port: 465
   imap:
     port: 993

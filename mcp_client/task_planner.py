@@ -74,7 +74,7 @@ class TaskPlanner:
                 # 如果计划无效，使用LLM生成Python代码
                 from mcp_client.llm import LLMClient
                 llm_client = LLMClient()
-                code = llm_client.generate_python(query)
+                code = await llm_client.generate_python_code(query)
                 
                 # 构建简单的计划
                 return {

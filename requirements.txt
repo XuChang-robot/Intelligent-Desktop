@@ -15,6 +15,21 @@ logging
 # YAML解析
 pyyaml
 
+# 数据验证
+pydantic
+
 # PyQt6 UI框架
 PyQt6
 PyQt6-Qt6
+
+# 系统信息获取
+psutil
+
+# 异步HTTP请求
+aiohttp
+
+# 文字转语音
+pyttsx3
+
+# Word文档处理
+python-docx

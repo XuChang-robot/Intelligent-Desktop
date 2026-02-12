@@ -4,7 +4,7 @@
 mcp:
   server:
     host: "localhost"
-    port: 8000
+    port: 8001
     max_connections: 10
   client:
     retry_attempts: 3
@@ -37,3 +37,11 @@ ui:
 logging:
   level: "INFO"
   format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+# 邮件服务配置
+email:
+  smtp:
+    server: "smtp.qq.com"
+    port: 587
+  imap:
+    port: 993

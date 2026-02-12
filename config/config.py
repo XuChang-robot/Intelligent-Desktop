@@ -19,47 +19,8 @@ class ConfigLoader:
                 self.config = yaml.safe_load(f)
         except Exception as e:
             print(f"加载配置文件失败: {e}")
-            # 使用默认配置
-            self.config = self._get_default_config()
-    
-    def _get_default_config(self) -> Dict[str, Any]:
-        """获取默认配置"""
-        return {
-            "mcp": {
-                "server": {
-                    "host": "localhost",
-                    "port": 8765,
-                    "max_connections": 10
-                },
-                "client": {
-                    "timeout": 30,
-                    "retry_attempts": 3
-                }
-            },
-            "llm": {
-                "model": "qwen3:30b",
-                "base_url": "http://localhost:11434",
-                "temperature": 0.7,
-                "max_tokens": 2000
-            },
-            "security": {
-                "enable_sandbox": True,
-                "dangerous_commands": ["rm -rf", "format", "shutdown", "reboot"],
-                "allow_network": True,
-                "allow_file_system": True,
-                "max_execution_time": 30
-            },
-            "ui": {
-                "title": "智能桌面系统",
-                "width": 800,
-                "height": 600,
-                "theme": "light"
-            },
-            "logging": {
-                "level": "INFO",
-                "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-            }
-        }
+            # 如果加载失败，使用空配置
+            self.config = {}
     
     def get(self, key: str, default: Any = None) -> Any:
         """获取配置值"""

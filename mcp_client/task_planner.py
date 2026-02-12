@@ -9,11 +9,16 @@ class TaskPlanner:
         self.llm_client = llm_client
         self.logger = logging.getLogger(__name__)
     
-    async def plan_task(self, intent: Dict[str, Any]) -> Dict[str, Any]:
-        """规划任务步骤"""
+    async def plan_task(self, intent: Dict[str, Any], tools=None) -> Dict[str, Any]:
+        """规划任务步骤
+        
+        Args:
+            intent: 用户意图
+            tools: 可用工具列表（从server获取）
+        """
         try:
-            # 使用LLM生成任务计划
-            plan = await self.llm_client.plan_task(intent)
+            # 使用LLM生成任务计划，传入工具列表
+            plan = await self.llm_client.plan_task(intent, tools)
             self.logger.info(f"生成任务计划成功: {plan}")
             return plan
         except Exception as e:
@@ -46,8 +51,13 @@ class TaskPlanner:
         # 例如：合并相同的工具调用、调整执行顺序等
         return plan
     
-    async def plan(self, query: str) -> Dict[str, Any]:
-        """规划任务步骤（兼容旧接口）"""
+    async def plan(self, query: str, tools=None) -> Dict[str, Any]:
+        """规划任务步骤（兼容旧接口）
+        
+        Args:
+            query: 用户查询
+            tools: 可用工具列表（从server获取）
+        """
         try:
             # 构建意图字典
             intent = {
@@ -56,8 +66,8 @@ class TaskPlanner:
                 "confidence": 0.9
             }
             
-            # 调用现有的plan_task方法
-            plan = await self.plan_task(intent)
+            # 调用现有的plan_task方法，传入工具列表
+            plan = await self.plan_task(intent, tools)
             
             # 验证计划
             if not self.validate_plan(plan):

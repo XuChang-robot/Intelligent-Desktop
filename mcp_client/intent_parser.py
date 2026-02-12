@@ -39,8 +39,13 @@ class IntentParser:
         
         return True
     
-    async def parse(self, user_input: str) -> Dict[str, Any]:
-        """解析用户意图（兼容旧接口）"""
+    async def parse(self, user_input: str, tools=None) -> Dict[str, Any]:
+        """解析用户意图（兼容旧接口）
+        
+        Args:
+            user_input: 用户输入
+            tools: 可用工具列表（从server获取）
+        """
         self.logger.info(f"开始解析用户意图: {user_input[:50]}...")
         try:
             # 调用现有的parse_intent方法
@@ -49,14 +54,15 @@ class IntentParser:
             
             # 如果意图解析失败，使用简单的fallback逻辑
             if intent_result.get("intent") == "unknown" or intent_result.get("confidence", 0) < 0.5:
-                self.logger.warning(f"意图解析失败，使用fallback逻辑")
-                # 使用简单的规则来解析用户意图
-                # 默认使用tool_call类型，让LLM生成Python代码
+                self.logger.warning(f"意图解析失败或置信度低，使用task_planner")
+                # 使用task_planner生成任务计划，传入工具列表
+                plan = await self.llm_client.plan_task(intent_result, tools)
+                self.logger.info(f"任务计划生成完成: {plan}")
                 return {
-                    "type": "tool_call",
-                    "tool": "execute_python",
-                    "args": {"code": user_input},
-                    "confidence": 0.5
+                    "type": "task",
+                    "plan": plan,
+                    "entities": intent_result.get("entities", {}),
+                    "confidence": intent_result.get("confidence", 0.5)
                 }
             
             # 转换为client.py期望的格式
@@ -72,22 +78,26 @@ class IntentParser:
                     "confidence": intent_result.get("confidence", 0.5)
                 }
             elif intent_result.get("intent") == "task":
-                self.logger.info("意图是task")
+                self.logger.info("意图是task，调用task_planner生成任务计划")
+                # 使用task_planner生成任务计划，传入工具列表
+                plan = await self.llm_client.plan_task(intent_result, tools)
+                self.logger.info(f"任务计划生成完成: {plan}")
                 return {
                     "type": "task",
+                    "plan": plan,
                     "entities": intent_result.get("entities", {}),
                     "confidence": intent_result.get("confidence", 0.5)
                 }
             else:
-                # 对于其他意图，也转换为tool_call类型，使用Python代码执行
-                # 生成Python代码而不是直接使用用户输入
-                self.logger.info(f"其他意图: {intent_result.get('intent')}, 开始生成Python代码")
-                code = await self.llm_client.generate_python_code(user_input)
-                self.logger.info(f"Python代码生成完成")
+                # 对于其他意图，也转换为task类型，使用task_planner生成任务计划
+                # 这样可以利用专用工具而不是直接生成Python代码
+                self.logger.info(f"其他意图: {intent_result.get('intent')}, 调用task_planner生成任务计划")
+                plan = await self.llm_client.plan_task(intent_result, tools)
+                self.logger.info(f"任务计划生成完成: {plan}")
                 return {
-                    "type": "tool_call",
-                    "tool": "execute_python",
-                    "args": {"code": code},
+                    "type": "task",
+                    "plan": plan,
+                    "entities": intent_result.get("entities", {}),
                     "confidence": intent_result.get("confidence", 0.5)
                 }
         except Exception as e:

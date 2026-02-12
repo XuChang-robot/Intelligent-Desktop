@@ -55,6 +55,7 @@ class WorkerThread(QThread):
         self.running = True
         self.logger = logging.getLogger(__name__)
         self.elicitation_future = None
+        self.interrupted = False
         
         # 设置日志处理器
         self.setup_log_handler()
@@ -227,6 +228,17 @@ class WorkerThread(QThread):
         if self.elicitation_future and not self.elicitation_future.done():
             self.elicitation_future.set_result(result)
     
+    def interrupt(self):
+        """中断执行"""
+        self.logger.info("收到中断请求")
+        self.interrupted = True
+        # 通知客户端中断执行
+        if hasattr(self.client, 'interrupt'):
+            self.client.interrupt()
+        # 取消当前的elicitation请求
+        if self.elicitation_future and not self.elicitation_future.done():
+            self.elicitation_future.cancel()
+    
 class App(QObject):
     """应用程序"""
     
@@ -252,6 +264,8 @@ class App(QObject):
         
         # 设置UI回调
         self.main_window.set_user_input_callback(self.on_user_input)
+        # 设置中断回调
+        self.main_window.set_interrupt_callback(self.on_interrupt)
         
         # 获取并设置可用模型列表
         self.update_model_list()
@@ -312,6 +326,11 @@ class App(QObject):
         
         if self.worker:
             self.worker.add_user_input(user_input)
+    
+    def on_interrupt(self):
+        """中断回调"""
+        if self.worker:
+            self.worker.interrupt()
     
     def on_message(self, sender: str, message: str):
         """消息信号处理"""

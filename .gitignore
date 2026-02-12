@@ -440,3 +440,14 @@ ui/__pycache__/tk_main_window.cpython-313.pyc
 utils/__pycache__/error_handler.cpython-313.pyc
 config/__pycache__/__init__.cpython-313.pyc
 config/__pycache__/config.cpython-313.pyc
+~/Desktop/MyFolder/word.docx
+~/Desktop/New Folder/hello.docx
+~/Desktop/my_folder/word_file.docx
+mcp_server/tools/__pycache__/__init__.cpython-313.pyc
+mcp_server/tools/__pycache__/document_converter.cpython-313.pyc
+mcp_server/tools/__pycache__/email_processor.cpython-313.pyc
+mcp_server/tools/__pycache__/file_operations.cpython-313.pyc
+mcp_server/tools/__pycache__/network_request.cpython-313.pyc
+mcp_server/tools/__pycache__/pdf_processor.cpython-313.pyc
+mcp_server/tools/__pycache__/system_info.cpython-313.pyc
+mcp_server/tools/__pycache__/text_processing.cpython-313.pyc

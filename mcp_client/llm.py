@@ -109,7 +109,31 @@ class LLMClient:
         """解析用户意图"""
         system_prompt = "你是一个智能桌面系统的意图解析器，负责分析用户的自然语言输入并提取出明确的意图和关键信息。你必须只返回有效的JSON格式，不要包含任何其他文字、解释或markdown标记。"
         
-        prompt = f"请分析以下用户输入，提取出用户的意图和关键信息：\n\n用户输入：{user_input}\n\n请严格按照以下JSON格式返回结果，不要添加任何其他内容：\n{{\n  \"intent\": \"用户的主要意图\",\n  \"entities\": {{\n    \"关键信息1\": \"值1\",\n    \"关键信息2\": \"值2\"\n  }},\n  \"confidence\": 0.9\n}}\n\n注意：只返回JSON，不要包含任何解释、注释或其他文字。"
+        prompt = f"""请分析以下用户输入，提取出用户的意图和关键信息：
+
+用户输入：{user_input}
+
+重要规则：
+1. 意图类型只能是以下几种：
+   - "task": 任务型意图（默认），包括文件操作、系统信息、文本处理、网络请求等
+   - "execute_code": 仅当用户明确要求执行Python代码时使用
+2. 对于文件操作（创建、读取、写入、删除文件/文件夹），使用"task"意图
+3. 对于获取系统信息，使用"task"意图
+4. 对于文本处理（转语音、摘要、格式化），使用"task"意图
+5. 对于网络请求，使用"task"意图
+6. 不要使用"execute_code"意图，除非用户明确提到"执行Python代码"、"运行代码"等关键词
+
+请严格按照以下JSON格式返回结果，不要添加任何其他内容：
+{{
+  "intent": "用户的主要意图（只能是task或execute_code）",
+  "entities": {{
+    "关键信息1": "值1",
+    "关键信息2": "值2"
+  }},
+  "confidence": 0.9
+}}
+
+注意：只返回JSON，不要包含任何解释、注释或其他文字。"""
         
         response = self.generate(prompt, system_prompt)
         response = self.clean_json_response(response)
@@ -119,35 +143,78 @@ class LLMClient:
         except json.JSONDecodeError as e:
             self.logger.error(f"解析意图响应失败: {e}, 原始响应: {response}")
             return {
-                "intent": "unknown",
+                "intent": "task",
                 "entities": {},
                 "confidence": 0.5
             }
     
-    async def plan_task(self, intent: Dict[str, Any]) -> Dict[str, Any]:
-        """规划任务步骤"""
+    def format_tools_for_llm(self, tools) -> str:
+        """将MCP工具列表格式化为LLM可理解的文本格式
+        
+        Args:
+            tools: MCP工具列表（从server获取）
+            
+        Returns:
+            格式化后的工具描述文本
+        """
+        if not tools:
+            return "没有可用的工具"
+        
+        tool_descriptions = ["可用工具列表：\n"]
+        
+        for i, tool in enumerate(tools, 1):
+            tool_name = tool.name if hasattr(tool, 'name') else str(tool)
+            tool_desc = tool.description if hasattr(tool, 'description') else ""
+            
+            tool_descriptions.append(f"{i}. {tool_name}")
+            
+            if tool_desc:
+                tool_descriptions.append(f"   描述: {tool_desc}")
+            
+            # 处理参数信息
+            if hasattr(tool, 'inputSchema'):
+                input_schema = tool.inputSchema
+                if hasattr(input_schema, 'properties'):
+                    properties = input_schema.properties
+                    if properties:
+                        tool_descriptions.append("   参数:")
+                        for param_name, param_info in properties.items():
+                            param_type = param_info.get('type', 'unknown')
+                            param_desc = param_info.get('description', '')
+                            required = param_name in input_schema.get('required', [])
+                            
+                            param_line = f"   - {param_name} ({param_type}"
+                            if required:
+                                param_line += ", 必需"
+                            else:
+                                param_line += ", 可选"
+                            param_line += ")"
+                            tool_descriptions.append(param_line)
+                            
+                            if param_desc:
+                                tool_descriptions.append(f"     {param_desc}")
+            
+            tool_descriptions.append("")  # 空行分隔
+        
+        return "\n".join(tool_descriptions)
+    
+    async def plan_task(self, intent: Dict[str, Any], tools=None) -> Dict[str, Any]:
+        """规划任务步骤
+        
+        Args:
+            intent: 用户意图
+            tools: 可用工具列表（从server获取）
+        """
         system_prompt = "你是一个智能桌面系统的任务规划器，负责根据用户的意图生成详细的任务执行计划。你必须只返回有效的JSON格式，不要包含任何其他文字、解释或markdown标记。"
         
-        # 可用工具列表
-        available_tools = """
-        可用工具列表：
-        1. execute_python - 执行Python代码
-           - 参数：code (string, 必需) - 要执行的Python代码
-           - 参数：timeout (integer, 可选) - 执行超时时间（秒），默认30
-           - 适用场景：数学计算、数据处理、字符串操作、文件操作等所有可以用Python完成的任务
-        
-        2. system_command - 执行系统命令
-           - 参数：command (string, 必需) - 要执行的命令
-           - 参数：timeout (integer, 可选) - 执行超时时间（秒），默认30
-           - 适用场景：系统管理、文件操作、网络操作等需要使用命令行的任务
-        """
+        # 格式化工具列表
+        available_tools = self.format_tools_for_llm(tools) if tools else "没有可用的工具"
         
         prompt = f"""请根据以下用户意图，生成详细的任务执行计划：\n\n用户意图：{intent}\n\n{available_tools}\n\n重要规则：
-1. 所有数学计算、数据处理、字符串操作等任务必须使用 execute_python 工具
-2. 只有需要执行系统命令时才使用 system_command 工具
-3. 使用 execute_python 时，code 参数应该是完整的、可直接执行的Python代码
-4. Python代码应该包含 print() 语句来输出结果，或者使用 return 语句返回结果
-5. 不要使用不存在的工具（如calculator、compute等），只能使用上面列出的两个工具\n\n请严格按照以下JSON格式返回结果，不要添加任何其他内容：\n{{\n  \"plan\": \"任务计划概述\",\n  \"steps\": [\n    {{\n      \"tool\": \"工具名称（必须是execute_python或system_command）\",\n      \"args\": {{\n        \"code\": \"要执行的Python代码\" 或 \"command\": \"要执行的命令\"\n      }},\n      \"description\": \"步骤描述\"\n    }}\n  ]\n}}\n\n注意：只返回JSON，不要包含任何解释、注释或其他文字。"""
+1. 优先使用上面列出的专用工具
+2. 只有当专用工具无法满足需求时，才使用 execute_python 工具（如果存在）
+3. 不要使用不存在的工具，只能使用上面列出的工具
+4. 如果可用工具无法完成用户任务，请返回空的steps数组，并在plan字段说明无法完成的原因\n\n请严格按照以下JSON格式返回结果，不要添加任何其他内容：\n{{\n  \"plan\": \"任务计划概述\",\n  \"steps\": [\n    {{\n      \"tool\": \"工具名称\",\n      \"args\": {{\n        \"参数名\": \"参数值\"\n      }},\n      \"description\": \"步骤描述\"\n    }}\n  ]\n}}\n\n注意：只返回JSON，不要包含任何解释、注释或其他文字。"""
         
         response = self.generate(prompt, system_prompt)
         response = self.clean_json_response(response)

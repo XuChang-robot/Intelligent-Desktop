@@ -34,6 +34,7 @@ class SessionManager:
         self.response_given = False
         self.connected = False
         self.elicitation_callback = None
+        self.tools = None  # 保存工具列表
     
     async def connect(self):
         """连接到MCP服务器"""
@@ -58,7 +59,8 @@ class SessionManager:
             logging.info("连接成功！")
             # 列出可用工具
             tools = await self.session.list_tools()
-            logging.info(f"可用工具: {[t.name for t in tools.tools]}")
+            self.tools = tools.tools  # 保存工具列表
+            logging.info(f"可用工具: {[t.name for t in self.tools]}")
             self.connected = True
         except Exception as e:
             logging.error(f"连接失败: {str(e)}")
@@ -153,14 +155,20 @@ class SessionManager:
             logging.error(f"工具调用失败: {e}")
             raise
 
-async def get_session_manager(server_url="http://localhost:8000/mcp"):
+async def get_session_manager(server_url=None):
     """获取全局的会话管理器实例"""
     global _global_session_manager
     if _global_session_manager is None:
+        # 如果没有指定server_url，从配置文件读取
+        if server_url is None:
+            config = load_config()
+            host = config["mcp"]["server"]["host"]
+            port = config["mcp"]["server"]["port"]
+            server_url = f"http://{host}:{port}/mcp"
         _global_session_manager = SessionManager(server_url)
     return _global_session_manager
 
-async def initialize_global_session(server_url="http://localhost:8000/mcp"):
+async def initialize_global_session(server_url=None):
     """初始化全局会话"""
     manager = await get_session_manager(server_url)
     await manager.connect()
@@ -184,6 +192,8 @@ class MCPClient:
         self.logger = logging.getLogger(__name__)
         self.elicitation_callback = None
         self.ui_callback = None
+        self.tools = None  # 保存工具列表
+        self.interrupted = False  # 中断标志
     
     async def connect(self) -> bool:
         """连接到MCP Server"""
@@ -195,7 +205,9 @@ class MCPClient:
                 self.session_manager.elicitation_callback = self.elicitation_callback
             # 连接到服务器
             await self.session_manager.connect()
-            self.logger.info("成功连接到MCP Server")
+            # 获取工具列表
+            self.tools = self.session_manager.tools
+            self.logger.info(f"成功连接到MCP Server，获取到{len(self.tools) if self.tools else 0}个工具")
             return True
                 
         except Exception as e:
@@ -215,6 +227,13 @@ class MCPClient:
     def set_ui_callback(self, callback):
         """设置UI回调"""
         self.ui_callback = callback
+    
+    def interrupt(self):
+        """中断执行"""
+        self.logger.info("收到中断请求")
+        self.interrupted = True
+        if self.ui_callback:
+            self.ui_callback("task_update", {"description": "任务已被用户中断"})
 
     async def send_tool_call(self, tool_name: str, tool_args: Dict[str, Any]) -> Dict[str, Any]:
         """发送工具调用请求"""
@@ -235,9 +254,23 @@ class MCPClient:
                         # 获取第一个内容项
                         first_item = content[0]
                         if hasattr(first_item, 'text'):
+                            # 尝试解析JSON格式的返回值
+                            text = first_item.text
+                            try:
+                                import json
+                                parsed = json.loads(text)
+                                if isinstance(parsed, dict):
+                                    # 如果是字典，直接返回
+                                    return {
+                                        "type": "tool_response",
+                                        "result": parsed
+                                    }
+                            except (json.JSONDecodeError, ValueError):
+                                # 如果不是JSON，直接返回文本
+                                pass
                             return {
                                 "type": "tool_response",
-                                "result": first_item.text
+                                "result": text
                             }
                         elif hasattr(first_item, 'data'):
                             return {
@@ -280,7 +313,32 @@ class MCPClient:
             包含summary和plan的字典
         """
         result_text = result.get("result", "")
-        if isinstance(result_text, str):
+        
+        # 处理file_operations等工具的返回格式：{"success": True, "result": "...", "path": "..."}
+        if isinstance(result_text, dict):
+            success = result_text.get("success", False)
+            tool_result = result_text.get("result", "")
+            error = result_text.get("error", "")
+            path = result_text.get("path", "")
+            
+            # 检查是否是文件夹已存在的情况
+            is_folder_exists = "文件夹已存在" in tool_result or "文件夹已存在" in error
+            
+            if success or is_folder_exists:
+                if is_folder_exists:
+                    # 文件夹已存在视为成功
+                    summary = f"{prefix}: 文件夹已存在" if prefix else "文件夹已存在"
+                else:
+                    summary = f"{prefix}: {tool_result}" if prefix else tool_result
+                if path:
+                    summary += f" (路径: {path})"
+                return {"summary": summary, "plan": plan if plan else {}}
+            else:
+                summary = f"{prefix} 错误: {error}" if prefix else f"执行错误: {error}"
+                return {"summary": summary, "plan": plan if plan else {}}
+        
+        # 处理execute_python工具的返回格式：{"result": {"output": "...", "error": "..."}}
+        elif isinstance(result_text, str):
             try:
                 execution_result = json.loads(result_text)
                 output = execution_result.get("output", "")
@@ -297,18 +355,6 @@ class MCPClient:
             except json.JSONDecodeError:
                 summary = f"{prefix}: {result_text}" if prefix else result_text
                 return {"summary": summary, "plan": plan if plan else {}}
-        elif isinstance(result_text, dict):
-            output = result_text.get("output", "")
-            error = result_text.get("error", "")
-            if output:
-                summary = f"{prefix}: {output}" if prefix else output
-                return {"summary": summary, "plan": plan if plan else {}}
-            elif error:
-                summary = f"{prefix} 错误: {error}" if prefix else f"执行错误: {error}"
-                return {"summary": summary, "plan": plan if plan else {}}
-            else:
-                summary = f"{prefix}: 执行成功！" if prefix else "执行成功！"
-                return {"summary": summary, "plan": plan if plan else {}}
         else:
             summary = f"{prefix}: {str(result)}" if prefix else str(result)
             return {"summary": summary, "plan": plan if plan else {}}
@@ -320,7 +366,7 @@ class MCPClient:
             if self.ui_callback:
                 self.ui_callback("task_update", {"description": f"解析用户意图: {query}"})
             
-            intent = await self.intent_parser.parse(query)
+            intent = await self.intent_parser.parse(query, self.tools)
             
             if self.ui_callback:
                 self.ui_callback("task_update", {"description": f"识别意图: {intent['type']}", "tool": intent.get("tool", "")})
@@ -347,7 +393,14 @@ class MCPClient:
                 if self.ui_callback:
                     self.ui_callback("task_update", {"description": "生成任务计划"})
                 
-                plan = await self.task_planner.plan(query)
+                # 如果intent中已经包含了plan，直接使用
+                if "plan" in intent:
+                    plan = intent["plan"]
+                    self.logger.info(f"使用intent中的任务计划: {plan}")
+                else:
+                    # 否则调用task_planner生成任务计划，传入工具列表
+                    plan = await self.task_planner.plan(query, self.tools)
+                    self.logger.info(f"调用task_planner生成任务计划: {plan}")
                 
                 if self.ui_callback:
                     self.ui_callback("task_update", {"description": f"任务计划生成完成，共{len(plan['steps'])}个步骤", "plan": plan})
@@ -410,11 +463,18 @@ class MCPClient:
         7. 显示在输出 UI 上
         """
         try:
+            # 重置中断标志
+            self.interrupted = False
+            
             # 1. 使用 LLM 解析用户意图
             if self.ui_callback:
                 self.ui_callback("task_update", {"description": f"解析用户意图: {query}"})
             
-            intent = await self.intent_parser.parse(query)
+            # 检查是否中断
+            if self.interrupted:
+                return {"summary": "任务已被用户中断", "plan": {}}
+            
+            intent = await self.intent_parser.parse(query, self.tools)
             
             if self.ui_callback:
                 self.ui_callback("task_update", {"description": f"识别意图: {intent['type']}", "tool": intent.get("tool", "")})
@@ -458,25 +518,45 @@ class MCPClient:
                 # 复杂的任务由 LLM 拆解
                 if self.ui_callback:
                     self.ui_callback("task_update", {"description": "复杂任务，使用 LLM 拆解"})
+                    self.ui_callback("loading", True, "正在分析任务...")
                 
                 self.logger.info(f"复杂任务，使用 LLM 拆解")
                 
-                # 使用 LLM 生成任务计划
+                # 使用 LLM 生成任务计划，传入工具列表
                 if self.ui_callback:
                     self.ui_callback("task_update", {"description": "生成任务计划"})
+                    self.ui_callback("loading", True, "正在生成任务计划...")
+                    self.ui_callback("progress", True, 10)
                 
-                plan = await self.task_planner.plan(query)
+                plan = await self.task_planner.plan(query, self.tools)
                 
                 if self.ui_callback:
                     self.ui_callback("task_update", {"description": f"任务计划生成完成，共{len(plan.get('steps', []))}个步骤", "plan": plan})
+                    self.ui_callback("loading", True, "任务计划生成完成...")
+                    self.ui_callback("progress", True, 30)
                 
                 self.logger.info(f"生成的任务计划: {plan}")
                 
                 # 执行任务计划中的每个步骤
                 results = []
-                for i, step in enumerate(plan.get("steps", [])):
+                steps = plan.get('steps', [])
+                total_steps = len(steps)
+                
+                for i, step in enumerate(steps):
+                    # 检查是否中断
+                    if self.interrupted:
+                        if self.ui_callback:
+                            self.ui_callback("task_update", {"description": "任务执行被中断"})
+                            self.ui_callback("loading", False, "")
+                            self.ui_callback("progress", False, 0)
+                        return {"summary": "任务已被用户中断", "plan": plan}
+                    
                     if self.ui_callback:
                         self.ui_callback("task_update", {"description": f"执行任务步骤 {i+1}/{len(plan.get('steps', []))}: {step['tool']}"})
+                        self.ui_callback("loading", True, f"正在执行步骤 {i+1}/{total_steps}...")
+                        # 更新进度条
+                        progress_value = 30 + (i + 1) / total_steps * 60
+                        self.ui_callback("progress", True, int(progress_value))
                     
                     # 将每个步骤按 MCP 协议发送给 MCP server 执行
                     result = await self.send_tool_call(step["tool"], step.get("args", {}))
@@ -491,9 +571,15 @@ class MCPClient:
                     parsed = self._parse_mcp_result(result, prefix=f"步骤 {i+1}")
                     execution_results.append(parsed["summary"])
                 
-                # 将执行结果按 MCP 协议返回给 MCP client
+                if self.ui_callback:
+                    self.ui_callback("loading", True, "任务执行完成...")
+                    self.ui_callback("progress", True, 100)
+                    # 添加任务完成提示
+                    self.ui_callback("task_update", {"description": "🎉 任务执行完成！", "status": "完成"})
+                
+                # 将执行结果按 MCP 协议返回给 MCP client，确保步骤分开显示
                 return {
-                    "summary": "\n".join(execution_results),
+                    "summary": "\n\n".join(execution_results),
                     "plan": plan
                 }
             else:

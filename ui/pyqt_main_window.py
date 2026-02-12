@@ -4,8 +4,8 @@ from PyQt6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
                                QLabel, QTextEdit, QLineEdit, QPushButton, 
                                QComboBox, QFrame, QSplitter, QScrollArea,
                                QSizePolicy, QMessageBox, QProgressBar, QStatusBar)
-from PyQt6.QtCore import Qt, QThread, pyqtSignal, QTimer, QUrl
-from PyQt6.QtGui import QFont, QColor, QPalette, QTextCursor, QTextDocument
+from PyQt6.QtCore import Qt, QThread, pyqtSignal, QTimer, QUrl, QSize
+from PyQt6.QtGui import QFont, QColor, QPalette, QTextCursor, QTextDocument, QIcon
 from typing import Dict, Any, Optional, Callable
 import logging
 
@@ -393,10 +393,40 @@ class MainWindow(QMainWindow):
         self.input_field.setPlaceholderText("请输入您的指令...")
         self.input_field.returnPressed.connect(self.on_send)
         
-        self.send_button = QPushButton("发送")
-        self.send_button.setFont(ModernStyle.TEXT_FONT)
-        self.send_button.setMinimumWidth(100)
+        # 创建发送按钮，使用图标代替文字
+        self.send_button = QPushButton()
+        self.send_button.setIcon(QIcon.fromTheme("mail-send"))  # 使用系统图标
+        self.send_button.setIconSize(QSize(24, 24))
+        self.send_button.setMinimumWidth(48)
+        self.send_button.setMaximumWidth(48)
         self.send_button.clicked.connect(self.on_send)
+        self.send_button.setToolTip("发送指令")
+        
+        # 按钮状态管理
+        self.is_executing = False
+        
+        # 按钮样式设置
+        self.send_button.setStyleSheet("""
+            QPushButton {
+                border: 2px solid #2196F3;
+                border-radius: 20px;
+                background-color: white;
+                padding: 5px;
+                transition: all 0.3s ease;
+            }
+            QPushButton:hover {
+                background-color: #E3F2FD;
+                transform: scale(1.05);
+            }
+            QPushButton:pressed {
+                background-color: #BBDEFB;
+                transform: scale(0.95);
+            }
+            QPushButton:disabled {
+                border: 2px solid #BDBDBD;
+                background-color: #F5F5F5;
+            }
+        """)
         
         input_container_layout.addWidget(self.input_field, 1)
         input_container_layout.addWidget(self.send_button)
@@ -412,15 +442,82 @@ class MainWindow(QMainWindow):
         
     def on_send(self):
         """发送按钮点击"""
-        user_input = self.input_field.text().strip()
-        if user_input:
-            self.input_field.clear()
-            if self.user_input_callback:
-                self.user_input_callback(user_input)
+        if self.is_executing:
+            # 如果正在执行，中断执行
+            self.is_executing = False
+            self.send_button.setIcon(QIcon.fromTheme("mail-send"))
+            self.send_button.setToolTip("发送指令")
+            # 恢复按钮样式
+            self.send_button.setStyleSheet("""
+                QPushButton {
+                    border: 2px solid #2196F3;
+                    border-radius: 20px;
+                    background-color: white;
+                    padding: 5px;
+                    transition: all 0.3s ease;
+                }
+                QPushButton:hover {
+                    background-color: #E3F2FD;
+                    transform: scale(1.05);
+                }
+                QPushButton:pressed {
+                    background-color: #BBDEFB;
+                    transform: scale(0.95);
+                }
+                QPushButton:disabled {
+                    border: 2px solid #BDBDBD;
+                    background-color: #F5F5F5;
+                }
+            """)
+            # 发送中断信号
+            if hasattr(self, 'interrupt_callback') and self.interrupt_callback:
+                self.interrupt_callback()
+        else:
+            # 如果不在执行，开始新任务
+            user_input = self.input_field.text().strip()
+            if user_input:
+                self.input_field.clear()
+                # 清空任务历史和显示区域，准备显示新任务
+                self.task_history = []
+                self.task_area.clear()
+                # 切换按钮状态为停止图标
+                self.is_executing = True
+                self.send_button.setIcon(QIcon.fromTheme("process-stop"))
+                self.send_button.setToolTip("停止执行")
+                # 添加繁忙状态样式
+                self.send_button.setStyleSheet("""
+                    QPushButton {
+                        border: 2px solid #FF5722;
+                        border-radius: 20px;
+                        background-color: #FFF3E0;
+                        padding: 5px;
+                        transition: all 0.3s ease;
+                        animation: pulse 1.5s infinite;
+                    }
+                    QPushButton:hover {
+                        background-color: #FFE0B2;
+                        transform: scale(1.05);
+                    }
+                    QPushButton:pressed {
+                        background-color: #FFCC80;
+                        transform: scale(0.95);
+                    }
+                    @keyframes pulse {
+                        0% { box-shadow: 0 0 0 0 rgba(255, 87, 34, 0.7); }
+                        70% { box-shadow: 0 0 0 10px rgba(255, 87, 34, 0); }
+                        100% { box-shadow: 0 0 0 0 rgba(255, 87, 34, 0); }
+                    }
+                """)
+                if self.user_input_callback:
+                    self.user_input_callback(user_input)
                 
     def set_user_input_callback(self, callback):
         """设置用户输入回调"""
         self.user_input_callback = callback
+    
+    def set_interrupt_callback(self, callback):
+        """设置中断回调"""
+        self.interrupt_callback = callback
         
     def add_message(self, sender: str, message: str):
         """添加消息到聊天区域"""
@@ -439,28 +536,28 @@ class MainWindow(QMainWindow):
         message_html = ""
         if sender == "用户":
             # 用户消息：右对齐
-            message_html = f"<div style='margin: 15px 0;'>"
-            message_html += f"<div style='color: #2196F3; font-weight: bold; text-align: right; margin-bottom: 5px;'>用户:</div>"
-            message_html += f"<div style='text-align: right; padding: 10px; max-width: 80%; margin-left: auto;'>{message}</div>"
-            message_html += "</div><br clear='all'>"
+            message_html = f"<div style='margin: 5px 0;'>"
+            message_html += f"<div style='color: #2196F3; font-weight: bold; text-align: right; margin-bottom: 3px;'>用户:</div>"
+            message_html += f"<div style='text-align: right; padding: 8px; max-width: 80%; margin-left: auto; white-space: pre-wrap;'>{message}</div>"
+            message_html += "</div>"
         elif sender == "系统":
             # 系统消息：左对齐
-            message_html += f"<div style='margin: 15px 0;'>"
-            message_html += f"<div style='color: #4CAF50; font-weight: bold; text-align: left; margin-bottom: 5px;'>系统:</div>"
-            message_html += f"<div style='text-align: left; padding: 10px; max-width: 80%; margin-right: auto;'>{message}</div>"
-            message_html += "</div><br clear='all'>"
+            message_html += f"<div style='margin: 5px 0;'>"
+            message_html += f"<div style='color: #4CAF50; font-weight: bold; text-align: left; margin-bottom: 3px;'>系统:</div>"
+            message_html += f"<div style='text-align: left; padding: 8px; max-width: 80%; margin-right: auto; white-space: pre-wrap;'>{message}</div>"
+            message_html += "</div>"
         elif sender == "系统确认":
             # 系统确认消息：左对齐，橙色高亮
-            message_html += f"<div style='margin: 15px 0;'>"
-            message_html += f"<div style='color: #FF9800; font-weight: bold; text-align: left; margin-bottom: 5px;'>⚠️ 系统确认:</div>"
-            message_html += f"<div style='text-align: left; padding: 15px; background-color: #FFF3E0; border-radius: 10px; max-width: 80%; margin-right: auto; border-left: 4px solid #FF9800;'>{message}</div>"
-            message_html += "</div><br clear='all'>"
+            message_html += f"<div style='margin: 5px 0;'>"
+            message_html += f"<div style='color: #FF9800; font-weight: bold; text-align: left; margin-bottom: 3px;'>⚠️ 系统确认:</div>"
+            message_html += f"<div style='text-align: left; padding: 12px; background-color: #FFF3E0; border-radius: 10px; max-width: 80%; margin-right: auto; border-left: 4px solid #FF9800; white-space: pre-wrap;'>{message}</div>"
+            message_html += "</div>"
         else:
             # 其他消息：左对齐
-            message_html += f"<div style='margin: 15px 0;'>"
-            message_html += f"<div style='color: #757575; font-weight: bold; text-align: left; margin-bottom: 5px;'>{sender}:</div>"
-            message_html += f"<div style='text-align: left; padding: 10px; max-width: 80%; margin-right: auto;'>{message}</div>"
-            message_html += "</div><br clear='all'>"
+            message_html += f"<div style='margin: 5px 0;'>"
+            message_html += f"<div style='color: #757575; font-weight: bold; text-align: left; margin-bottom: 3px;'>{sender}:</div>"
+            message_html += f"<div style='text-align: left; padding: 8px; max-width: 80%; margin-right: auto; white-space: pre-wrap;'>{message}</div>"
+            message_html += "</div>"
         
         # 将新消息插入到HTML中
         new_html = current_html.replace("</body>", message_html + "</body>")
@@ -490,16 +587,16 @@ class MainWindow(QMainWindow):
             current_html = "<html><body style='font-family: Arial, sans-serif; font-size: 14px;'></body></html>"
         
         # 创建交互式确认消息的HTML
-        message_html = f"<div style='margin: 15px 0;'>"
-        message_html += f"<div style='color: #FF9800; font-weight: bold; text-align: left; margin-bottom: 5px;'>⚠️ 系统确认:</div>"
-        message_html += f"<div style='text-align: left; padding: 15px; background-color: #FFF3E0; border-radius: 10px; max-width: 80%; margin-right: auto; border-left: 4px solid #FF9800;'>"
-        message_html += f"<div style='margin-bottom: 10px;'>{message}</div>"
-        message_html += f"<div style='margin-top: 10px;'>"
-        message_html += f"<a href='confirm:yes' style='display: inline-block; padding: 10px 20px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 6px; margin-right: 10px; border: 2px solid #388E3C; font-weight: bold; cursor: pointer;'>✅ 确认执行</a>"
-        message_html += f"<a href='confirm:no' style='display: inline-block; padding: 10px 20px; background-color: #F44336; color: white; text-decoration: none; border-radius: 6px; border: 2px solid #D32F2F; font-weight: bold; cursor: pointer;'>❌ 取消执行</a>"
+        message_html = f"<div style='margin: 5px 0;'>"
+        message_html += f"<div style='color: #FF9800; font-weight: bold; text-align: left; margin-bottom: 3px;'>⚠️ 系统确认:</div>"
+        message_html += f"<div style='text-align: left; padding: 12px; background-color: #FFF3E0; border-radius: 10px; max-width: 80%; margin-right: auto; border-left: 4px solid #FF9800; white-space: pre-wrap;'>"
+        message_html += f"<div style='margin-bottom: 8px;'>{message}</div>"
+        message_html += f"<div style='margin-top: 8px;'>"
+        message_html += f"<a href='confirm:yes' style='display: inline-block; padding: 8px 16px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 6px; margin-right: 8px; border: 2px solid #388E3C; font-weight: bold; cursor: pointer;'>✅ 确认执行</a>"
+        message_html += f"<a href='confirm:no' style='display: inline-block; padding: 8px 16px; background-color: #F44336; color: white; text-decoration: none; border-radius: 6px; border: 2px solid #D32F2F; font-weight: bold; cursor: pointer;'>❌ 取消执行</a>"
         message_html += f"</div>"
         message_html += f"</div>"
-        message_html += "</div><br clear='all'>"
+        message_html += "</div>"
         
         # 将新消息插入到HTML中
         new_html = current_html.replace("</body>", message_html + "</body>")
@@ -539,9 +636,10 @@ class MainWindow(QMainWindow):
         tool = task_info.get("tool", "")
         status = task_info.get("status", "")
         progress = task_info.get("progress", None)
+        result = task_info.get("result", None)
         
         # 检查是否是有效的任务信息
-        if not description and not tool and not status and progress is None:
+        if not description and not tool and not status and progress is None and result is None:
             return
         
         # 检查是否是日志信息（特殊处理）
@@ -552,7 +650,8 @@ class MainWindow(QMainWindow):
             "description": description,
             "tool": tool,
             "status": status,
-            "progress": progress
+            "progress": progress,
+            "result": result
         }
         
         # 检查是否与最后一条记录重复
@@ -561,15 +660,16 @@ class MainWindow(QMainWindow):
             if (last_task.get("description") == description and
                 last_task.get("tool") == tool and
                 last_task.get("status") == status and
-                last_task.get("progress") == progress):
+                last_task.get("progress") == progress and
+                last_task.get("result") == result):
                 return  # 重复记录，跳过
         
         # 添加到历史
         self.task_history.append(task_record)
         
-        # 限制历史记录数量
-        if len(self.task_history) > 10:
-            self.task_history = self.task_history[-10:]
+        # 不再限制历史记录数量
+        # if len(self.task_history) > 10:
+        #     self.task_history = self.task_history[-10:]
         
         # 重建显示内容
         self.task_area.clear()
@@ -581,11 +681,13 @@ class MainWindow(QMainWindow):
             task_tool = task.get("tool", "")
             task_status = task.get("status", "")
             task_progress = task.get("progress", None)
+            task_result = task.get("result", None)
             
             # 显示主要描述
             if task_description:
                 if i > 0:
-                    self.task_area.insertHtml('<hr style="border: 1px solid #E0E0E0; margin: 8px 0;">')
+                    # 在步骤之间添加分隔线，不添加空行
+                    self.task_area.insertHtml('<hr style="border: 1px solid #E0E0E0; margin: 5px 0;">')
                 
                 # 根据内容类型选择不同颜色
                 if "错误" in task_description:
@@ -597,51 +699,101 @@ class MainWindow(QMainWindow):
                 else:
                     color = ModernStyle.PRIMARY_COLOR
                 
-                self.task_area.insertHtml(f'<p style="color: {color}; font-weight: bold; font-size: 14px;">{task_description}</p>')
+                self.task_area.insertHtml(f'<p style="color: {color}; font-weight: bold; font-size: 14px; margin: 0;">{task_description}</p>')
             
             # 显示工具信息
             if task_tool:
-                self.task_area.insertHtml(f'<p style="color: {ModernStyle.SECONDARY_TEXT_COLOR}; margin-top: 3px; font-size: 13px;">🔧 工具: {task_tool}</p>')
+                self.task_area.insertHtml(f'<p style="color: {ModernStyle.SECONDARY_TEXT_COLOR}; margin: 2px 0; font-size: 13px;">🔧 工具: {task_tool}</p>')
             
             # 显示状态信息
             if task_status:
                 status_color = ModernStyle.SUCCESS_COLOR if "成功" in task_status or "完成" in task_status else ModernStyle.WARNING_COLOR
-                self.task_area.insertHtml(f'<p style="color: {status_color}; margin-top: 3px; font-size: 13px;">📊 状态: {task_status}</p>')
+                self.task_area.insertHtml(f'<p style="color: {status_color}; margin: 2px 0; font-size: 13px;">📊 状态: {task_status}</p>')
             
             # 显示进度信息
             if task_progress is not None:
-                self.task_area.insertHtml(f'<p style="color: {ModernStyle.SECONDARY_TEXT_COLOR}; margin-top: 3px; font-size: 13px;">⏳ 进度: {task_progress}%</p>')
+                self.task_area.insertHtml(f'<p style="color: {ModernStyle.SECONDARY_TEXT_COLOR}; margin: 2px 0; font-size: 13px;">⏳ 进度: {task_progress}%</p>')
+            
+            # 显示结果信息
+            if task_result:
+                # 尝试解析结果
+                try:
+                    if isinstance(task_result, dict):
+                        # 检查是否是工具响应格式：{"type": "tool_response", "result": {...}}
+                        if "type" in task_result and task_result["type"] == "tool_response" and "result" in task_result:
+                            # 提取真正的结果
+                            actual_result = task_result["result"]
+                            if isinstance(actual_result, dict):
+                                # 检查是否是文件或文件夹已存在的情况
+                                is_exists = False
+                                if "result" in actual_result:
+                                    is_exists = "已存在" in actual_result["result"]
+                                elif "error" in actual_result:
+                                    is_exists = "已存在" in actual_result["error"]
+                                
+                                if actual_result.get("success") or is_exists:
+                                    success_msg = actual_result.get("result", "执行成功")
+                                    path = actual_result.get("path", "")
+                                    self.task_area.insertHtml(f'<p style="color: {ModernStyle.SUCCESS_COLOR}; margin: 2px 0; font-size: 13px;">✅ 结果: {success_msg}</p>')
+                                    if path:
+                                        self.task_area.insertHtml(f'<p style="color: {ModernStyle.SECONDARY_TEXT_COLOR}; margin: 2px 0; font-size: 13px;">📁 路径: {path}</p>')
+                                else:
+                                    error_msg = actual_result.get("error", "执行失败")
+                                    self.task_area.insertHtml(f'<p style="color: {ModernStyle.ERROR_COLOR}; margin: 2px 0; font-size: 13px;">❌ 错误: {error_msg}</p>')
+                            else:
+                                # 如果是其他类型，直接显示
+                                self.task_area.insertHtml(f'<p style="color: {ModernStyle.SECONDARY_TEXT_COLOR}; margin: 2px 0; font-size: 13px;">📋 结果: {str(actual_result)}</p>')
+                        else:
+                            # 如果是其他字典格式，直接检查 success 字段
+                            if task_result.get("success"):
+                                success_msg = task_result.get("result", "执行成功")
+                                path = task_result.get("path", "")
+                                self.task_area.insertHtml(f'<p style="color: {ModernStyle.SUCCESS_COLOR}; margin: 2px 0; font-size: 13px;">✅ 结果: {success_msg}</p>')
+                                if path:
+                                    self.task_area.insertHtml(f'<p style="color: {ModernStyle.SECONDARY_TEXT_COLOR}; margin: 2px 0; font-size: 13px;">📁 路径: {path}</p>')
+                            else:
+                                error_msg = task_result.get("error", "执行失败")
+                                self.task_area.insertHtml(f'<p style="color: {ModernStyle.ERROR_COLOR}; margin: 2px 0; font-size: 13px;">❌ 错误: {error_msg}</p>')
+                    else:
+                        # 如果是其他类型，直接显示
+                        self.task_area.insertHtml(f'<p style="color: {ModernStyle.SECONDARY_TEXT_COLOR}; margin: 2px 0; font-size: 13px;">📋 结果: {str(task_result)}</p>')
+                except:
+                    # 如果解析失败，直接显示
+                    self.task_area.insertHtml(f'<p style="color: {ModernStyle.SECONDARY_TEXT_COLOR}; margin: 2px 0; font-size: 13px;">📋 结果: {str(task_result)}</p>')
         
         # 确保滚动到底部
         self.task_area.moveCursor(QTextCursor.MoveOperation.End)
             
     def update_system_status(self, status_info: Dict[str, Any]):
         """更新系统状态显示"""
-        self.task_area.clear()
-        self.task_area.moveCursor(QTextCursor.MoveOperation.End)
-        
-        # 标题
-        self.task_area.insertHtml(f'<h3 style="color: {ModernStyle.PRIMARY_COLOR}; margin: 10px 0;">📋 系统状态</h3>')
-        
-        # 系统状态
-        system_status = status_info.get("status", "就绪")
-        status_color = ModernStyle.SUCCESS_COLOR if "就绪" in system_status else ModernStyle.WARNING_COLOR
-        self.task_area.insertHtml(f'<p style="color: {status_color}; margin: 5px 0;">🔄 系统状态: {system_status}</p>')
-        
-        # 当前模型
-        current_model = status_info.get("model", "未知")
-        self.task_area.insertHtml(f'<p style="color: {ModernStyle.TEXT_COLOR}; margin: 5px 0;">🤖 当前模型: {current_model}</p>')
-        
-        # 连接状态
-        connected = status_info.get("connected", False)
-        conn_status = "已连接" if connected else "未连接"
-        conn_color = ModernStyle.SUCCESS_COLOR if connected else ModernStyle.ERROR_COLOR
-        self.task_area.insertHtml(f'<p style="color: {conn_color}; margin: 5px 0;">🔗 服务器连接: {conn_status}</p>')
-        
-        # 可用工具
-        tools = status_info.get("tools", [])
-        if tools:
-            self.task_area.insertHtml(f'<p style="color: {ModernStyle.TEXT_COLOR}; margin: 5px 0;">🛠️ 可用工具: {", ".join(tools)}</p>')
+        # 只在初始启动时显示系统状态，不覆盖任务执行过程
+        # 检查是否是初始启动（任务历史为空）
+        if not self.task_history:
+            self.task_area.clear()
+            self.task_area.moveCursor(QTextCursor.MoveOperation.End)
+            
+            # 标题
+            self.task_area.insertHtml(f'<h3 style="color: {ModernStyle.PRIMARY_COLOR}; margin: 10px 0;">📋 系统状态</h3>')
+            
+            # 系统状态
+            system_status = status_info.get("status", "就绪")
+            status_color = ModernStyle.SUCCESS_COLOR if "就绪" in system_status else ModernStyle.WARNING_COLOR
+            self.task_area.insertHtml(f'<p style="color: {status_color}; margin: 5px 0;">🔄 系统状态: {system_status}</p>')
+            
+            # 当前模型
+            current_model = status_info.get("model", "未知")
+            self.task_area.insertHtml(f'<p style="color: {ModernStyle.TEXT_COLOR}; margin: 5px 0;">🤖 当前模型: {current_model}</p>')
+            
+            # 连接状态
+            connected = status_info.get("connected", False)
+            conn_status = "已连接" if connected else "未连接"
+            conn_color = ModernStyle.SUCCESS_COLOR if connected else ModernStyle.ERROR_COLOR
+            self.task_area.insertHtml(f'<p style="color: {conn_color}; margin: 5px 0;">🔗 服务器连接: {conn_status}</p>')
+            
+            # 可用工具
+            tools = status_info.get("tools", [])
+            if tools:
+                self.task_area.insertHtml(f'<p style="color: {ModernStyle.TEXT_COLOR}; margin: 5px 0;">🛠️ 可用工具: {" ".join(tools)}</p>')
             
     def clear_task(self):
         """清空任务显示区域"""
@@ -666,6 +818,33 @@ class MainWindow(QMainWindow):
     def update_status(self, status: str):
         """更新状态栏"""
         self.status_label.setText(f"状态: {status}")
+        # 如果状态变为就绪，恢复按钮状态
+        if status == "就绪" and self.is_executing:
+            self.is_executing = False
+            self.send_button.setIcon(QIcon.fromTheme("mail-send"))
+            self.send_button.setToolTip("发送指令")
+            # 恢复按钮样式
+            self.send_button.setStyleSheet("""
+                QPushButton {
+                    border: 2px solid #2196F3;
+                    border-radius: 20px;
+                    background-color: white;
+                    padding: 5px;
+                    transition: all 0.3s ease;
+                }
+                QPushButton:hover {
+                    background-color: #E3F2FD;
+                    transform: scale(1.05);
+                }
+                QPushButton:pressed {
+                    background-color: #BBDEFB;
+                    transform: scale(0.95);
+                }
+                QPushButton:disabled {
+                    border: 2px solid #BDBDBD;
+                    background-color: #F5F5F5;
+                }
+            """)
         
     def show_progress(self, visible: bool, value: int):
         """显示/隐藏进度条"""

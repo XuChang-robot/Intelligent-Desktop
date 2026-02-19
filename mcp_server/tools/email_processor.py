@@ -17,7 +17,7 @@ from mcp.server.fastmcp import Context
 from mcp_server.tools.file_operations import process_path
 
 # 从config导入配置
-from config.config import get_config
+from user_config.config import get_config
 
 
 def register_email_processor_tools(mcp, security_checker=None, output_callback=None):

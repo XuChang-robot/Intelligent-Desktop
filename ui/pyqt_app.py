@@ -13,7 +13,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 
 from ui.pyqt_main_window import MainWindow, ModernStyle
 from mcp_client.client import MCPClient
-from config.config import load_config
+from user_config.config import load_config
 
 class WorkerSignals(QObject):
     """工作线程信号"""

@@ -4,7 +4,7 @@
 import logging
 import asyncio
 from mcp_client.client import MCPClient, initialize_global_session, close_global_session
-from config.config import load_config
+from user_config.config import load_config
 
 # 配置日志
 config = load_config()

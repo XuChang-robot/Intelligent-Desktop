@@ -12,7 +12,7 @@ def register_network_request_tools(mcp):
     
     @mcp.tool()
     async def network_request(
-        method: str,
+        operation: str,
         url: str,
         data: Optional[Dict[str, Any]] = None,
         headers: Optional[Dict[str, str]] = None,
@@ -23,7 +23,7 @@ def register_network_request_tools(mcp):
         支持发送HTTP请求，包括GET、POST、PUT、DELETE等方法。
         
         Args:
-            method: HTTP方法，可选值：
+            operation: 操作类型，可选值：
                 - "GET": 获取数据
                 - "POST": 提交数据
                 - "PUT": 更新数据
@@ -51,7 +51,7 @@ def register_network_request_tools(mcp):
             
             async with aiohttp.ClientSession() as session:
                 async with session.request(
-                    method=method,
+                    method=operation,
                     url=url,
                     json=data,
                     headers=headers,

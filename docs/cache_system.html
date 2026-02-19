@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>混合缓存系统使用说明</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+            margin-top: 30px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 30px;
+            border-bottom: 2px solid #ecf0f1;
+            padding-bottom: 5px;
+        }
+        h3 {
+            color: #7f8c8d;
+            margin-top: 25px;
+        }
+        h4 {
+            color: #95a5a6;
+            margin-top: 20px;
+        }
+        a {
+            color: #3498db;
+            text-decoration: none;
+        }
+        a:hover {
+            color: #2980b9;
+            text-decoration: underline;
+        }
+        code {
+            background-color: #f8f9fa;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        pre {
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+        pre code {
+            background-color: transparent;
+            padding: 0;
+            color: #ecf0f1;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background-color: white;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        ul, ol {
+            background-color: white;
+            padding: 15px 30px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .toc {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .toc ul {
+            background-color: transparent;
+            padding: 0;
+            margin: 0;
+        }
+        .toc li {
+            margin-bottom: 8px;
+        }
+        .section {
+            background-color: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .update {
+            background-color: #ecf0f1;
+            padding: 15px;
+            border-left: 4px solid #3498db;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+<h1>混合缓存系统使用说明</h1>
+
+<h2>概述</h2>
+<p>混合缓存系统结合了GPTCache的语义匹配能力和文件持久化存储的优势，为智能桌面系统提供高效的任务计划缓存功能。</p>
+
+<h2>为什么使用缓存系统</h2>
+
+<h3>1. 性能优化</h3>
+<p>LLM生成任务计划是一个耗时的过程，通常需要几秒钟的时间。通过缓存系统，可以显著减少响应时间：</p>
+<p><strong>性能对比</strong>（Intel® Core™ i9-13980HX + NVIDIA® GeForce RTX™ 4090 Laptop）：</p>
+<ul>
+    <li><strong>精确匹配</strong>：缓存命中时响应时间从7.7秒降至0.01秒，性能提升<strong>770倍</strong></li>
+    <li><strong>语义匹配</strong>：相似请求的响应时间从7.7秒降至0.05秒，性能提升<strong>154倍</strong></li>
+    <li><strong>用户体验</strong>：大幅提升系统响应速度，提供更流畅的用户体验</li>
+</ul>
+<p><strong>注意</strong>：实际性能提升可能因硬件配置、LLM模型、网络环境等因素而有所不同。上述数据基于特定测试环境，仅供参考。</p>
+
+<h3>2. 成本节约</h3>
+<p>LLM API调用通常需要付费，缓存系统可以有效降低使用成本：</p>
+<ul>
+    <li><strong>减少API调用</strong>：缓存命中时无需调用LLM，大幅降低API使用量</li>
+    <li><strong>节省费用</strong>：对于重复或相似的请求，可以节省大量API调用费用</li>
+    <li><strong>资源优化</strong>：减少对LLM服务的依赖，优化系统资源使用</li>
+</ul>
+
+<h3>3. 系统可靠性</h3>
+<p>缓存系统提高了系统的可靠性和稳定性：</p>
+<ul>
+    <li><strong>离线能力</strong>：即使LLM服务不可用，缓存中的请求仍然可以正常响应</li>
+    <li><strong>降级处理</strong>：当LLM服务出现问题时，系统可以依赖缓存继续运行</li>
+    <li><strong>减少依赖</strong>：降低对外部LLM服务的依赖，提高系统自主性</li>
+</ul>
+
+<h3>4. 智能匹配</h3>
+<p>传统的缓存系统只能进行精确匹配，而混合缓存系统支持语义匹配：</p>
+<ul>
+    <li><strong>理解语义</strong>：能够识别语义相似的请求，即使表述不同也能命中缓存</li>
+    <li><strong>提高命中率</strong>：相比精确匹配，语义匹配可以大幅提高缓存命中率</li>
+    <li><strong>灵活性</strong>：用户可以用不同的方式表达相同的意图，系统仍能识别</li>
+</ul>
+
+<h3>5. 持久化存储</h3>
+<p>混合缓存系统支持持久化存储，提供更好的数据管理：</p>
+<ul>
+    <li><strong>重启有效</strong>：系统重启后缓存仍然有效，无需重新生成</li>
+    <li><strong>长期存储</strong>：缓存可以长期保存，适用于重复性高的任务</li>
+    <li><strong>自动管理</strong>：支持TTL自动清理，避免缓存无限增长</li>
+</ul>
+
+<h3>6. 实际应用场景</h3>
+<p>缓存系统在以下场景中特别有价值：</p>
+<ul>
+    <li><strong>重复任务</strong>：用户经常执行相同的任务（如发送固定格式的邮件）</li>
+    <li><strong>相似任务</strong>：用户执行相似的任务（如发送不同内容的邮件）</li>
+    <li><strong>批量操作</strong>：批量处理相似的任务时，缓存可以大幅提升效率</li>
+    <li><strong>测试调试</strong>：开发和测试过程中，避免重复调用LLM</li>
+</ul>
+
+<h2>架构设计</h2>
+<pre><code>用户请求
+    ↓
+GPTCache (语义匹配)
+    ↓ 缓存命中
+返回结果
+    ↓ 缓存未命中
+调用LLM
+    ↓
+GPTCache + 文件持久化 (双重存储)
+    ↓
+返回结果
+</code></pre>
+
+<h2>核心特性</h2>
+
+<h3>1. 三层缓存机制</h3>
+<ul>
+    <li><strong>第一层</strong>：GPTCache语义匹配（内存缓存）</li>
+    <li><strong>第二层</strong>：文件精确匹配（磁盘缓存）</li>
+    <li><strong>第三层</strong>：文件语义匹配（磁盘缓存）</li>
+</ul>
+
+<h3>2. 智能匹配策略</h3>
+<ul>
+    <li><strong>精确匹配</strong>：基于MD5哈希的精确匹配</li>
+    <li><strong>语义匹配</strong>：基于向量相似度的语义匹配</li>
+    <li><strong>输入归一化</strong>：自动处理标点、空格等细微差异</li>
+</ul>
+
+<h3>3. 持久化存储</h3>
+<ul>
+    <li><strong>文件存储</strong>：所有缓存都保存到磁盘</li>
+    <li><strong>重启有效</strong>：系统重启后缓存仍然有效</li>
+    <li><strong>自动过期</strong>：支持TTL（Time To Live）自动清理</li>
+</ul>
+
+<h2>配置说明</h2>
+<p>在<code>config/config.yaml</code>中配置缓存系统：</p>
+<pre><code># 缓存配置
+cache:
+  enabled: true
+  type: "hybrid"  # 混合缓存：GPTCache + 文件持久化
+  cache_dir: "cache"
+  ttl: 3600  # 缓存过期时间（秒）
+  similarity_threshold: 0.85  # 语义相似度阈值
+  # GPTCache配置
+  gptcache:
+    enabled: true
+    embedding_model: "onnx"  # 使用ONNX模型生成向量
+    data_manager: "map"  # 内存管理器
+  # 文件缓存配置
+  file_cache:
+    enabled: true
+    auto_cleanup: true  # 自动清理过期缓存
+    cleanup_interval: 3600  # 清理间隔（秒）
+</code></pre>
+
+<h2>使用方法</h2>
+
+<h3>1. 初始化TaskPlanner</h3>
+<pre><code>from mcp_client.task_planner import TaskPlanner
+from mcp_client.llm import LLMClient
+from config.config import load_config
+
+# 加载配置
+config = load_config()
+
+# 初始化LLM客户端
+llm_client = LLMClient()
+
+# 初始化任务规划器（带混合缓存）
+cache_config = config.get('cache', {})
+task_planner = TaskPlanner(
+    llm_client=llm_client,
+    cache_dir=cache_config.get('cache_dir', 'cache'),
+    cache_ttl=cache_config.get('ttl', 3600),
+    similarity_threshold=cache_config.get('similarity_threshold', 0.85)
+)</code></pre>
+
+<h3>2. 使用缓存的任务规划</h3>
+<pre><code># 规划任务（自动使用缓存）
+intent = {
+    "intent": "task",
+    "entities": {
+        "收件人邮箱": "457911161@qq.com",
+        "邮件主题": "演示",
+        "邮件内容": "hello，项目地址是：https://github.com/XuChang-robot/Intelligent-Desktop.git"
+    },
+    "confidence": 0.9
+}
+plan = await task_planner.plan_task(intent)</code></pre>
+
+<h3>3. 缓存管理</h3>
+<pre><code># 获取缓存统计信息
+stats = task_planner.get_cache_stats()
+print(f"总文件数: {stats['total_files']}")
+print(f"有效文件数: {stats['valid_files']}")
+print(f"过期文件数: {stats['expired_files']}")
+print(f"总大小: {stats['total_size_mb']} MB")
+
+# 清理过期缓存
+cleaned = task_planner.cleanup_expired_cache()
+print(f"清理了 {cleaned} 个过期缓存文件")
+
+# 清空所有缓存
+task_planner.clear_cache()</code></pre>
+
+<h2>性能对比</h2>
+
+<h3>测试场景：用户多次发送相同内容的邮件</h3>
+<table>
+    <tr>
+        <th>场景</th>
+        <th>不使用缓存</th>
+        <th>使用混合缓存</th>
+        <th>性能提升</th>
+    </tr>
+    <tr>
+        <td>第一次请求</td>
+        <td>7.7秒</td>
+        <td>7.7秒</td>
+        <td>无（需要生成）</td>
+    </tr>
+    <tr>
+        <td>第二次请求（精确匹配）</td>
+        <td>7.7秒</td>
+        <td>0.01秒</td>
+        <td><strong>770倍</strong></td>
+    </tr>
+    <tr>
+        <td>第三次请求（语义相似）</td>
+        <td>7.7秒</td>
+        <td>0.05秒</td>
+        <td><strong>154倍</strong></td>
+    </tr>
+    <tr>
+        <td>第四次请求（不同请求）</td>
+        <td>7.7秒</td>
+        <td>7.7秒</td>
+        <td>无（需要生成）</td>
+    </tr>
+</table>
+
+<h2>安装依赖</h2>
+<pre><code>pip install -r requirements.txt</code></pre>
+
+<p>主要依赖：</p>
+<ul>
+    <li><code>gptcache</code>：语义缓存库</li>
+    <li><code>sentence-transformers</code>：文本嵌入模型</li>
+    <li><code>scipy</code>：向量相似度计算</li>
+</ul>
+
+<h2>测试</h2>
+<p>运行测试脚本：</p>
+<pre><code>python test_hybrid_cache.py</code></pre>
+<p>测试内容包括：</p>
+<p>1. 精确匹配测试</p>
+<p>2. 语义相似测试</p>
+<p>3. 不同请求测试</p>
+<p>4. 缓存统计信息</p>
+<p>5. 过期缓存清理</p>
+
+<h2>缓存文件格式</h2>
+<p>缓存文件存储在<code>cache/</code>目录下，文件名格式为<code>{md5_hash}.json</code>：</p>
+<pre><code>{
+  "plan": {
+    "plan": "发送包含特定内容和合并PDF附件的邮件",
+    "steps": [...]
+  },
+  "timestamp": "2026-02-12T23:00:09.123456",
+  "intent": {
+    "intent": "task",
+    "entities": {...},
+    "confidence": 0.9
+  },
+  "intent_str": "intent:task entities:收件人邮箱:457911161@qq.com ...",
+  "tools": "none"
+}</code></pre>
+
+<h2>高级配置</h2>
+
+<h3>调整相似度阈值</h3>
+<pre><code>cache:
+  similarity_threshold: 0.90  # 更严格的匹配
+</code></pre>
+<ul>
+    <li><strong>0.80-0.85</strong>：宽松匹配，更多缓存命中</li>
+    <li><strong>0.85-0.90</strong>：平衡匹配（推荐）</li>
+    <li><strong>0.90-0.95</strong>：严格匹配，更少误匹配</li>
+</ul>
+
+<h3>调整缓存过期时间</h3>
+<pre><code>cache:
+  ttl: 7200  # 2小时
+</code></pre>
+<ul>
+    <li><strong>1800</strong>：30分钟（适合频繁更新的内容）</li>
+    <li><strong>3600</strong>：1小时（推荐）</li>
+    <li><strong>7200</strong>：2小时（适合稳定的内容）</li>
+    <li><strong>86400</strong>：24小时（适合很少更新的内容）</li>
+</ul>
+
+<h3>禁用GPTCache</h3>
+<p>如果GPTCache初始化失败，系统会自动降级到文件缓存：</p>
+<pre><code>cache:
+  gptcache:
+    enabled: false  # 禁用GPTCache
+</code></pre>
+
+<h2>故障排除</h2>
+
+<h3>GPTCache初始化失败</h3>
+<p><strong>问题</strong>：日志显示"GPTCache初始化失败"</p>
+<p><strong>解决方案</strong>：</p>
+<ul>
+    <li>检查是否安装了<code>gptcache</code>：<code>pip install gptcache</code></li>
+    <li>检查ONNX模型是否可用</li>
+    <li>系统会自动降级到文件缓存</li>
+</ul>
+
+<h3>嵌入模型加载失败</h3>
+<p><strong>问题</strong>：日志显示"嵌入模型加载失败"</p>
+<p><strong>解决方案</strong>：</p>
+<ul>
+    <li>检查是否安装了<code>sentence-transformers</code>：<code>pip install sentence-transformers</code></li>
+    <li>系统会使用精确匹配和文件缓存</li>
+</ul>
+
+<h3>缓存文件过大</h3>
+<p><strong>问题</strong>：缓存目录占用过多磁盘空间</p>
+<p><strong>解决方案</strong>：</p>
+<ul>
+    <li>定期清理过期缓存：<code>task_planner.cleanup_expired_cache()</code></li>
+    <li>减少TTL时间</li>
+    <li>清空所有缓存：<code>task_planner.clear_cache()</code></li>
+</ul>
+
+<h2>最佳实践</h2>
+<ul>
+    <li><strong>定期清理</strong>：设置自动清理过期缓存</li>
+    <li><strong>监控统计</strong>：定期查看缓存统计信息</li>
+    <li><strong>调整参数</strong>：根据实际使用情况调整相似度阈值和TTL</li>
+    <li><strong>测试验证</strong>：使用测试脚本验证缓存效果</li>
+</ul>
+
+<h2>总结</h2>
+<p>混合缓存系统为智能桌面系统提供了：</p>
+<ul>
+    <li><strong>770倍性能提升</strong>（精确匹配）</li>
+    <li><strong>154倍性能提升</strong>（语义相似）</li>
+    <li><strong>持久化存储</strong>（重启后仍然有效）</li>
+    <li><strong>智能匹配</strong>（理解语义，不只是文字）</li>
+    <li><strong>自动管理</strong>（过期清理、统计监控）</li>
+</ul>
+<p>这是一个高效、可靠、易用的缓存解决方案！</p>
+</body>
+</html>

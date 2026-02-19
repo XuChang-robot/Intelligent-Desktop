@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能桌面系统 - 用户使用说明</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+            margin-top: 30px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 30px;
+            border-bottom: 2px solid #ecf0f1;
+            padding-bottom: 5px;
+        }
+        h3 {
+            color: #7f8c8d;
+            margin-top: 25px;
+        }
+        h4 {
+            color: #95a5a6;
+            margin-top: 20px;
+        }
+        a {
+            color: #3498db;
+            text-decoration: none;
+        }
+        a:hover {
+            color: #2980b9;
+            text-decoration: underline;
+        }
+        code {
+            background-color: #f8f9fa;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        pre {
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+        pre code {
+            background-color: transparent;
+            padding: 0;
+            color: #ecf0f1;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background-color: white;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        ul, ol {
+            background-color: white;
+            padding: 15px 30px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .toc {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .toc ul {
+            background-color: transparent;
+            padding: 0;
+            margin: 0;
+        }
+        .toc li {
+            margin-bottom: 8px;
+        }
+        .section {
+            background-color: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .update {
+            background-color: #ecf0f1;
+            padding: 15px;
+            border-left: 4px solid #3498db;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>智能桌面系统 - 用户使用说明</h1>
+
+    <div class="toc">
+        <h2>目录</h2>
+        <ul>
+            <li><a href="#系统概述">系统概述</a></li>
+            <li><a href="#快速开始">快速开始</a></li>
+            <li><a href="#功能说明">功能说明</a></li>
+            <li><a href="#配置指南">配置指南</a></li>
+            <li><a href="#使用示例">使用示例</a></li>
+            <li><a href="#常见问题">常见问题</a></li>
+            <li><a href="#历史更新">历史更新</a></li>
+        </ul>
+    </div>
+
+<h2 id="系统概述">系统概述</h2>
+
+<p>智能桌面系统是一个基于MCP（Model Context Protocol）架构的智能助手，可以帮助用户完成各种桌面任务，包括文档转换、文件操作、邮件处理、网络请求等。</p>
+
+<h3>核心特性</h3>
+<ul></ul>
+    <li><strong>智能意图识别</strong>：自动理解用户需求</li>
+    <li><strong>任务规划</strong>：自动生成执行计划</li>
+    <li><strong>高效缓存</strong>：基于FAISS向量搜索的混合缓存系统</li>
+    <li><strong>安全可靠</strong>：沙箱隔离、权限控制</li>
+    <li><strong>易于扩展</strong>：模块化设计，支持自定义工具</li>
+</ul>
+
+<h3>系统架构</h3>
+
+<pre><code>用户输入
+    ↓
+意图解析（Intent Parser）
+    ↓
+判断意图类型
+    ↓
+┌─────────────┬─────────────┐
+│  task（任务）│  chat（聊天）│
+└─────────────┴─────────────┘
+      ↓              ↓
+任务规划      直接LLM回答
+    ↓              ↓
+缓存检查
+    ↓
+执行计划（MCP Tools）
+    ↓
+返回结果
+</code></pre>
+
+<h3>意图类型</h3>
+
+<p>系统支持两种意图类型：</p>
+
+<h4>1. task（任务型）</h4>
+<p>需要调用工具执行具体操作，包括：</p>
+<ul>
+    <li>文件操作：创建、读取、写入、删除文件/文件夹</li>
+    <li>文档转换：PDF转Word、Word转PDF等</li>
+    <li>系统信息：获取系统信息、进程列表等</li>
+    <li>文本处理：转语音、摘要、格式化等</li>
+    <li>网络请求：HTTP请求、API调用等</li>
+    <li>邮件发送：发送邮件、读取邮件等</li>
+</ul>
+
+<h4>2. chat（聊天型）</h4>
+<p>纯对话内容，直接使用LLM回答，包括：</p>
+<ul>
+    <li>问候：如"你好"、"早上好"等</li>
+    <li>提问：如"什么是"、"如何"、"为什么"等</li>
+    <li>闲聊：如"今天天气怎么样"、"你好吗"等</li>
+    <li>咨询：各种问题咨询和建议</li>
+</ul>
+
+<h2 id="快速开始">快速开始</h2>
+
+<h3>安装依赖</h3>
+
+<pre><code>pip install -r requirements.txt
+</code></pre>
+
+<h3>启动系统</h3>
+
+<pre><code>python main.py
+</code></pre>
+
+<h3>基本使用</h3>
+
+<p>在聊天界面输入自然语言指令，例如：</p>
+
+<pre><code>把桌面上的生成式对抗网络.pdf转为word，放入桌面上的cx文件夹内
+</code></pre>
+
+<p>系统会自动：</p>
+<ol>
+    <li>解析意图</li>
+    <li>生成任务计划</li>
+    <li>执行任务</li>
+    <li>返回结果</li>
+</ol>
+
+<h2 id="功能说明">功能说明</h2>
+
+<h3>1. 文档转换</h3>
+
+<p>支持PDF与Word文档的互转。</p>
+
+<p>#### PDF转Word</p>
+
+<pre><code>把桌面上的xxx.pdf转为word
+</code></pre>
+
+<p>#### Word转PDF</p>
+
+<pre><code>把桌面上的xxx.docx转为pdf
+</code></pre>
+
+<p>#### 指定输出路径</p>
+
+<pre><code>把桌面上的xxx.pdf转为word，放入桌面上的cx文件夹内
+</code></pre>
+
+<h3>2. 文件操作</h3>
+
+<p>支持创建、读取、写入、删除、移动、复制、列表、搜索等操作。</p>
+
+<p>#### 创建文件</p>
+
+<pre><code>在桌面上创建一个test.txt文件
+</code></pre>
+
+<p>#### 读取文件</p>
+
+<pre><code>读取桌面上的test.txt文件内容
+</code></pre>
+
+<p>#### 写入文件</p>
+
+<pre><code>向桌面上的test.txt文件写入"hello world"
+</code></pre>
+
+<p>#### 删除文件</p>
+
+<pre><code>删除桌面上的test.txt文件
+</code></pre>
+
+<p>#### 移动文件</p>
+
+<pre><code>把桌面上的test.txt移动到桌面上的cx文件夹内
+</code></pre>
+
+<p>#### 复制文件</p>
+
+<pre><code>复制桌面上的test.txt到桌面上的cx文件夹内
+</code></pre>
+
+<p>#### 列出目录</p>
+
+<pre><code>列出桌面上的文件
+</code></pre>
+
+<p>#### 搜索文件</p>
+
+<pre><code>在桌面上搜索test.txt文件
+</code></pre>
+
+<h3>3. PDF处理</h3>
+
+<p>支持PDF合并、插入页、打印、提取页、拆分等操作。</p>
+
+<p>#### PDF合并</p>
+
+<pre><code>合并桌面上的file1.pdf和file2.pdf
+</code></pre>
+
+<p>#### PDF插入页</p>
+
+<pre><code>在桌面上的file1.pdf的第2页插入桌面上的file2.pdf
+</code></pre>
+
+<p>#### PDF打印</p>
+
+<pre><code>打印桌面上的file1.pdf
+</code></pre>
+
+<p>#### PDF提取页</p>
+
+<pre><code>提取桌面上的file1.pdf的第1-3页
+</code></pre>
+
+<p>#### PDF拆分</p>
+
+<pre><code>拆分桌面上的file1.pdf的第1-3页
+</code></pre>
+
+<h3>4. 文本处理</h3>
+
+<p>支持文字转语音、文本摘要、格式化、统计等操作。</p>
+
+<p>#### 文字转语音</p>
+
+<pre><code>把桌面上的test.txt转为语音
+</code></pre>
+
+<p>#### 文本摘要</p>
+
+<pre><code>对桌面上的test.txt进行摘要
+</code></pre>
+
+<p>#### 文本格式化</p>
+
+<pre><code>格式化桌面上的test.txt为大写
+</code></pre>
+
+<p>#### 统计字符数</p>
+
+<pre><code>统计桌面上的test.txt的字符数
+</code></pre>
+
+<h3>5. 邮件处理</h3>
+
+<p>支持发送和接收邮件。</p>
+
+<p>#### 发送邮件</p>
+
+<pre><code>发送邮件到457911161@qq.com，主题是"测试"，内容是"hello"
+</code></pre>
+
+<p>#### 接收邮件</p>
+
+<pre><code>接收457911161@qq.com的邮件
+</code></pre>
+
+<h3>6. 网络请求</h3>
+
+<p>支持GET、POST、PUT、DELETE等HTTP请求。</p>
+
+<p>#### GET请求</p>
+
+<pre><code>发送GET请求到https://api.example.com/data
+</code></pre>
+
+<p>#### POST请求</p>
+
+<pre><code>发送POST请求到https://api.example.com/data，数据是{"key": "value"}
+</code></pre>
+
+<h2 id="配置指南">配置指南</h2>
+
+<h3>配置文件结构</h3>
+
+<pre><code>Intelligence_Desktop/
+├── system_config/           # 系统配置（用户不应该修改）
+│   ├── cache_config.json    # 缓存关键参数配置
+│   └── README.md          # 系统配置说明
+├── user_config/            # 用户配置
+│   ├── config.yaml         # 用户配置文件
+│   ├── config.py          # 配置加载器
+│   ├── README.md          # 用户配置说明
+│   └── CACHE_CONFIG_GUIDE.md  # 缓存配置指南
+</code></pre>
+
+<h3>MCP配置</h3>
+
+<pre><code>mcp:
+  server:
+    host: "localhost"           # MCP服务器地址
+    port: 8001                   # MCP服务器端口
+    max_connections: 10          # 最大连接数
+  client:
+    retry_attempts: 3            # 客户端重试次数
+</code></pre>
+
+<h3>LLM配置</h3>
+
+<pre><code>llm:
+  model: "qwen3:8b"             # LLM模型名称
+  base_url: "http://localhost:11434"  # LLM服务地址
+  temperature: 0.6              # 温度参数（0-1，越高越随机）
+  max_tokens: 4000              # 最大生成token数
+</code></pre>
+
+<h3>安全配置</h3>
+
+<pre><code>security:
+  enable_sandbox: true          # 是否启用沙箱
+  dangerous_commands: ["rm -rf", "format", "shutdown", "reboot"]  # 危险命令列表
+  allow_network: true           # 是否允许网络操作
+  allow_file_system: true       # 是否允许文件系统操作
+</code></pre>
+
+<h3>UI配置</h3>
+
+<pre><code>ui:
+  title: "智能桌面系统"         # 窗口标题
+  width: 800                    # 窗口宽度
+  height: 600                   # 窗口高度
+  theme: "light"                # 主题（light/dark）
+</code></pre>
+
+<h3>缓存配置</h3>
+
+<pre><code>cache:
+  enabled: true                  # 是否启用缓存
+  type: "faiss"                 # 缓存类型
+  cache_dir: "cache"            # 缓存目录
+
+  ttl: 604800                   # 缓存过期时间（秒），默认一周
+  max_total_size_mb: 1024       # 总大小限制（1GB）
+  max_db_size_mb: 768           # SQLite数据库最大768MB
+  max_faiss_size_mb: 392       # FAISS索引最大392MB
+  max_records: 100000           # 最多100000条记录
+
+  cleanup_interval: 3600        # 清理间隔（秒），默认1小时
+  cleanup_on_startup: true     # 启动时清理过期缓存
+
+  similarity_threshold: 0.85    # 相似度阈值（0-1）
+  embedding_model: "nomic-embed-text"  # Embedding模型
+</code></pre>
+
+<p>#### 缓存配置说明</p>
+
+<strong>TTL（过期时间）</strong>：</p>
+<li><code>604800</code>秒（7天）：默认设置，适合大多数场景</li>
+<li><code>3600</code>秒（1小时）：适合频繁更新的内容</li>
+<li><code>86400</code>秒（24小时）：适合稳定的内容</li>
+
+<strong>大小限制</strong>：</p>
+<li><code>max_total_size_mb</code>：总大小限制，超过后会清理旧缓存</li>
+<li><code>max_db_size_mb</code>：SQLite数据库大小限制，建议设置为总大小的75%</li>
+<li><code>max_faiss_size_mb</code>：FAISS索引大小限制，建议设置为总大小的25%</li>
+
+<strong>相似度阈值</strong>：</p>
+<li><code>0.85</code>：平衡匹配（推荐）</li>
+<li><code>0.90</code>：高精度匹配，缓存命中率较低</li>
+<li><code>0.80</code>：宽松匹配，缓存命中率较高</li>
+
+<p>详细配置指南请参考：<a href="../user_config/CACHE_CONFIG_GUIDE.html" target="_blank">缓存配置指南</a></p>
+
+<h2 id="使用示例">使用示例</h2>
+
+<h3>示例1：文档转换</h3>
+
+<pre><code>用户：把桌面上的生成式对抗网络.pdf转为word，放入桌面上的cx文件夹内
+
+系统：
+1. 解析意图：pdf_to_word
+2. 生成计划：使用文档转换工具
+3. 执行计划：转换PDF到Word
+4. 返回结果：转换成功
+</code></pre>
+
+<h3>示例2：邮件发送</h3>
+
+<pre><code>用户：发送邮件到457911161@qq.com，主题是"测试"，内容是"hello"
+
+系统：
+1. 解析意图：send_email
+2. 生成计划：使用邮件发送工具
+3. 执行计划：发送邮件
+4. 返回结果：邮件发送成功
+</code></pre>
+
+<h3>示例3：文件操作</h3>
+
+<pre><code>用户：在桌面上创建一个test.txt文件，写入"hello world"
+
+系统：
+1. 解析意图：create_file
+2. 生成计划：使用文件操作工具
+3. 执行计划：创建文件并写入内容
+4. 返回结果：文件创建成功
+</code></pre>
+
+<h2 id="常见问题">常见问题</h2>
+
+<h3>Q1: 意图解析失败怎么办？</h3>
+
+<strong>A</strong>: 检查以下几点：</p>
+<p>1. 确保LLM服务正常运行</p>
+<p>2. 检查LLM配置是否正确</p>
+<p>3. 查看日志了解具体错误信息</p>
+
+<h3>Q2: 缓存未命中怎么办？</h3>
+
+<strong>A</strong>: 检查以下几点：</p>
+<p>1. 确保缓存已启用</p>
+<p>2. 检查相似度阈值是否过高</p>
+<p>3. 查看日志了解缓存状态</p>
+
+<h3>Q3: 如何提高缓存命中率？</h3>
+
+<strong>A</strong>: 可以尝试以下方法：</p>
+<p>1. 降低相似度阈值（如从0.85降到0.80）</p>
+<p>2. 增加缓存过期时间</p>
+<p>3. 使用更相似的表述</p>
+
+<h3>Q4: 如何清理缓存？</h3>
+
+<strong>A</strong>: 有以下几种方法：</p>
+<p>1. 自动清理：系统会定期清理过期缓存</p>
+<p>2. 手动清理：删除cache目录</p>
+<p>3. 调整配置：减少TTL时间</p>
+
+<h3>Q5: 系统支持哪些文件格式？</h3>
+
+<strong>A</strong>: 支持以下文件格式：</p>
+<li>文档：PDF、Word（.docx）</li>
+<li>文本：TXT</li>
+<li>音频：MP3、WAV（文字转语音）</li>
+<li>图片：PNG、JPG（OCR识别）</li>
+
+<h2 id="历史更新">历史更新</h2>
+
+<h3>2026-02-19</h3>
+
+<p>#### 新增功能</p>
+
+<p>1. <strong>意图解析优化</strong></p>
+<p>   - 重新设计意图类型：task（任务型）和chat（聊天型）</p>
+<p>   - 移除execute_code意图，不再生成Python代码</p>
+<p>   - 所有任务通过专用工具组合完成，提高系统稳定性</p>
+
+<p>2. <strong>聊天功能增强</strong></p>
+<p>   - 新增chat意图类型，支持纯对话内容</p>
+<p>   - 问候、提问、闲聊等直接使用LLM回答</p>
+<p>   - 避免误匹配缓存中的任务计划</p>
+
+<p>3. <strong>任务执行优化</strong></p>
+<p>   - task意图专注于工具调用和任务执行</p>
+<p>   - 更清晰的意图判断标准</p>
+<p>   - 提高系统响应速度和准确性</p>
+
+<p>#### 修复问题</p>
+
+<p>1. <strong>缓存误匹配</strong></p>
+<p>   - 修复简单输入（如"1"）错误匹配缓存的问题</p>
+<p>   - 聊天型意图不查询缓存，避免误执行任务</p>
+<p>   - 提高缓存匹配的准确性</p>
+
+<p>2. <strong>代码生成移除</strong></p>
+<p>   - 移除所有execute_code相关逻辑</p>
+<p>   - 移除Python代码生成和执行功能</p>
+<p>   - 简化系统架构，提高可靠性</p>
+
+<p>#### 文档更新</p>
+
+<p>1. <strong>用户文档</strong></p>
+<p>   - 更新系统架构图，反映意图类型判断</p>
+<p>   - 新增意图类型说明（task和chat）</p>
+<p>   - 更新功能说明和使用示例</p>
+
+<p>2. <strong>开发者文档</strong></p>
+<p>   - 更新意图解析器说明</p>
+<p>   - 移除execute_code相关文档</p>
+<p>   - 更新API接口说明</p>
+
+<h3>2026-02-18</h3>
+
+<p>#### 新增功能</p>
+
+<p>1. <strong>缓存关键参数配置</strong></p>
+<p>   - 新增<code>system_config/cache_config.json</code>配置文件</p>
+<p>   - 支持配置缓存关键参数（如operation）</p>
+<p>   - 确保不同操作类型不会被错误匹配</p>
+
+<p>2. <strong>配置文件分离</strong></p>
+<p>   - 新增<code>system_config</code>文件夹：系统配置（用户不应该修改）</p>
+<p>   - 新增<code>user_config</code>文件夹：用户配置</p>
+<p>   - 更清晰的配置管理结构</p>
+
+<p>3. <strong>缓存配置优化</strong></p>
+<p>   - 优化SQLite和FAISS的大小比例（1.96:1）</p>
+<p>   - 调整<code>max_db_size_mb</code>为768MB</p>
+<p>   - 联调<code>max_faiss_size_mb</code>为392MB</p>
+<p>   - 支持100000条记录的缓存</p>
+
+<p>4. <strong>网络请求工具优化</strong></p>
+<p>   - 将<code>method</code>参数改为<code>operation</code>参数</p>
+<p>   - 统一工具参数命名规范</p>
+<p>   - 更好的缓存匹配</p>
+
+<p>#### 修复问题</p>
+
+<p>1. <strong>意图解析失败</strong></p>
+<p>   - 修复PDF转Word的意图解析问题</p>
+<p>   - 修复输出路径提取问题</p>
+<p>   - 改进LLM提示词</p>
+
+<p>2. <strong>缓存未命中</strong></p>
+<p>   - 修复缓存匹配逻辑</p>
+<p>   - 添加关键参数验证</p>
+<p>   - 确保缓存正确命中</p>
+
+<p>3. <strong>模板匹配过于宽松</strong></p>
+<p>   - 添加关键参数验证</p>
+<p>   - 确保不同操作类型不会被错误匹配</p>
+<p>   - 提高缓存匹配精度</p>
+
+<p>#### 文档更新</p>
+
+<p>1. <strong>新增文档</strong></p>
+<p>   - <code>system_config/README.md</code>：系统配置说明</p>
+<p>   - <code>user_config/README.md</code>：用户配置说明</p>
+<p>   - <code>user_config/CACHE_CONFIG_GUIDE.md</code>：缓存配置指南</p>
+<p>   - <code>docs/USER_GUIDE.md</code>：用户使用说明（本文档）</p>
+<p>   - <code>docs/DEVELOPER_GUIDE.md</code>：开发者文档</p>
+
+<p>2. <strong>配置说明</strong></p>
+<p>   - 详细的配置项说明</p>
+<p>   - 配置修改建议</p>
+<p>   - 故障排除指南</p>
+
+<h2>相关文档</h2>
+
+<ul>
+    <li><a href="./DEVELOPER_GUIDE.html" target="_blank">开发者文档</a></li>
+    <li><a href="../system_config/README.html" target="_blank">系统配置说明</a></li>
+    <li><a href="../user_config/README.html" target="_blank">用户配置说明</a></li>
+    <li><a href="../user_config/CACHE_CONFIG_GUIDE.html" target="_blank">缓存配置指南</a></li>
+</ul>
+
+</body>
+</html>

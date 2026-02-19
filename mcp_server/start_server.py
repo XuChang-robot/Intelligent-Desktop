@@ -8,7 +8,7 @@ import logging
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from mcp_server.server import MCPServer
-from config.config import load_config
+from user_config.config import load_config
 
 # 配置日志
 config = load_config()

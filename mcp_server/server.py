@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from mcp.server.fastmcp import FastMCP, Context
 from mcp_server.sandbox import SandboxExecutor
 from mcp_server.security import SecurityChecker
-from config.config import load_config
+from user_config.config import load_config
 
 # 导入工具模块
 from mcp_server.tools import file_operations, system_info, text_processing, network_request, document_converter, pdf_processor, email_processor

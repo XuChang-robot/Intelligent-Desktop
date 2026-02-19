@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>系统配置说明</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+            margin-top: 30px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 30px;
+            border-bottom: 2px solid #ecf0f1;
+            padding-bottom: 5px;
+        }
+        h3 {
+            color: #7f8c8d;
+            margin-top: 25px;
+        }
+        h4 {
+            color: #95a5a6;
+            margin-top: 20px;
+        }
+        a {
+            color: #3498db;
+            text-decoration: none;
+        }
+        a:hover {
+            color: #2980b9;
+            text-decoration: underline;
+        }
+        code {
+            background-color: #f8f9fa;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        pre {
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+        pre code {
+            background-color: transparent;
+            padding: 0;
+            color: #ecf0f1;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background-color: white;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        ul, ol {
+            background-color: white;
+            padding: 15px 30px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .toc {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .toc ul {
+            background-color: transparent;
+            padding: 0;
+            margin: 0;
+        }
+        .toc li {
+            margin-bottom: 8px;
+        }
+        .section {
+            background-color: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .update {
+            background-color: #ecf0f1;
+            padding: 15px;
+            border-left: 4px solid #3498db;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+<h1>系统配置说明</h1>
+
+<p>本文件夹包含系统的核心配置文件，这些配置文件由系统维护，<strong>用户不应该修改</strong>。</p>
+
+<h2>配置文件说明</h2>
+
+<h3>cache_config.json</h3>
+
+<p>缓存关键参数配置文件，用于控制缓存匹配行为。</p>
+
+<h4>配置结构</h4>
+<pre><code>{
+  "cache_key_params": {
+    "global": ["operation"],
+    "tools": {
+      "document_converter": ["operation"],
+      "file_operations": ["operation"],
+      "pdf_processor": ["operation"],
+      "text_processing": ["operation"],
+      "email_processor": ["operation"],
+      "network_request": ["operation"]
+    }
+  }
+}</code></pre>
+
+<h4>配置项说明</h4>
+<ul>
+    <li><strong>global</strong>: 全局关键参数列表，适用于所有工具</li>
+    <li><strong>tools</strong>: 各工具特定的关键参数列表，可以覆盖全局配置</li>
+</ul>
+
+<h4>关键参数的作用</h4>
+<p>关键参数用于区分不同的操作类型，确保缓存的准确性。例如：</p>
+<ul>
+    <li><code>operation</code>: 区分不同的操作类型（如"pdf_to_word" vs "word_to_pdf"）</li>
+    <li>当用户请求"把PDF转为Word"和"把Word转为PDF"时，虽然参数名称相同，但operation的值不同，因此会被识别为不同的意图</li>
+</ul>
+
+<h4>影响范围</h4>
+<ul>
+    <li>缓存匹配精度：关键参数越多，缓存匹配越精确，但可能降低缓存命中率</li>
+    <li>缓存命中率：关键参数越少，缓存命中率越高，但可能降低匹配精度</li>
+    <li>系统性能：合理的配置可以平衡缓存命中率和匹配精度</li>
+</ul>
+
+<h4>修改建议</h4>
+<p><strong>用户不应该修改此文件</strong>。如果需要调整关键参数，请联系系统维护人员。</p>
+
+<h2>注意事项</h2>
+<ul>
+    <li>本文件夹中的配置文件由系统维护，用户不应该修改</li>
+    <li>修改系统配置可能导致缓存失效或系统行为异常</li>
+    <li>如果需要调整配置，请联系系统维护人员</li>
+</ul>
+</body>
+</html>

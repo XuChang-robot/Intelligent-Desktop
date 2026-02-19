@@ -5,7 +5,7 @@ import logging
 import json
 import asyncio
 from typing import Dict, Any, Optional
-from config.config import load_config
+from user_config.config import load_config
 
 class LLMClient:
     def __init__(self):
@@ -209,30 +209,78 @@ class LLMClient:
         
         return response
     
-    async def parse_intent(self, user_input: str) -> Dict[str, Any]:
+    async def parse_intent(self, user_input: str, tools=None) -> Dict[str, Any]:
         """解析用户意图"""
         system_prompt = "你是一个智能桌面系统的意图解析器，负责分析用户的自然语言输入并提取出明确的意图和关键信息。你必须只返回有效的JSON格式，不要包含任何其他文字、解释或markdown标记。"
         
+        # 如果提供了tools，格式化工具信息
+        tools_info = ""
+        if tools:
+            tools_info = "\n\n可用工具及其参数：\n"
+            for tool in tools:
+                tool_name = tool.name if hasattr(tool, 'name') else str(tool)
+                tool_desc = tool.description if hasattr(tool, 'description') else ""
+                
+                tools_info += f"\n{tool_name}:\n"
+                if tool_desc:
+                    tools_info += f"  描述: {tool_desc}\n"
+                
+                # 处理参数信息
+                if hasattr(tool, 'inputSchema'):
+                    input_schema = tool.inputSchema
+                    if hasattr(input_schema, 'properties'):
+                        properties = input_schema.properties
+                        if properties:
+                            tools_info += f"  参数:\n"
+                            for param_name, param_info in properties.items():
+                                param_type = param_info.get('type', 'unknown')
+                                param_desc = param_info.get('description', '')
+                                tools_info += f"    - {param_name} ({param_type})"
+                                if param_desc:
+                                    tools_info += f": {param_desc}\n"
+                                else:
+                                    tools_info += "\n"
+        
         prompt = f"""请分析以下用户输入，提取出用户的意图和关键信息：
 
-用户输入：{user_input}
+用户输入：{user_input}{tools_info}
 
 重要规则：
-1. 意图类型只能是以下几种：
-   - "task": 任务型意图（默认），包括文件操作、系统信息、文本处理、网络请求等
-   - "execute_code": 仅当用户明确要求执行Python代码时使用
-2. 对于文件操作（创建、读取、写入、删除文件/文件夹），使用"task"意图
-3. 对于获取系统信息，使用"task"意图
-4. 对于文本处理（转语音、摘要、格式化），使用"task"意图
-5. 对于网络请求，使用"task"意图
-6. 不要使用"execute_code"意图，除非用户明确提到"执行Python代码"、"运行代码"等关键词
+1. 意图类型只能是以下两种：
+   - "task": 任务型意图，包括文件操作、系统信息、文本处理、网络请求、邮件发送等需要调用工具的操作
+   - "chat": 聊天型意图，包括问候、提问、闲聊、咨询等纯对话内容，不执行任何工具
+2. 判断是否为"task"的标准：
+   - 用户明确要求执行某个操作（如"转换"、"发送"、"处理"、"生成"、"删除"、"打开"等）
+   - 用户提到文件路径、文件名、邮箱地址等具体参数
+   - 用户需要调用系统工具完成某个功能
+3. 判断是否为"chat"的标准：
+   - 用户只是问候（如"你好"、"早上好"等）
+   - 用户只是提问（如"什么是"、"如何"、"为什么"等）
+   - 用户只是闲聊（如"今天天气怎么样"、"你好吗"等）
+   - 用户没有明确要求执行任何操作
+   - 用户没有提供任何具体参数（如文件路径、邮箱地址等）
+4. 对于聊天型意图，entities可以为空或包含简单的对话内容
+
+参数提取规则：
+1. entities中的键必须是工具的参数名称（如input_path、output_path、operation等）
+2. 不要使用中文实体名称（如"文件名"、"目标文件夹"），必须使用英文参数名
+3. 根据用户的语义，将中文描述映射到对应的英文参数名
+4. 对于文档转换操作（如pdf_to_word、word_to_pdf），output_path必须是完整的输出文件路径（包括文件名和扩展名）：
+   - 如果用户只指定了输出文件夹，需要根据输入文件名自动生成输出文件名
+   - 例如：输入文件是"桌面/xxx.pdf"，操作是"pdf_to_word"，输出文件夹是"桌面/cx"
+   - 则output_path应该是："桌面/cx/xxx.docx"（保持原文件名，只改变扩展名）
+5. 如果用户只指定了输出文件夹，需要根据输入文件名自动生成输出文件名
+6. 示例：
+   - "把桌面上的xxx.pdf转为word" → input_path="桌面/xxx.pdf", operation="pdf_to_word", output_path="桌面/xxx.docx"
+   - "把桌面上的xxx.pdf转为word，放入桌面上的cx文件夹" → input_path="桌面/xxx.pdf", operation="pdf_to_word", output_path="桌面/cx/xxx.docx"
+   - "给xxx发邮件" → to="xxx", subject="邮件主题", content="邮件内容"
 
 请严格按照以下JSON格式返回结果，不要添加任何其他内容：
 {{
-  "intent": "用户的主要意图（只能是task或execute_code）",
+  "intent": "用户的主要意图（只能是task或chat）",
   "entities": {{
-    "关键信息1": "值1",
-    "关键信息2": "值2"
+    "参数名1": "值1",
+    "参数名2": "值2"
   }},
   "confidence": 0.9
 }}
@@ -322,11 +370,19 @@ class LLMClient:
         # 格式化工具列表
         available_tools = self.format_tools_for_llm(tools) if tools else "没有可用的工具"
         
-        prompt = f"""请根据以下用户意图，生成详细的任务执行计划：\n\n用户意图：{intent}\n\n{available_tools}\n\n重要规则：
+        # 提取entities信息
+        entities = intent.get("entities", {})
+        entities_info = ""
+        if entities:
+            entities_info = "\n\n已提取的参数信息：\n"
+            for key, value in entities.items():
+                entities_info += f"- {key}: {value}\n"
+        
+        prompt = f"""请根据以下用户意图，生成详细的任务执行计划：\n\n用户意图：{intent}{entities_info}\n\n{available_tools}\n\n重要规则：
 1. 优先使用上面列出的专用工具
-2. 只有当专用工具无法满足需求时，才使用 execute_python 工具（如果存在）
-3. 不要使用不存在的工具，只能使用上面列出的工具
-4. 如果可用工具无法完成用户任务，请返回空的steps数组，并在plan字段说明无法完成的原因\n\n请严格按照以下JSON格式返回结果，不要添加任何其他内容：\n{{\n  \"plan\": \"任务计划概述\",\n  \"steps\": [\n    {{\n      \"tool\": \"工具名称\",\n      \"args\": {{\n        \"参数名\": \"参数值\"\n      }},\n      \"description\": \"步骤描述\"\n    }}\n  ]\n}}\n\n注意：只返回JSON，不要包含任何解释、注释或其他文字。"""
+2. 不要使用不存在的工具，只能使用上面列出的工具
+3. 如果可用工具无法完成用户任务，请返回空的steps数组，并在plan字段说明无法完成的原因
+4. 如果已提取的参数信息中包含了工具所需的参数，请直接使用这些参数值\n\n请严格按照以下JSON格式返回结果，不要添加任何其他内容：\n{{\n  \"plan\": \"任务计划概述\",\n  \"steps\": [\n    {{\n      \"tool\": \"工具名称\",\n      \"args\": {{\n        \"参数名\": \"参数值\"\n      }},\n      \"description\": \"步骤描述\"\n    }}\n  ]\n}}\n\n注意：只返回JSON，不要包含任何解释、注释或其他文字。"""
         
         response = self.generate(prompt, system_prompt)
         response = self.clean_json_response(response)

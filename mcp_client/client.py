@@ -12,7 +12,7 @@ from mcp_client.llm import LLMClient
 from mcp_client.intent_parser import IntentParser
 from mcp_client.task_planner import TaskPlanner
 from mcp_client.elicitation import ElicitationManager
-from config.config import load_config
+from user_config.config import load_config
 
 # 配置日志
 logging.basicConfig(
@@ -186,7 +186,22 @@ class MCPClient:
         self.config = load_config()
         self.llm_client = LLMClient()
         self.intent_parser = IntentParser(self.llm_client)
-        self.task_planner = TaskPlanner(self.llm_client)
+        
+        # 从config中读取缓存配置
+        cache_config = self.config.get('cache', {})
+        self.task_planner = TaskPlanner(
+            llm_client=self.llm_client,
+            cache_dir=cache_config.get('cache_dir', 'cache'),
+            cache_ttl=cache_config.get('ttl', 604800),
+            similarity_threshold=cache_config.get('similarity_threshold', 0.85),
+            max_total_size_mb=cache_config.get('max_total_size_mb', 1024),
+            max_db_size_mb=cache_config.get('max_db_size_mb', 512),
+            max_faiss_size_mb=cache_config.get('max_faiss_size_mb', 512),
+            max_records=cache_config.get('max_records', 10000),
+            cleanup_interval=cache_config.get('cleanup_interval', 3600),
+            cleanup_on_startup=cache_config.get('cleanup_on_startup', True),
+            embedding_model=cache_config.get('embedding_model', 'nomic-embed-text')
+        )
         self.elicitation_manager = ElicitationManager(self.llm_client)
         self.session_manager: Optional[SessionManager] = None
         self.logger = logging.getLogger(__name__)
@@ -388,6 +403,20 @@ class MCPClient:
                     "type": "response",
                     "content": result
                 }
+            elif intent["type"] == "chat":
+                # 聊天型意图，直接使用LLM回答
+                if self.ui_callback:
+                    self.ui_callback("task_update", {"description": "使用LLM生成回答"})
+                
+                response = self.llm_client.generate(query)
+                
+                if self.ui_callback:
+                    self.ui_callback("task_update", {"description": "LLM回答生成完成"})
+                
+                return {
+                    "type": "response",
+                    "content": response
+                }
             elif intent["type"] == "task":
                 # 任务规划
                 if self.ui_callback:
@@ -398,8 +427,8 @@ class MCPClient:
                     plan = intent["plan"]
                     self.logger.info(f"使用intent中的任务计划: {plan}")
                 else:
-                    # 否则调用task_planner生成任务计划，传入工具列表
-                    plan = await self.task_planner.plan(query, self.tools)
+                    # 否则调用task_planner生成任务计划，传入intent（包含entities）
+                    plan = await self.task_planner.plan_task(intent, self.tools)
                     self.logger.info(f"调用task_planner生成任务计划: {plan}")
                 
                 if self.ui_callback:
@@ -409,15 +438,40 @@ class MCPClient:
                 
                 # 执行任务计划
                 results = []
-                for i, step in enumerate(plan["steps"]):
+                execution_success = True  # 标记所有步骤是否执行成功
+                
+                steps = plan.get("steps", [])
+                self.logger.info(f"任务计划步骤数: {len(steps)}")
+                
+                for i, step in enumerate(steps):
                     if self.ui_callback:
                         self.ui_callback("task_update", {"description": f"执行任务步骤 {i+1}/{len(plan['steps'])}: {step['tool']}"})
                     
                     result = await self.send_tool_call(step["tool"], step.get("args", {}))
                     results.append(result)
                     
+                    # 检查步骤是否执行成功
+                    if not result.get("success", True):
+                        execution_success = False
+                        self.logger.warning(f"任务步骤 {i+1} 执行失败: {step['tool']}")
+                    
                     if self.ui_callback:
                         self.ui_callback("task_update", {"description": f"任务步骤 {i+1} 完成", "result": result})
+                
+                # 如果所有步骤执行成功，缓存任务计划（只有当计划不是来自缓存时）
+                if execution_success and not plan.get("from_cache", False):
+                    # 构建intent字典用于缓存，使用intent_parser返回的entities
+                    cache_intent = {
+                        "intent": "task",
+                        "entities": intent.get("entities", {}),
+                        "confidence": intent.get("confidence", 0.9)
+                    }
+                    self.task_planner.cache_plan(cache_intent, plan, self.tools)
+                    self.logger.info("任务执行成功，已缓存任务计划")
+                elif execution_success and plan.get("from_cache", False):
+                    self.logger.info("任务执行成功，但计划来自缓存，无需再次缓存")
+                else:
+                    self.logger.warning("任务执行失败，不缓存任务计划")
                 
                 return {
                     "type": "response",
@@ -481,39 +535,21 @@ class MCPClient:
             
             self.logger.info(f"解析到的意图: {intent}")
             
-            # 2. 根据用户意图生成 Python 代码
-            if intent["type"] == "tool_call":
-                # 直接调用工具，将用户输入作为 Python 代码
-                code = intent.get("args", {}).get("code", query)
-                
-                # 如果代码不是有效的 Python 语法，使用 LLM 生成对应的 Python 代码
-                if not self._is_valid_python(code):
-                    if self.ui_callback:
-                        self.ui_callback("task_update", {"description": "代码不是有效的 Python 语法，使用 LLM 生成对应的 Python 代码"})
-                         # 添加UI回调，显示LLM生成代码的开始
-                        self.ui_callback("task_update", {"description": f"开始生成Python代码，任务描述: {query[:50]}..."})
-                        self.ui_callback("task_update", {"description": "开始调用LLM生成代码"})
-
-                    self.logger.info(f"代码不是有效的 Python 语法，使用 LLM 生成对应的 Python 代码")
-                
-                    code = await self.llm_client.generate_python_code(query)
-                    
-                    if self.ui_callback:
-                        self.ui_callback("task_update", {"description": "Python 代码生成完成", "code": code})
-                else:
-                    if self.ui_callback:
-                        self.ui_callback("task_update", {"description": "使用用户提供的 Python 代码", "code": code})
-                
-                # 3. 将 Python 代码按 MCP 协议发送给 MCP server 执行
-                result = await self.send_tool_call("execute_python", {"code": code})
-                self.logger.info(f"send_tool_call 返回结果: {result}")
-                
-                # 发送代码执行结果到UI（只显示代码的print输出）
+            # 根据用户意图执行相应的操作
+            if intent["type"] == "chat":
+                # 聊天型意图，直接使用LLM回答
                 if self.ui_callback:
-                    self.ui_callback("task_update", {"result": result})
+                    self.ui_callback("task_update", {"description": "使用LLM生成回答"})
                 
-                # 4. 解析并返回执行结果
-                return self._parse_mcp_result(result)
+                response = self.llm_client.generate(query)
+                
+                if self.ui_callback:
+                    self.ui_callback("task_update", {"description": "LLM回答生成完成"})
+                
+                return {
+                    "summary": response,
+                    "plan": {}
+                }
             elif intent["type"] == "task":
                 # 复杂的任务由 LLM 拆解
                 if self.ui_callback:
@@ -522,13 +558,13 @@ class MCPClient:
                 
                 self.logger.info(f"复杂任务，使用 LLM 拆解")
                 
-                # 使用 LLM 生成任务计划，传入工具列表
+                # 使用 LLM 生成任务计划，传入intent（包含entities）
                 if self.ui_callback:
                     self.ui_callback("task_update", {"description": "生成任务计划"})
                     self.ui_callback("loading", True, "正在生成任务计划...")
                     self.ui_callback("progress", True, 10)
                 
-                plan = await self.task_planner.plan(query, self.tools)
+                plan = await self.task_planner.plan_task(intent, self.tools)
                 
                 if self.ui_callback:
                     self.ui_callback("task_update", {"description": f"任务计划生成完成，共{len(plan.get('steps', []))}个步骤", "plan": plan})
@@ -539,6 +575,7 @@ class MCPClient:
                 
                 # 执行任务计划中的每个步骤
                 results = []
+                execution_success = True  # 标记所有步骤是否执行成功
                 steps = plan.get('steps', [])
                 total_steps = len(steps)
                 
@@ -562,8 +599,28 @@ class MCPClient:
                     result = await self.send_tool_call(step["tool"], step.get("args", {}))
                     results.append(result)
                     
+                    # 检查步骤是否执行成功
+                    if not result.get("success", True):
+                        execution_success = False
+                        self.logger.warning(f"任务步骤 {i+1} 执行失败: {step['tool']}")
+                    
                     if self.ui_callback:
                         self.ui_callback("task_update", {"description": f"任务步骤 {i+1} 完成", "result": result})
+                
+                # 如果所有步骤执行成功，缓存任务计划（只有当计划不是来自缓存时）
+                if execution_success and not plan.get("from_cache", False):
+                    # 构建intent字典用于缓存，使用intent_parser返回的entities
+                    cache_intent = {
+                        "intent": "task",
+                        "entities": intent.get("entities", {}),
+                        "confidence": intent.get("confidence", 0.9)
+                    }
+                    self.task_planner.cache_plan(cache_intent, plan, self.tools)
+                    self.logger.info("任务执行成功，已缓存任务计划")
+                elif execution_success and plan.get("from_cache", False):
+                    self.logger.info("任务执行成功，但计划来自缓存，无需再次缓存")
+                else:
+                    self.logger.warning("任务执行失败，不缓存任务计划")
                 
                 # 提取所有步骤的执行结果
                 execution_results = []
@@ -582,26 +639,20 @@ class MCPClient:
                     "summary": "\n\n".join(execution_results),
                     "plan": plan
                 }
-            else:
-                # 对于其他意图，使用 LLM 生成 Python 代码执行
+            elif intent["type"] == "chat":
+                # 聊天型意图，直接使用LLM回答
                 if self.ui_callback:
-                    self.ui_callback("task_update", {"description": "其他意图，使用 LLM 生成 Python 代码"})
+                    self.ui_callback("task_update", {"description": "使用LLM生成回答"})
                 
-                self.logger.info(f"其他意图，使用 LLM 生成 Python 代码")
-                code = await self.llm_client.generate_python_code(query)
+                response = self.llm_client.generate(query)
                 
                 if self.ui_callback:
-                    self.ui_callback("task_update", {"description": "Python 代码生成完成", "code": code})
+                    self.ui_callback("task_update", {"description": "LLM回答生成完成"})
                 
-                # 将 Python 代码按 MCP 协议发送给 MCP server 执行
-                result = await self.send_tool_call("execute_python", {"code": code})
-                
-                # 发送代码执行结果到UI（只显示代码的print输出）
-                if self.ui_callback:
-                    self.ui_callback("task_update", {"result": result})
-                
-                # 解析并返回执行结果
-                return self._parse_mcp_result(result)
+                return {
+                    "summary": response,
+                    "plan": {}
+                }
         
         except Exception as e:
             self.logger.error(f"处理用户意图时出错: {e}")

@@ -45,3 +45,32 @@ email:
     port: 465
   imap:
     port: 993
+
+# 缓存配置
+cache:
+  enabled: true
+  type: "faiss"  # FAISS向量搜索 + SQLite元数据存储
+  cache_dir: "cache"
+  
+  # 时间策略
+  ttl: 604800  # 缓存过期时间（秒），默认一周
+  
+  # 大小策略
+  max_total_size_mb: 1024  # 总大小限制（1GB）
+  max_db_size_mb: 768  # SQLite数据库最大768MB
+  max_faiss_size_mb: 392  # FAISS索引最大392MB
+  
+  # 记录数量策略
+  max_records: 100000  # 最多10000条记录
+  
+  # 清理策略
+  cleanup_interval: 3600  # 清理间隔（秒），默认1小时
+  cleanup_on_startup: true  # 启动时清理过期缓存
+
+  # Embedding模型
+  embedding_model: "nomic-embed-text"
+  
+  # 相似度阈值
+  similarity_threshold: 0.85
+  
+  

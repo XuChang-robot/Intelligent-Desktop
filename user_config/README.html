@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户配置说明</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+            margin-top: 30px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 30px;
+            border-bottom: 2px solid #ecf0f1;
+            padding-bottom: 5px;
+        }
+        h3 {
+            color: #7f8c8d;
+            margin-top: 25px;
+        }
+        h4 {
+            color: #95a5a6;
+            margin-top: 20px;
+        }
+        a {
+            color: #3498db;
+            text-decoration: none;
+        }
+        a:hover {
+            color: #2980b9;
+            text-decoration: underline;
+        }
+        code {
+            background-color: #f8f9fa;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        pre {
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+        pre code {
+            background-color: transparent;
+            padding: 0;
+            color: #ecf0f1;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background-color: white;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        ul, ol {
+            background-color: white;
+            padding: 15px 30px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .toc {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .toc ul {
+            background-color: transparent;
+            padding: 0;
+            margin: 0;
+        }
+        .toc li {
+            margin-bottom: 8px;
+        }
+        .section {
+            background-color: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .update {
+            background-color: #ecf0f1;
+            padding: 15px;
+            border-left: 4px solid #3498db;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+<h1>用户配置说明</h1>
+
+<p>本文件夹包含用户可自定义的配置文件，用户可以根据自己的需求修改这些配置。</p>
+
+<h2>配置文件说明</h2>
+
+<h3>config.yaml</h3>
+
+<p>系统主配置文件，包含MCP服务器、LLM、安全、UI、日志、邮件、缓存等配置。</p>
+
+<h4>配置项说明</h4>
+
+<h5>MCP 配置</h5>
+<pre><code>mcp:
+  server:
+    host: "localhost"           # MCP服务器地址
+    port: 8001                   # MCP服务器端口
+    max_connections: 10          # 最大连接数
+  client:
+    retry_attempts: 3            # 客户端重试次数
+</code></pre>
+
+<p><strong>影响</strong>：控制MCP客户端和服务器之间的连接行为</p>
+
+<h5>LLM 配置</h5>
+<pre><code>llm:
+  model: "qwen3:8b"             # LLM默认模型名称
+  base_url: "http://localhost:11434"  # LLM服务地址
+  temperature: 0.6              # 温度参数（0-1，越高越随机）
+  max_tokens: 4000              # 最大生成token数
+  repeat_penalty: 1.1           # 重复惩罚
+  top_p: 0.9                    # 核采样参数
+  top_k: 40                     # Top-K采样参数
+</code></pre>
+
+<p><strong>影响</strong>：控制LLM的生成质量和性能</p>
+<ul>
+    <li><code>temperature</code>: 越高生成越有创意，越低生成越确定</li>
+    <li><code>max_tokens</code>: 限制生成内容的长度</li>
+    <li><code>repeat_penalty</code>: 防止重复生成相同内容</li>
+</ul>
+
+<h5>安全配置</h5>
+<pre><code>security:
+  enable_sandbox: true          # 是否启用沙箱
+  dangerous_commands: [...]     # 危险命令列表
+  allow_network: true           # 是否允许网络操作
+  allow_file_system: true       # 是否允许文件系统操作
+</code></pre>
+
+<p><strong>影响</strong>：控制系统的安全级别</p>
+<ul>
+    <li><code>enable_sandbox</code>: 启用沙箱可以隔离危险操作</li>
+    <li><code>dangerous_commands</code>: 禁止执行的危险命令</li>
+    <li><code>allow_network</code>: 控制是否允许网络请求</li>
+    <li><code>allow_file_system</code>: 控制是否允许文件系统操作</li>
+</ul>
+
+<h5>UI 配置</h5>
+<pre><code>ui:
+  title: "智能桌面系统"         # 窗口标题
+  width: 800                    # 窗口宽度
+  height: 600                   # 窗口高度
+  theme: "light"                # 主题（light/dark）
+</code></pre>
+
+<p><strong>影响</strong>：控制用户界面的外观和行为</p>
+
+<h5>日志配置</h5>
+<pre><code>logging:
+  level: "INFO"                 # 日志级别（DEBUG/INFO/WARNING/ERROR）
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+</code></pre>
+
+<p><strong>影响</strong>：控制日志的详细程度和格式</p>
+<ul>
+    <li><code>DEBUG</code>: 最详细的日志，用于调试</li>
+    <li><code>INFO</code>: 一般信息日志</li>
+    <li><code>WARNING</code>: 警告信息</li>
+    <li><code>ERROR</code>: 错误信息</li>
+</ul>
+
+<h5>邮件服务配置</h5>
+<pre><code>email:
+  smtp:
+    server: "smtp.163.com"      # SMTP服务器地址
+    port: 465                   # SMTP服务器端口
+  imap:
+    port: 993                   # IMAP服务器端口
+</code></pre>
+
+<p><strong>影响</strong>：控制邮件发送和接收的服务器设置</p>
+
+<h5>缓存配置</h5>
+<pre><code>cache:
+  enabled: true                  # 是否启用缓存
+  type: "faiss"                 # 缓存类型
+  cache_dir: "cache"            # 缓存目录
+  ttl: 604800                   # 缓存过期时间（秒），默认一周
+  max_total_size_mb: 1024       # 总大小限制（1GB）
+  max_db_size_mb: 512           # SQLite数据库最大512MB
+  max_faiss_size_mb: 512        # FAISS索引最大512MB
+  max_records: 10000            # 最多10000条记录
+  cleanup_interval: 3600        # 清理间隔（秒），默认1小时
+  cleanup_on_startup: true     # 启动时清理过期缓存
+  similarity_threshold: 0.85    # 相似度阈值（0-1）
+  embedding_model: "nomic-embed-text"  # Embedding模型
+</code></pre>
+
+<p><strong>影响</strong>：控制缓存系统的行为和性能</p>
+<ul>
+    <li><code>enabled</code>: 是否启用缓存，禁用后每次都会重新生成计划</li>
+    <li><code>ttl</code>: 缓存过期时间，过期后缓存会被清理</li>
+    <li><code>max_total_size_mb</code>: 缓存总大小限制，超过后会清理旧缓存</li>
+    <li><code>similarity_threshold</code>: 相似度阈值，越高匹配越严格</li>
+    <li><code>embedding_model</code>: 用于向量搜索的模型</li>
+</ul>
+
+<h2>config.py</h2>
+
+<p>配置加载器模块，提供配置读取接口。</p>
+
+<h4>使用方法</h4>
+<pre><code>from user_config.config import get_config, load_config
+
+# 获取配置值
+model = get_config("llm.model", "default_model")
+temperature = get_config("llm.temperature", 0.7)
+
+# 加载完整配置
+config = load_config()</code></pre>
+
+<h4>配置修改建议</h4>
+
+<h5>性能优化</h5>
+<p>1. <strong>提高缓存命中率</strong>：降低<code>similarity_threshold</code>（如0.8）</p>
+<p>2. <strong>减少缓存大小</strong>：降低<code>max_total_size_mb</code>和<code>max_records</code></p>
+<p>3. <strong>提高LLM速度</strong>：降低<code>max_tokens</code>和<code>temperature</code></p>
+
+<h5>安全增强</h5>
+<p>1. <strong>启用沙箱</strong>：设置<code>enable_sandbox: true</code></p>
+<p>2. <strong>禁止网络操作</strong>：设置<code>allow_network: false</code></p>
+<p>3. <strong>禁止文件系统操作</strong>：设置<code>allow_file_system: false</code></p>
+<h>调试模式</h>
+<p>1. <strong>启用详细日志</strong>：设置<code>logging.level: "DEBUG"</code></p>
+<p>2. <strong>禁用缓存</strong>：设置<code>cache.enabled: false</code></p>
+<h>注意事项</h>
+<p>1. 修改配置后需要重启系统才能生效</p>
+<p>2. 建议在修改前备份原配置文件</p>
+<p>3. 某些配置修改可能导致系统行为异常，请谨慎修改</p>
+<p>4. 如果不确定某个配置的作用，建议不要修改</p>
+</body>
+</html>

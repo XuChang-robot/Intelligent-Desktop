@@ -9,11 +9,11 @@ class IntentParser:
         self.llm_client = llm_client
         self.logger = logging.getLogger(__name__)
     
-    async def parse_intent(self, user_input: str) -> Dict[str, Any]:
+    async def parse_intent(self, user_input: str, tools=None) -> Dict[str, Any]:
         """解析用户意图"""
         try:
             # 使用LLM解析意图
-            intent = await self.llm_client.parse_intent(user_input)
+            intent = await self.llm_client.parse_intent(user_input, tools)
             self.logger.info(f"解析意图成功: {intent}")
             return intent
         except Exception as e:
@@ -48,8 +48,8 @@ class IntentParser:
         """
         self.logger.info(f"开始解析用户意图: {user_input[:50]}...")
         try:
-            # 调用现有的parse_intent方法
-            intent_result = await self.parse_intent(user_input)
+            # 调用现有的parse_intent方法，传入tools参数
+            intent_result = await self.parse_intent(user_input, tools)
             self.logger.info(f"parse_intent返回: {intent_result}")
             
             # 如果意图解析失败，使用简单的fallback逻辑
@@ -66,25 +66,19 @@ class IntentParser:
                 }
             
             # 转换为client.py期望的格式
-            if intent_result.get("intent") == "execute_code":
-                # 生成Python代码而不是直接使用用户输入
-                self.logger.info("意图是execute_code，开始生成Python代码")
-                code = await self.llm_client.generate_python_code(user_input)
-                self.logger.info("Python代码生成完成")
+            if intent_result.get("intent") == "chat":
+                # 聊天型意图，直接返回
+                self.logger.info("意图是chat，直接返回聊天内容")
                 return {
-                    "type": "tool_call",
-                    "tool": "execute_python",
-                    "args": {"code": code},
+                    "type": "chat",
+                    "entities": intent_result.get("entities", {}),
                     "confidence": intent_result.get("confidence", 0.5)
                 }
             elif intent_result.get("intent") == "task":
-                self.logger.info("意图是task，调用task_planner生成任务计划")
-                # 使用task_planner生成任务计划，传入工具列表
-                plan = await self.llm_client.plan_task(intent_result, tools)
-                self.logger.info(f"任务计划生成完成: {plan}")
+                # 只返回entities，不生成任务计划（让task_planner处理缓存）
+                self.logger.info("意图是task，返回entities让task_planner处理缓存")
                 return {
                     "type": "task",
-                    "plan": plan,
                     "entities": intent_result.get("entities", {}),
                     "confidence": intent_result.get("confidence", 0.5)
                 }
@@ -104,16 +98,20 @@ class IntentParser:
             self.logger.error(f"解析意图失败: {e}")
             import traceback
             traceback.print_exc()
-            # 即使出现异常，也尝试生成Python代码
+            # 即使出现异常，也尝试调用task_planner生成任务计划
             try:
-                self.logger.info("尝试生成Python代码（fallback）")
-                code = await self.llm_client.generate_python_code(user_input)
+                self.logger.info("尝试调用task_planner生成任务计划（fallback）")
+                plan = await self.llm_client.plan_task(intent_result, tools)
+                return {
+                    "type": "task",
+                    "plan": plan,
+                    "entities": intent_result.get("entities", {}),
+                    "confidence": 0.5
+                }
             except Exception as e2:
-                self.logger.error(f"生成Python代码失败: {e2}")
-                code = user_input
-            return {
-                "type": "tool_call",
-                "tool": "execute_python",
-                "args": {"code": code},
-                "confidence": 0.5
-            }
+                self.logger.error(f"生成任务计划失败: {e2}")
+                return {
+                    "type": "chat",
+                    "entities": {},
+                    "confidence": 0.5
+                }

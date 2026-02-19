@@ -1,0 +1,13 @@
+{
+  "cache_key_params": {
+    "global": ["operation"],
+    "tools": {
+      "document_converter": ["operation"],
+      "file_operations": ["operation"],
+      "pdf_processor": ["operation"],
+      "text_processing": ["operation"],
+      "email_processor": ["operation"],
+      "network_request": ["operation"]
+    }
+  }
+}

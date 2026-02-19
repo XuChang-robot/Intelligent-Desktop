@@ -6,7 +6,7 @@ import re
 from typing import Dict, Any
 import sys
 sys.path.append('..')
-from config.config import load_config
+from user_config.config import load_config
 
 class SecurityChecker:
     def __init__(self):

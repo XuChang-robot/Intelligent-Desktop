@@ -33,3 +33,10 @@ pyttsx3
 
 # Word文档处理
 python-docx
+
+# 缓存系统
+gptcache
+ollama
+scipy
+numpy
+faiss-cpu

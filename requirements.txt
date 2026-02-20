@@ -40,3 +40,10 @@ ollama
 scipy
 numpy
 faiss-cpu
+
+# JSON修复
+fast-json-repair
+
+# PDF处理
+pypdf
+docx2pdf

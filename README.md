@@ -9,6 +9,9 @@
 - 🚀 **高效缓存**：基于FAISS向量搜索的混合缓存系统
 - 🔒 **安全可靠**：沙箱隔离、权限控制
 - 🧩 **易于扩展**：模块化设计，支持自定义工具
+- ☁️ **天气查询**：实时天气信息查询和预警通知
+- 📄 **批量文档处理**：支持批量文件转换和通配符匹配
+- 💭 **LLM思考过程**：可折叠的思考过程显示
 
 ## 🚀 快速开始
 
@@ -61,6 +64,7 @@ python main.py
 - PDF转Word
 - Word转PDF
 - 支持指定输出路径
+- **支持批量转换**：使用通配符匹配多个文件
 
 ### 文件操作
 - 创建、读取、写入、删除文件
@@ -88,6 +92,11 @@ python main.py
 - GET、POST、PUT、DELETE请求
 - 支持自定义请求头和参数
 
+### 天气查询
+- **实时天气**：查询指定城市的当前天气
+- **预警信息**：显示天气预警标题和生效时间
+- **日期显示**：修复天气查询结果中的日期显示问题
+
 ## 📁 项目结构
 
 ```
@@ -104,7 +113,9 @@ Intelligence_Desktop/
 │       ├── pdf_processor.py
 │       ├── text_processing.py
 │       ├── email_processor.py
-│       └── network_request.py
+│       ├── network_request.py
+│       └── query/          # 查询工具
+│           └── weather_query.py  # 天气查询工具
 ├── system_config/         # 系统配置（用户不应该修改）
 ├── user_config/           # 用户配置
 ├── cache/                # 缓存目录
@@ -192,6 +203,24 @@ python test_different_operations.py
 - 问题反馈：[https://github.com/XuChang-robot/Intelligent-Desktop/issues](https://github.com/XuChang-robot/Intelligent-Desktop/issues)
 
 ## 📝 更新日志
+
+### 2026-02-21
+
+#### 新增功能
+- ✨ 天气查询工具：实时天气信息和预警通知
+- ✨ 批量文档处理：支持通配符匹配和批量文件转换
+- ✨ LLM思考过程显示：可折叠的思考过程
+
+#### 修复问题
+- 🐛 修复天气查询结果中的日期显示问题
+- 🐛 修复混合缓存系统中的实体模板提取和操作类型不匹配问题
+- 🐛 修复聊天窗口步骤间缺少换行的问题
+- 🐛 集成fast-json-repair库修复malformed JSON问题
+
+#### 系统优化
+- ⚡ 重构意图解析系统
+- ⚡ 优化任务规划逻辑
+- ⚡ 精简LLM提示词
 
 ### 2026-02-18
 

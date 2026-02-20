@@ -60,3 +60,6 @@ Thumbs.db
 
 # Reference code
 reference_code/
+
+# Trae IDE
+.trae/

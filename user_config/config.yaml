@@ -71,6 +71,10 @@ cache:
   embedding_model: "nomic-embed-text"
   
   # 相似度阈值
-  similarity_threshold: 0.85
-  
-  
+  similarity_threshold: 0.999
+
+# 接口盒子API配置，官网https://www.apihz.cn/
+interfacebox:
+  api:
+    user_id: ""  # 接口盒子用户ID（可通过环境变量INTERFACEBOX_API_USER_ID覆盖）
+    api_key: ""  # 接口盒子API密钥（可通过环境变量INTERFACEBOX_API_KEY覆盖）  

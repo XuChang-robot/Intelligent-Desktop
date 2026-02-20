@@ -17,7 +17,7 @@ from user_config.config import load_config
 
 class WorkerSignals(QObject):
     """工作线程信号"""
-    message = pyqtSignal(str, str)
+    message = pyqtSignal(str, str, str)  # sender, message, thinking
     task = pyqtSignal(dict)
     task_update = pyqtSignal(dict)
     status = pyqtSignal(str)
@@ -144,10 +144,10 @@ class WorkerThread(QThread):
             result = await self.client.process_user_intent(user_input)
             
             # 显示处理结果
-            self.signals.loading.emit(True, '正在执行任务...')
             summary = result.get('summary', '')
+            thinking = result.get('thinking', '')
             if summary:
-                self.signals.message.emit('系统', summary)
+                self.signals.message.emit('系统', summary, thinking)
             
             # 显示任务计划
             plan = result.get('plan', {})
@@ -157,6 +157,31 @@ class WorkerThread(QThread):
                 self.signals.loading.emit(True, f'正在执行: {step_description}')
                 self.signals.task.emit(step)
                 await asyncio.sleep(0.1)
+            
+            # 检查是否有results（仅用于调试，不重复显示）
+            content = result.get('content', {})
+            if isinstance(content, dict):
+                # 检查是否有results（调试信息）
+                results = content.get('results', [])
+                if results:
+                    self.logger.info(f"执行结果数量: {len(results)}")
+                    # 遍历results，查找formatted_message（仅用于调试）
+                    for i, step_result in enumerate(results):
+                        if isinstance(step_result, dict):
+                            # 查找formatted_message字段
+                            formatted_message = step_result.get('formatted_message')
+                            if formatted_message:
+                                self.logger.info(f"步骤 {i+1} 的formatted_message: {formatted_message[:50]}...")
+                
+                # 如果没有results，检查content本身是否有formatted_message（仅用于调试）
+                if not results:
+                    formatted_message = content.get('formatted_message')
+                    if formatted_message:
+                        self.logger.info(f"content中的formatted_message: {formatted_message[:50]}...")
+                
+                # 如果content本身是字符串（LLM直接回答）
+                elif isinstance(content, str):
+                    self.logger.info(f"content是字符串: {content[:50]}...")
                 
         except Exception as e:
             self.signals.message.emit('系统', f'处理失败: {str(e)}')
@@ -169,8 +194,12 @@ class WorkerThread(QThread):
     def ui_callback(self, callback_type: str, *args):
         """UI回调"""
         if callback_type == 'message':
-            sender, message = args
-            self.signals.message.emit(sender, message)
+            if len(args) >= 3:
+                sender, message, thinking = args
+                self.signals.message.emit(sender, message, thinking)
+            else:
+                sender, message = args
+                self.signals.message.emit(sender, message, "")
         elif callback_type == 'task':
             task = args[0]
             self.signals.task.emit(task)
@@ -332,9 +361,9 @@ class App(QObject):
         if self.worker:
             self.worker.interrupt()
     
-    def on_message(self, sender: str, message: str):
+    def on_message(self, sender: str, message: str, thinking: str = None):
         """消息信号处理"""
-        self.main_window.add_message(sender, message)
+        self.main_window.add_message(sender, message, thinking)
     
     def on_task(self, task: dict):
         """任务信号处理"""

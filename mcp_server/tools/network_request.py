@@ -63,13 +63,53 @@ def register_network_request_tools(mcp):
                     except:
                         response_data = response_text
                     
+                    # 构建formatted_message
+                    status_success = response.status < 400
+                    
+                    if status_success:
+                        # 成功响应
+                        message_parts = [
+                            f"🌐 网络请求成功",
+                            f"📡 方法: {operation}",
+                            f"🔗 URL: {url}",
+                            f"✅ 状态码: {response.status}"
+                        ]
+                        
+                        # 添加参数信息
+                        if params:
+                            message_parts.append(f"📝 URL参数: {params}")
+                        
+                        # 添加数据预览
+                        if isinstance(response_data, dict):
+                            data_preview = str(response_data)[:200] + ("..." if len(str(response_data)) > 200 else "")
+                            message_parts.append(f"\n📄 响应数据预览:")
+                            message_parts.append(data_preview)
+                        elif isinstance(response_data, str):
+                            data_preview = response_data[:200] + ("..." if len(response_data) > 200 else "")
+                            message_parts.append(f"\n📄 响应文本预览:")
+                            message_parts.append(data_preview)
+                        
+                        formatted_message = "\n".join(message_parts)
+                    else:
+                        # 失败响应
+                        formatted_message = f"❌ 网络请求失败\n📡 方法: {operation}\n🔗 URL: {url}\n❌ 状态码: {response.status}\n📄 错误信息: {response_text[:200]}{'...' if len(response_text) > 200 else ''}"
+                    
                     return {
-                        "success": response.status < 400,
+                        "success": status_success,
                         "status_code": response.status,
-                        "data": response_data
+                        "data": response_data,
+                        "formatted_message": formatted_message
                     }
             
         except ImportError:
-            return {"success": False, "error": "未安装aiohttp库，请运行: pip install aiohttp"}
+            return {
+                "success": False, 
+                "error": "未安装aiohttp库，请运行: pip install aiohttp",
+                "formatted_message": "❌ 错误: 未安装aiohttp库，请运行: pip install aiohttp"
+            }
         except Exception as e:
-            return {"success": False, "error": str(e)}
+            return {
+                "success": False, 
+                "error": str(e),
+                "formatted_message": f"❌ 错误: {str(e)}"
+            }

@@ -85,10 +85,14 @@ def register_email_processor_tools(mcp, security_checker=None, output_callback=N
             
             # 验证收件人邮箱地址格式
             if not validate_email(recipient):
-                return {"success": False, "error": f"收件人邮箱地址格式不正确: {recipient}"}
+                return {
+                    "success": False, 
+                    "error": f"收件人邮箱地址格式不正确: {recipient}",
+                    "formatted_message": f"❌ 错误: 收件人邮箱地址格式不正确\n📧 邮箱: {recipient}"
+                }
             
-            # 从配置文件读取默认值
-            smtp_server = smtp_server or get_config("email.smtp.server", "smtp.example.com")
+            # 优先从环境变量读取，然后从配置文件读取，最后使用默认值
+            smtp_server = smtp_server or os.getenv('SMTP_SERVER', '') or get_config("email.smtp.server", "smtp.example.com")
             
             # 根据SMTP服务器域名确定邮箱服务商
             email_provider = "unknown"
@@ -97,41 +101,61 @@ def register_email_processor_tools(mcp, security_checker=None, output_callback=N
             elif "qq.com" in smtp_server:
                 email_provider = "qq"
             
-            # 优先从配置文件读取SMTP端口，环境变量作为备选
+            # 优先从环境变量读取SMTP端口，然后从配置文件读取，最后使用默认值
             try:
-                smtp_port = smtp_port or get_config("email.smtp.port", 465) or (int(os.getenv('SMTP_PORT', '')) if os.getenv('SMTP_PORT', '') else None)
+                smtp_port = smtp_port or int(os.getenv('SMTP_PORT', '')) if os.getenv('SMTP_PORT', '') else None
             except ValueError:
-                smtp_port = smtp_port or get_config("email.smtp.port", 465)
+                smtp_port = None
+            smtp_port = smtp_port or get_config("email.smtp.port", 465)
             
-            # 根据邮箱服务商从配置文件读取SMTP用户名和密码，环境变量作为备选
+            # 根据邮箱服务商从环境变量读取SMTP用户名和密码，然后从配置文件读取
             if email_provider == "163":
-                smtp_username = smtp_username or get_config("email.smtp.username", "") or os.getenv('SMTP_163_USERNAME', '') or os.getenv('SMTP_USERNAME', '')
-                smtp_password = smtp_password or get_config("email.smtp.password", "") or os.getenv('SMTP_163_PASSWORD', '') or os.getenv('SMTP_PASSWORD', '')
+                smtp_username = smtp_username or os.getenv('SMTP_163_USERNAME', '') or os.getenv('SMTP_USERNAME', '') or get_config("email.smtp.username", "")
+                smtp_password = smtp_password or os.getenv('SMTP_163_PASSWORD', '') or os.getenv('SMTP_PASSWORD', '') or get_config("email.smtp.password", "")
             elif email_provider == "qq":
-                smtp_username = smtp_username or get_config("email.smtp.username", "") or os.getenv('SMTP_QQ_USERNAME', '') or os.getenv('SMTP_USERNAME', '')
-                smtp_password = smtp_password or get_config("email.smtp.password", "") or os.getenv('SMTP_QQ_PASSWORD', '') or os.getenv('SMTP_PASSWORD', '')
+                smtp_username = smtp_username or os.getenv('SMTP_QQ_USERNAME', '') or os.getenv('SMTP_USERNAME', '') or get_config("email.smtp.username", "")
+                smtp_password = smtp_password or os.getenv('SMTP_QQ_PASSWORD', '') or os.getenv('SMTP_PASSWORD', '') or get_config("email.smtp.password", "")
             else:
-                smtp_username = smtp_username or get_config("email.smtp.username", "") or os.getenv('SMTP_USERNAME', '')
-                smtp_password = smtp_password or get_config("email.smtp.password", "") or os.getenv('SMTP_PASSWORD', '')
+                smtp_username = smtp_username or os.getenv('SMTP_USERNAME', '') or get_config("email.smtp.username", "")
+                smtp_password = smtp_password or os.getenv('SMTP_PASSWORD', '') or get_config("email.smtp.password", "")
             
-            imap_server = imap_server or get_config("email.imap.server", "")
-            # 优先从配置文件读取IMAP端口，环境变量作为备选
+            # 优先从环境变量读取IMAP服务器，然后从配置文件读取
+            imap_server = imap_server or os.getenv('IMAP_SERVER', '') or get_config("email.imap.server", "")
+            
+            # 优先从环境变量读取IMAP端口，然后从配置文件读取，最后使用默认值
             try:
-                imap_port = imap_port or get_config("email.imap.port", 993) or (int(os.getenv('IMAP_PORT', '')) if os.getenv('IMAP_PORT', '') else None)
+                imap_port = imap_port or int(os.getenv('IMAP_PORT', '')) if os.getenv('IMAP_PORT', '') else None
             except ValueError:
-                imap_port = imap_port or get_config("email.imap.port", 993)
+                imap_port = None
+            imap_port = imap_port or get_config("email.imap.port", 993)
             
             # 验证必要参数
             if operation == "send":
                 if not smtp_username:
-                    return {"success": False, "error": "缺少SMTP用户名，请在配置文件中设置或直接提供"}
+                    return {
+                        "success": False, 
+                        "error": "缺少SMTP用户名，请在配置文件中设置或直接提供",
+                        "formatted_message": "❌ 错误: 缺少SMTP用户名，请在配置文件中设置或直接提供"
+                    }
                 if not smtp_password:
-                    return {"success": False, "error": "缺少SMTP密码，请在配置文件中设置或直接提供"}
+                    return {
+                        "success": False, 
+                        "error": "缺少SMTP密码，请在配置文件中设置或直接提供",
+                        "formatted_message": "❌ 错误: 缺少SMTP密码，请在配置文件中设置或直接提供"
+                    }
             elif operation == "receive":
                 if not smtp_username:
-                    return {"success": False, "error": "缺少邮箱用户名，请在配置文件中设置或直接提供"}
+                    return {
+                        "success": False, 
+                        "error": "缺少邮箱用户名，请在配置文件中设置或直接提供",
+                        "formatted_message": "❌ 错误: 缺少邮箱用户名，请在配置文件中设置或直接提供"
+                    }
                 if not smtp_password:
-                    return {"success": False, "error": "缺少邮箱密码，请在配置文件中设置或直接提供"}
+                    return {
+                        "success": False, 
+                        "error": "缺少邮箱密码，请在配置文件中设置或直接提供",
+                        "formatted_message": "❌ 错误: 缺少邮箱密码，请在配置文件中设置或直接提供"
+                    }
             if operation == "send":
                 # 发送邮件
                 try:
@@ -145,6 +169,7 @@ def register_email_processor_tools(mcp, security_checker=None, output_callback=N
                     msg.attach(MIMEText(body or "", 'plain', 'utf-8'))
                     
                     # 添加附件
+                    attachment_count = 0
                     if attachments:
                         attachment_paths = [p.strip() for p in attachments.split(";" if ";" in attachments else ",")]
                         for attachment_path in attachment_paths:
@@ -154,8 +179,12 @@ def register_email_processor_tools(mcp, security_checker=None, output_callback=N
                                 
                                 # 检查文件是否存在
                                 if not os.path.exists(processed_path):
-                                    return {"success": False, "error": f"附件文件不存在: {processed_path}"}
-                                
+                                    return {
+                                        "success": False, 
+                                        "error": f"附件文件不存在: {processed_path}",
+                                        "formatted_message": f"❌ 错误: 附件文件不存在\n📄 文件: {os.path.basename(processed_path)}\n📍 路径: {processed_path}"
+                                    }
+                                attachment_count += 1
                                 # 读取附件文件
                                 with open(processed_path, 'rb') as f:
                                     part = MIMEApplication(f.read())
@@ -190,28 +219,56 @@ def register_email_processor_tools(mcp, security_checker=None, output_callback=N
                         except:
                             pass
                     
-                    return {"success": True, "result": f"邮件发送成功，收件人: {recipient}"}
+                    return {
+                        "success": True, 
+                        "result": f"邮件发送成功，收件人: {recipient}",
+                        "formatted_message": f"✅ 邮件发送成功\n📧 收件人: {recipient}\n📤 发件人: {smtp_username}\n📝 主题: {subject or '无'}\n📎 附件数: {attachment_count}\n🌐 服务器: {smtp_server}:{smtp_port}"
+                    }
                 except socket.gaierror as e:
                     # DNS 解析错误
-                    return {"success": False, "error": f"DNS 解析错误: {str(e)} - 请检查 SMTP 服务器地址是否正确: {smtp_server}"}
+                    return {
+                        "success": False, 
+                        "error": f"DNS 解析错误: {str(e)} - 请检查 SMTP 服务器地址是否正确: {smtp_server}",
+                        "formatted_message": f"❌ DNS 解析错误\n🌐 服务器: {smtp_server}\n💬 错误: {str(e)}"
+                    }
                 except socket.timeout as e:
                     # 连接超时错误
-                    return {"success": False, "error": f"连接超时错误: {str(e)} - 请检查网络连接和防火墙设置，确保能访问 SMTP 服务器: {smtp_server}:{smtp_port}"}
+                    return {
+                        "success": False, 
+                        "error": f"连接超时错误: {str(e)} - 请检查网络连接和防火墙设置，确保能访问 SMTP 服务器: {smtp_server}:{smtp_port}",
+                        "formatted_message": f"❌ 连接超时错误\n🌐 服务器: {smtp_server}:{smtp_port}\n💬 错误: {str(e)}"
+                    }
                 except smtplib.SMTPAuthenticationError:
                     # 认证错误
-                    return {"success": False, "error": "SMTP 认证失败 - 请检查用户名和密码是否正确"}
+                    return {
+                        "success": False, 
+                        "error": "SMTP 认证失败 - 请检查用户名和密码是否正确",
+                        "formatted_message": "❌ SMTP 认证失败\n💡 请检查用户名和密码是否正确"
+                    }
                 except smtplib.SMTPConnectError as e:
                     # 连接错误
-                    return {"success": False, "error": f"SMTP 连接失败: {str(e)} - 请检查网络连接和服务器地址"}
+                    return {
+                        "success": False, 
+                        "error": f"SMTP 连接失败: {str(e)} - 请检查网络连接和服务器地址",
+                        "formatted_message": f"❌ SMTP 连接失败\n🌐 服务器: {smtp_server}:{smtp_port}\n💬 错误: {str(e)}"
+                    }
                 except Exception as e:
                     # 其他错误
-                    return {"success": False, "error": f"发送邮件失败: {str(e)}"}
+                    return {
+                        "success": False, 
+                        "error": f"发送邮件失败: {str(e)}",
+                        "formatted_message": f"❌ 发送邮件失败\n💬 错误: {str(e)}"
+                    }
             
             elif operation == "receive":
                 # 接收邮件
                 try:
                     if not imap_server or not imap_port:
-                        return {"success": False, "error": "接收邮件需要提供IMAP服务器地址和端口"}
+                        return {
+                            "success": False, 
+                            "error": "接收邮件需要提供IMAP服务器地址和端口",
+                            "formatted_message": "❌ 错误: 接收邮件需要提供IMAP服务器地址和端口"
+                        }
                     
                     # 连接IMAP服务器
                     with imaplib.IMAP4_SSL(imap_server, imap_port) as server:
@@ -222,7 +279,11 @@ def register_email_processor_tools(mcp, security_checker=None, output_callback=N
                         status, messages = server.search(None, f'FROM "{recipient}"')
                         
                         if status != 'OK':
-                            return {"success": False, "error": "搜索邮件失败"}
+                            return {
+                                "success": False, 
+                                "error": "搜索邮件失败",
+                                "formatted_message": "❌ 搜索邮件失败"
+                            }
                         
                         # 获取邮件ID列表
                         email_ids = messages[0].split()
@@ -262,12 +323,44 @@ def register_email_processor_tools(mcp, security_checker=None, output_callback=N
                                     
                                     received_emails.append(email_info)
                         
-                        return {"success": True, "result": f"成功接收 {len(received_emails)} 封邮件", "emails": received_emails}
+                        # 构建formatted_message
+                        formatted_msg = f"✅ 成功接收 {len(received_emails)} 封邮件\n📧 发件人: {recipient}\n📥 收件箱: {smtp_username}"
+                        if received_emails:
+                            formatted_msg += "\n\n📋 邮件列表:"
+                            for i, email_info in enumerate(received_emails[:3], 1):  # 只显示前3封
+                                formatted_msg += f"\n\n{i}. 主题: {email_info['subject'] or '无'}"
+                                formatted_msg += f"\n   日期: {email_info['date'] or '未知'}"
+                                formatted_msg += f"\n   发件人: {email_info['from'] or '未知'}"
+                                if len(email_info['body']) > 100:
+                                    formatted_msg += f"\n   正文: {email_info['body'][:100]}..."
+                                else:
+                                    formatted_msg += f"\n   正文: {email_info['body'] or '无'}"
+                            if len(received_emails) > 3:
+                                formatted_msg += f"\n\n... 还有 {len(received_emails) - 3} 封邮件未显示"
+                        
+                        return {
+                            "success": True, 
+                            "result": f"成功接收 {len(received_emails)} 封邮件", 
+                            "emails": received_emails,
+                            "formatted_message": formatted_msg
+                        }
                 except Exception as e:
-                    return {"success": False, "error": f"接收邮件失败: {str(e)}"}
+                    return {
+                        "success": False, 
+                        "error": f"接收邮件失败: {str(e)}",
+                        "formatted_message": f"❌ 接收邮件失败\n💬 错误: {str(e)}"
+                    }
             
             else:
-                return {"success": False, "error": f"不支持的操作: {operation}"}
+                return {
+                    "success": False, 
+                    "error": f"不支持的操作: {operation}",
+                    "formatted_message": f"❌ 错误: 不支持的操作 '{operation}'"
+                }
         
         except Exception as e:
-            return {"success": False, "error": str(e)}
+            return {
+                "success": False, 
+                "error": str(e),
+                "formatted_message": f"❌ 错误: {str(e)}"
+            }

@@ -519,8 +519,14 @@ class MainWindow(QMainWindow):
         """设置中断回调"""
         self.interrupt_callback = callback
         
-    def add_message(self, sender: str, message: str):
-        """添加消息到聊天区域"""
+    def add_message(self, sender: str, message: str, thinking: str = None):
+        """添加消息到聊天区域
+        
+        Args:
+            sender: 发送者名称
+            message: 消息内容
+            thinking: 思考过程（可选）
+        """
         # 确保消息内容正确
         if not message:
             return
@@ -532,31 +538,50 @@ class MainWindow(QMainWindow):
         if "</body>" not in current_html:
             current_html = "<html><body style='font-family: Arial, sans-serif; font-size: 14px;'></body></html>"
         
+        # 处理消息内容中的换行符，确保在HTML中正确显示
+        # 首先将消息内容中的HTML特殊字符转义，然后将换行符转换为<br>标签
+        import html
+        processed_message = html.escape(message)
+        # 将换行符转换为HTML换行标签
+        processed_message = processed_message.replace('\n', '<br>')
+        
+        # 处理思考过程
+        thinking_html = ""
+        if thinking:
+            processed_thinking = html.escape(thinking)
+            processed_thinking = processed_thinking.replace('\n', '<br>')
+            thinking_html = f"<div style='margin-top: 8px;'>"
+            thinking_html += f"<details>"
+            thinking_html += f"<summary style='cursor: pointer; color: #757575; font-size: 12px; font-weight: bold;'>💭 查看思考过程</summary>"
+            thinking_html += f"<div style='margin-top: 8px; padding: 8px; background-color: #F5F5F5; border-radius: 5px; font-size: 12px; color: #616161;'>{processed_thinking}</div>"
+            thinking_html += f"</details>"
+            thinking_html += f"</div>"
+        
         # 创建新消息的HTML
         message_html = ""
         if sender == "用户":
             # 用户消息：右对齐
             message_html = f"<div style='margin: 5px 0;'>"
             message_html += f"<div style='color: #2196F3; font-weight: bold; text-align: right; margin-bottom: 3px;'>用户:</div>"
-            message_html += f"<div style='text-align: right; padding: 8px; max-width: 80%; margin-left: auto; white-space: pre-wrap;'>{message}</div>"
+            message_html += f"<div style='text-align: right; padding: 8px; max-width: 80%; margin-left: auto;'>{processed_message}{thinking_html}</div>"
             message_html += "</div>"
         elif sender == "系统":
             # 系统消息：左对齐
-            message_html += f"<div style='margin: 5px 0;'>"
+            message_html = f"<div style='margin: 5px 0;'>"
             message_html += f"<div style='color: #4CAF50; font-weight: bold; text-align: left; margin-bottom: 3px;'>系统:</div>"
-            message_html += f"<div style='text-align: left; padding: 8px; max-width: 80%; margin-right: auto; white-space: pre-wrap;'>{message}</div>"
+            message_html += f"<div style='text-align: left; padding: 8px; max-width: 80%; margin-right: auto;'>{processed_message}{thinking_html}</div>"
             message_html += "</div>"
         elif sender == "系统确认":
             # 系统确认消息：左对齐，橙色高亮
-            message_html += f"<div style='margin: 5px 0;'>"
+            message_html = f"<div style='margin: 5px 0;'>"
             message_html += f"<div style='color: #FF9800; font-weight: bold; text-align: left; margin-bottom: 3px;'>⚠️ 系统确认:</div>"
-            message_html += f"<div style='text-align: left; padding: 12px; background-color: #FFF3E0; border-radius: 10px; max-width: 80%; margin-right: auto; border-left: 4px solid #FF9800; white-space: pre-wrap;'>{message}</div>"
+            message_html += f"<div style='text-align: left; padding: 12px; background-color: #FFF3E0; border-radius: 10px; max-width: 80%; margin-right: auto; border-left: 4px solid #FF9800;'>{processed_message}{thinking_html}</div>"
             message_html += "</div>"
         else:
             # 其他消息：左对齐
-            message_html += f"<div style='margin: 5px 0;'>"
+            message_html = f"<div style='margin: 5px 0;'>"
             message_html += f"<div style='color: #757575; font-weight: bold; text-align: left; margin-bottom: 3px;'>{sender}:</div>"
-            message_html += f"<div style='text-align: left; padding: 8px; max-width: 80%; margin-right: auto; white-space: pre-wrap;'>{message}</div>"
+            message_html += f"<div style='text-align: left; padding: 8px; max-width: 80%; margin-right: auto;'>{processed_message}{thinking_html}</div>"
             message_html += "</div>"
         
         # 将新消息插入到HTML中

@@ -329,6 +329,22 @@ class MCPClient:
         """
         result_text = result.get("result", "")
         
+        # 处理有formatted_message的结果（如天气查询）
+        if isinstance(result, dict):
+            # 检查result.result中的formatted_message
+            if result.get("type") == "tool_response":
+                tool_result = result.get("result", {})
+                if isinstance(tool_result, dict):
+                    formatted_message = tool_result.get("formatted_message")
+                    if formatted_message:
+                        summary = f"{prefix}: {formatted_message}" if prefix else formatted_message
+                        return {"summary": summary, "plan": plan if plan else {}}
+            # 也检查直接在result中的formatted_message
+            formatted_message = result.get("formatted_message")
+            if formatted_message:
+                summary = f"{prefix}: {formatted_message}" if prefix else formatted_message
+                return {"summary": summary, "plan": plan if plan else {}}
+        
         # 处理file_operations等工具的返回格式：{"success": True, "result": "...", "path": "..."}
         if isinstance(result_text, dict):
             success = result_text.get("success", False)
@@ -408,10 +424,44 @@ class MCPClient:
                 if self.ui_callback:
                     self.ui_callback("task_update", {"description": "使用LLM生成回答"})
                 
-                response = self.llm_client.generate(query)
+                response_dict = await self.llm_client.generate(query)
+                response = response_dict.get("response", "")
                 
                 if self.ui_callback:
                     self.ui_callback("task_update", {"description": "LLM回答生成完成"})
+                
+                return {
+                    "type": "response",
+                    "content": response
+                }
+            elif intent["type"] == "cannot_execute":
+                # 无法执行型意图，告诉用户当前任务不能执行并给出原因
+                if self.ui_callback:
+                    self.ui_callback("task_update", {"description": "分析任务可行性"})
+                
+                reason = intent.get("reason", "当前工具无法完成此任务")
+                self.logger.info(f"任务无法执行，原因: {reason}")
+                
+                # 使用LLM生成友好的拒绝消息
+                prompt = f"""用户请求执行某个任务，但当前可用工具无法完成。请生成一个友好、礼貌的拒绝消息，告诉用户当前任务不能执行，并给出具体原因。
+
+用户请求：{query}
+
+无法执行的原因：{reason}
+
+请生成一个友好、礼貌的回复，包含以下内容：
+1. 明确告诉用户当前任务无法执行
+2. 解释具体原因
+3. 如果可能，提供替代方案或建议
+4. 保持友好和礼貌的语气
+
+请直接返回回复内容，不要包含任何其他文字或解释。"""
+                
+                response_dict = await self.llm_client.generate(prompt)
+                response = response_dict.get("response", "")
+                
+                if self.ui_callback:
+                    self.ui_callback("task_update", {"description": "生成拒绝消息完成"})
                 
                 return {
                     "type": "response",
@@ -443,9 +493,17 @@ class MCPClient:
                 steps = plan.get("steps", [])
                 self.logger.info(f"任务计划步骤数: {len(steps)}")
                 
+                # 判断是否为单步任务
+                is_single_step = len(steps) == 1
+                
                 for i, step in enumerate(steps):
                     if self.ui_callback:
-                        self.ui_callback("task_update", {"description": f"执行任务步骤 {i+1}/{len(plan['steps'])}: {step['tool']}"})
+                        # 单步任务不显示步骤编号
+                        if is_single_step:
+                            self.ui_callback("task_update", {"description": f"正在执行: {step['tool']}"})
+                        else:
+                            step_num = chr(0x2460 + i)  # ①②③...
+                            self.ui_callback("task_update", {"description": f"执行任务步骤 {step_num}/{len(plan['steps'])}: {step['tool']}"})
                     
                     result = await self.send_tool_call(step["tool"], step.get("args", {}))
                     results.append(result)
@@ -456,13 +514,19 @@ class MCPClient:
                         self.logger.warning(f"任务步骤 {i+1} 执行失败: {step['tool']}")
                     
                     if self.ui_callback:
-                        self.ui_callback("task_update", {"description": f"任务步骤 {i+1} 完成", "result": result})
+                        # 单步任务不显示步骤编号
+                        if is_single_step:
+                            self.ui_callback("task_update", {"description": "执行完成", "result": result})
+                        else:
+                            step_num = chr(0x2460 + i)  # ①②③...
+                            self.ui_callback("task_update", {"description": f"任务步骤 {step_num} 完成", "result": result})
                 
                 # 如果所有步骤执行成功，缓存任务计划（只有当计划不是来自缓存时）
                 if execution_success and not plan.get("from_cache", False):
-                    # 构建intent字典用于缓存，使用intent_parser返回的entities
+                    # 构建intent字典用于缓存，包含user_input以便后续参数提取
                     cache_intent = {
                         "intent": "task",
+                        "user_input": intent.get("user_input", ""),
                         "entities": intent.get("entities", {}),
                         "confidence": intent.get("confidence", 0.9)
                     }
@@ -485,7 +549,8 @@ class MCPClient:
                 if self.ui_callback:
                     self.ui_callback("task_update", {"description": "使用LLM生成回答"})
                 
-                response = self.llm_client.generate(query)
+                response_dict = await self.llm_client.generate(query)
+                response = response_dict.get("response", "")
                 
                 if self.ui_callback:
                     self.ui_callback("task_update", {"description": "LLM回答生成完成"})
@@ -541,13 +606,16 @@ class MCPClient:
                 if self.ui_callback:
                     self.ui_callback("task_update", {"description": "使用LLM生成回答"})
                 
-                response = self.llm_client.generate(query)
+                response_dict = await self.llm_client.generate(query)
+                response = response_dict.get("response", "")
+                thinking = response_dict.get("thinking", "")
                 
                 if self.ui_callback:
                     self.ui_callback("task_update", {"description": "LLM回答生成完成"})
                 
                 return {
                     "summary": response,
+                    "thinking": thinking,
                     "plan": {}
                 }
             elif intent["type"] == "task":
@@ -579,6 +647,9 @@ class MCPClient:
                 steps = plan.get('steps', [])
                 total_steps = len(steps)
                 
+                # 判断是否为单步任务
+                is_single_step = total_steps == 1
+                
                 for i, step in enumerate(steps):
                     # 检查是否中断
                     if self.interrupted:
@@ -589,8 +660,14 @@ class MCPClient:
                         return {"summary": "任务已被用户中断", "plan": plan}
                     
                     if self.ui_callback:
-                        self.ui_callback("task_update", {"description": f"执行任务步骤 {i+1}/{len(plan.get('steps', []))}: {step['tool']}"})
-                        self.ui_callback("loading", True, f"正在执行步骤 {i+1}/{total_steps}...")
+                        # 单步任务不显示步骤编号
+                        if is_single_step:
+                            self.ui_callback("task_update", {"description": f"正在执行: {step['tool']}"})
+                            self.ui_callback("loading", True, f"正在执行...")
+                        else:
+                            step_num = chr(0x2460 + i)  # ①②③...
+                            self.ui_callback("task_update", {"description": f"执行任务步骤 {step_num}/{len(plan.get('steps', []))}: {step['tool']}"})
+                            self.ui_callback("loading", True, f"正在执行步骤 {step_num}/{total_steps}...")
                         # 更新进度条
                         progress_value = 30 + (i + 1) / total_steps * 60
                         self.ui_callback("progress", True, int(progress_value))
@@ -605,7 +682,12 @@ class MCPClient:
                         self.logger.warning(f"任务步骤 {i+1} 执行失败: {step['tool']}")
                     
                     if self.ui_callback:
-                        self.ui_callback("task_update", {"description": f"任务步骤 {i+1} 完成", "result": result})
+                        # 单步任务不显示步骤编号
+                        if is_single_step:
+                            self.ui_callback("task_update", {"description": "执行完成", "result": result})
+                        else:
+                            step_num = chr(0x2460 + i)  # ①②③...
+                            self.ui_callback("task_update", {"description": f"任务步骤 {step_num} 完成", "result": result})
                 
                 # 如果所有步骤执行成功，缓存任务计划（只有当计划不是来自缓存时）
                 if execution_success and not plan.get("from_cache", False):
@@ -624,8 +706,17 @@ class MCPClient:
                 
                 # 提取所有步骤的执行结果
                 execution_results = []
+                total_steps = len(results)
+                is_single_step = total_steps == 1
+                
                 for i, result in enumerate(results):
-                    parsed = self._parse_mcp_result(result, prefix=f"步骤 {i+1}")
+                    if is_single_step:
+                        # 单步任务不显示步骤编号
+                        parsed = self._parse_mcp_result(result)
+                    else:
+                        # 多步任务显示圆圈数字编号
+                        step_num = chr(0x2460 + i)  # ①②③...
+                        parsed = self._parse_mcp_result(result, prefix=f"{step_num}")
                     execution_results.append(parsed["summary"])
                 
                 if self.ui_callback:
@@ -635,8 +726,9 @@ class MCPClient:
                     self.ui_callback("task_update", {"description": "🎉 任务执行完成！", "status": "完成"})
                 
                 # 将执行结果按 MCP 协议返回给 MCP client，确保步骤分开显示
+                # 使用多个换行符确保在HTML中显示为空白行
                 return {
-                    "summary": "\n\n".join(execution_results),
+                    "summary": "\n\n\n".join(execution_results),
                     "plan": plan
                 }
             elif intent["type"] == "chat":
@@ -644,7 +736,8 @@ class MCPClient:
                 if self.ui_callback:
                     self.ui_callback("task_update", {"description": "使用LLM生成回答"})
                 
-                response = self.llm_client.generate(query)
+                response_dict = await self.llm_client.generate(query)
+                response = response_dict.get("response", "")
                 
                 if self.ui_callback:
                     self.ui_callback("task_update", {"description": "LLM回答生成完成"})

@@ -9,7 +9,7 @@ from mcp_server.security import SecurityChecker
 from user_config.config import load_config
 
 # 导入工具模块
-from mcp_server.tools import file_operations, system_info, text_processing, network_request, document_converter, pdf_processor, email_processor
+from mcp_server.tools import file_operations, system_info, text_processing, network_request, document_converter, pdf_processor, email_processor, query
 
 
 class ConfirmModel(BaseModel):
@@ -77,6 +77,9 @@ class MCPServer:
             security_checker=self.security_checker,
             output_callback=self.output_callback
         )
+        
+        # 注册天气查询工具
+        query.weather_query.register_weather_query_tools(self.mcp)
         
         # 注册execute_python工具（兜底工具）
         @self.mcp.tool()

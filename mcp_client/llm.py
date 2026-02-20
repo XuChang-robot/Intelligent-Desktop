@@ -49,36 +49,59 @@ class LLMClient:
             self.logger.error(f"获取模型列表异常: {e}")
             return ["qwen3:30b", "qwen3:7b", "llama2:7b"]
     
-    def generate(self, prompt: str, system_prompt: Optional[str] = None, timeout: int = 120) -> str:
-        """生成LLM响应"""
+    async def generate(self, prompt: str, system_prompt: Optional[str] = None, timeout: int = 120) -> Dict[str, Any]:
+        """生成LLM响应
+        
+        Returns:
+            Dict[str, Any]: 包含response和thinking的字典
+        """
         try:
             import time
+            import asyncio
             start_time = time.time()
             
             options = {
                 "temperature": self.temperature,
-                "max_tokens": self.max_tokens,
+                "num_predict": self.max_tokens,  # ollama使用num_predict，不是max_tokens
                 "repeat_penalty": self.repeat_penalty,
                 "top_p": self.top_p,
                 "top_k": self.top_k
             }
             
-            response = ollama.generate(
-                model=self.model,
-                prompt=prompt,
-                system=system_prompt,
-                options=options
+            # 使用asyncio.run_in_executor在后台线程中运行同步的ollama.generate
+            loop = asyncio.get_event_loop()
+            response = await loop.run_in_executor(
+                None,  # 使用默认的线程池
+                lambda: ollama.generate(
+                    model=self.model,
+                    prompt=prompt,
+                    system=system_prompt,
+                    options=options
+                )
             )
             
             elapsed_time = time.time() - start_time
             self.logger.info(f"LLM生成完成，耗时: {elapsed_time:.2f}秒")
             
-            return response.get("response", "")
+            # 检查响应中是否包含思考过程
+            thinking = response.get("thinking", "")
+            if not thinking:
+                # 尝试其他可能的字段名
+                thinking = response.get("thought", "")
+                thinking = response.get("reasoning", "")
+            
+            return {
+                "response": response.get("response", ""),
+                "thinking": thinking
+            }
         except Exception as e:
             self.logger.error(f"LLM生成失败: {e}")
             import traceback
             traceback.print_exc()
-            return ""
+            return {
+                "response": "",
+                "thinking": ""
+            }
     
     def validate_and_fix_json(self, json_str: str) -> str:
         """验证并修复JSON格式问题
@@ -90,7 +113,6 @@ class LLMClient:
             修复后的JSON字符串
         """
         import json
-        import re
         
         # 首先尝试直接解析
         try:
@@ -99,70 +121,17 @@ class LLMClient:
         except json.JSONDecodeError as e:
             self.logger.warning(f"JSON格式错误: {e}")
         
-        # 开始修复过程
-        fixed_json = json_str
-        
-        # 1. 移除控制字符，并处理因控制字符导致的格式问题
-        import re
-        control_char_pattern = re.compile(r'[\x00-\x1F\x7F]')
-        
-        # 先移除控制字符
-        fixed_json = control_char_pattern.sub('', fixed_json)
-        
-        # 检查是否有字符串未闭合的情况（因为控制字符可能打断了字符串）
-        # 查找所有键值对，检查值是否正确闭合
-        # 修复模式: "key": "value" (未闭合的字符串)
-        # 检查是否有 "key": "value 这样的模式（后面没有闭合引号）
-        # 这种情况通常是因为控制字符打断了字符串
-        
-        # 修复: "key": "value 后面直接是另一个键的情况
-        fixed_json = re.sub(r'("[^"]+":\s*)"([^"]*)(\s*"[^"]+":)', r'\1"\2", \3', fixed_json)
-        
-        # 2. 修复多余的逗号
-        # 修复对象开头的多余逗号: { , "key":
-        fixed_json = re.sub(r'\{\s*,\s*"[^"]+":', '{ "', fixed_json)
-        # 修复对象中间的多余逗号: "key": "value", , "key":
-        fixed_json = re.sub(r'("[^"]+":\s*"[^"]+")(,\s*)(,\s*)("[^"]+":)', r'\1, \4', fixed_json)
-        
-        # 3. 修复缺少逗号的问题
-        # 修复: "key": "value""key":
-        fixed_json = re.sub(r'("[^"]+":\s*"[^"]+")("[^"]+":)', r'\1, \2', fixed_json)
-        
-        # 4. 修复引号不匹配的问题
-        # 计算引号数量
-        quote_count = fixed_json.count('"')
-        if quote_count % 2 != 0:
-            # 如果引号数量为奇数，尝试在适当位置添加引号
-            # 查找最后一个冒号后的内容，确保字符串闭合
-            last_colon = fixed_json.rfind(':')
-            if last_colon != -1:
-                # 在最后一个引号后添加引号
-                last_quote = fixed_json.rfind('"')
-                if last_quote != -1 and last_quote > last_colon:
-                    fixed_json = fixed_json[:last_quote+1] + '"' + fixed_json[last_quote+1:]
-        
-        # 5. 修复括号不匹配的问题
-        open_braces = fixed_json.count('{')
-        close_braces = fixed_json.count('}')
-        if open_braces > close_braces:
-            fixed_json += '}' * (open_braces - close_braces)
-        elif close_braces > open_braces:
-            fixed_json = '{' * (close_braces - open_braces) + fixed_json
-        
-        open_brackets = fixed_json.count('[')
-        close_brackets = fixed_json.count(']')
-        if open_brackets > close_brackets:
-            fixed_json += ']' * (open_brackets - close_brackets)
-        elif close_brackets > open_brackets:
-            fixed_json = '[' * (close_brackets - open_brackets) + fixed_json
-        
-        # 尝试再次解析修复后的JSON
+        # 使用 fast-json-repair 库修复JSON
         try:
+            from fast_json_repair import repair_json
+            fixed_json = repair_json(json_str)
+            
+            # 验证修复后的JSON
             json.loads(fixed_json)
             self.logger.info("JSON格式修复成功")
             return fixed_json
-        except json.JSONDecodeError as e:
-            self.logger.error(f"JSON格式修复失败: {e}")
+        except Exception as e:
+            self.logger.error(f"fast-json-repair修复失败: {e}")
             # 如果修复失败，返回原始字符串
             return json_str
     
@@ -178,6 +147,11 @@ class LLMClient:
         except json.JSONDecodeError:
             # 如果JSON格式不正确，继续清理
             pass
+        
+        # 移除JSON前面的所有非JSON文本（查找第一个{字符）
+        first_brace = response.find('{')
+        if first_brace > 0:
+            response = response[first_brace:]
         
         # 移除markdown代码块标记
         if response.startswith("```json"):
@@ -210,95 +184,137 @@ class LLMClient:
         return response
     
     async def parse_intent(self, user_input: str, tools=None) -> Dict[str, Any]:
-        """解析用户意图"""
-        system_prompt = "你是一个智能桌面系统的意图解析器，负责分析用户的自然语言输入并提取出明确的意图和关键信息。你必须只返回有效的JSON格式，不要包含任何其他文字、解释或markdown标记。"
+        """解析用户意图（提取意图类型和关键实体）"""
+        system_prompt = "你是一个智能桌面系统的意图解析器，负责分析用户的自然语言输入并判断意图类型和提取关键实体。你必须只返回有效的JSON格式，不要包含任何其他文字、解释或markdown标记。"
         
         # 如果提供了tools，格式化工具信息
         tools_info = ""
         if tools:
-            tools_info = "\n\n可用工具及其参数：\n"
+            tools_info = "\n\n可用工具列表：\n"
             for tool in tools:
                 tool_name = tool.name if hasattr(tool, 'name') else str(tool)
                 tool_desc = tool.description if hasattr(tool, 'description') else ""
-                
-                tools_info += f"\n{tool_name}:\n"
-                if tool_desc:
-                    tools_info += f"  描述: {tool_desc}\n"
-                
-                # 处理参数信息
-                if hasattr(tool, 'inputSchema'):
-                    input_schema = tool.inputSchema
-                    if hasattr(input_schema, 'properties'):
-                        properties = input_schema.properties
-                        if properties:
-                            tools_info += f"  参数:\n"
-                            for param_name, param_info in properties.items():
-                                param_type = param_info.get('type', 'unknown')
-                                param_desc = param_info.get('description', '')
-                                tools_info += f"    - {param_name} ({param_type})"
-                                if param_desc:
-                                    tools_info += f": {param_desc}\n"
-                                else:
-                                    tools_info += "\n"
+                tools_info += f"- {tool_name}: {tool_desc}\n"
         
-        prompt = f"""请分析以下用户输入，提取出用户的意图和关键信息：
+        prompt = f"""请分析以下用户输入，判断用户的意图类型并提取关键实体：
 
 用户输入：{user_input}{tools_info}
 
 重要规则：
-1. 意图类型只能是以下两种：
-   - "task": 任务型意图，包括文件操作、系统信息、文本处理、网络请求、邮件发送等需要调用工具的操作
-   - "chat": 聊天型意图，包括问候、提问、闲聊、咨询等纯对话内容，不执行任何工具
+1. 意图类型只能是以下三种：
+   - "task": 任务型意图，当前可用工具可以完成的操作
+   - "chat": 聊天型意图，当前可用工具无法完成的操作，包括问候、提问、闲聊、咨询等纯对话内容，不执行任何工具
+   - "cannot_execute": 无法执行型意图，用户确实想调用工具执行任务，但现有工具或工具的组合步骤不能满足任务执行需要
+
 2. 判断是否为"task"的标准：
-   - 用户明确要求执行某个操作（如"转换"、"发送"、"处理"、"生成"、"删除"、"打开"等）
-   - 用户提到文件路径、文件名、邮箱地址等具体参数
-   - 用户需要调用系统工具完成某个功能
+   - 当前可用工具可以完成用户的请求（如文件操作、系统信息、文本处理、网络请求、邮件发送、天气查询、股票查询、新闻查询、快递查询等）
+   - 用户明确要求执行某个操作（如"转换"、"发送"、"处理"、"生成"、"删除"、"打开"、"查询"等）
+
 3. 判断是否为"chat"的标准：
+   - 当前可用工具无法完成用户的请求
    - 用户只是问候（如"你好"、"早上好"等）
    - 用户只是提问（如"什么是"、"如何"、"为什么"等）
-   - 用户只是闲聊（如"今天天气怎么样"、"你好吗"等）
+   - 用户只是闲聊（如"你好吗"、"在吗"等）
    - 用户没有明确要求执行任何操作
-   - 用户没有提供任何具体参数（如文件路径、邮箱地址等）
-4. 对于聊天型意图，entities可以为空或包含简单的对话内容
 
-参数提取规则：
-1. entities中的键必须是工具的参数名称（如input_path、output_path、operation等）
-2. 不要使用中文实体名称（如"文件名"、"目标文件夹"），必须使用英文参数名
-3. 根据用户的语义，将中文描述映射到对应的英文参数名
-4. 对于文档转换操作（如pdf_to_word、word_to_pdf），output_path必须是完整的输出文件路径（包括文件名和扩展名）：
-   - 如果用户只指定了输出文件夹，需要根据输入文件名自动生成输出文件名
-   - 例如：输入文件是"桌面/xxx.pdf"，操作是"pdf_to_word"，输出文件夹是"桌面/cx"
-   - 则output_path应该是："桌面/cx/xxx.docx"（保持原文件名，只改变扩展名）
-5. 如果用户只指定了输出文件夹，需要根据输入文件名自动生成输出文件名
-6. 示例：
-   - "把桌面上的xxx.pdf转为word" → input_path="桌面/xxx.pdf", operation="pdf_to_word", output_path="桌面/xxx.docx"
-   - "把桌面上的xxx.pdf转为word，放入桌面上的cx文件夹" → input_path="桌面/xxx.pdf", operation="pdf_to_word", output_path="桌面/cx/xxx.docx"
-   - "给xxx发邮件" → to="xxx", subject="邮件主题", content="邮件内容"
+4. 判断是否为"cannot_execute"的标准：
+   - 用户确实想调用工具执行任务，但现有工具或工具的组合步骤不能满足任务执行需要
+   - 用户明确要求执行某个操作，但当前工具无法完成
+   - 用户提到的任务需要多个步骤，但当前工具无法组合完成
+   - 用户提到的功能超出了当前工具的能力范围
+
+5. 提取关键实体（entities）：
+   - 对于task型意图，必须根据可用工具的描述提取关键实体：
+     * 首先确定要使用的工具（tool）
+     * 根据工具的描述，提取用户输入中提到的所有参数
+     * 例如：如果工具是 weather_query，需要提取 operation、city、province 等参数
+     * 例如：如果工具是 document_converter，需要提取 operation、input_path、output_path 等参数
+     * 重要：如果用户输入包含多个输入，必须提取所有输入，不能遗漏
+     * 识别多个输入的关键词：
+       - "两个"、"多个"、"三个"等数量词
+       - 使用顿号"、""、"、"等分隔符
+       - 使用"和"、"以及"等连接词
+     * 对于entitiesr的单个元素有多个输入的情况，使用数组格式，键值为num_inputs
+     * 根据工具的调用需要，entities可包含多个元素
+   - 对于chat和cannot_execute型意图，entities可以为空对象
 
 请严格按照以下JSON格式返回结果，不要添加任何其他内容：
 {{
-  "intent": "用户的主要意图（只能是task或chat）",
-  "entities": {{
-    "参数名1": "值1",
-    "参数名2": "值2"
+  "intent": "用户的主要意图（只能是task、chat或cannot_execute）",
+  "confidence": 0.9,
+  "reason": "无法执行的原因（仅当intent为cannot_execute时提供）",
+  "entities": [{{
+    "tool": "工具名称1",
+    "operation": "操作类型1",
+    "num_inputs": [
+      {{
+        "参数1": "值1",
+        "参数2": "值2"
+      }},
+      {{
+        "参数1": "值3",
+        "参数2": "值4"
+      }}
+    ]
   }},
-  "confidence": 0.9
+  {{
+    "tool": "工具名称2",
+    "operation": "操作类型2",
+    "num_inputs": [
+      {{
+        "参数3": "值5",
+        "参数4": "值6"
+      }},
+      {{
+        "参数3": "值7",
+        "参数4": "值8"
+      }}
+    ]
+  }}]
+}}
+
+**示例**：
+用户输入："把桌面上的证明、说明两个word文件转为pdf"
+应返回：
+{{
+  "intent": "task",
+  "confidence": 0.95,
+  "entities": {{
+    "tool": "document_converter",
+    "operation": "word_to_pdf",
+    "num_inputs": [
+      {{
+        "input_path": "桌面/证明.docx",
+        "output_path": "桌面/证明.pdf"
+      }},
+      {{
+        "input_path": "桌面/说明.docx",
+        "output_path": "桌面/说明.pdf"
+      }}
+    ]
+  }}
 }}
 
 注意：只返回JSON，不要包含任何解释、注释或其他文字。"""
         
-        response = self.generate(prompt, system_prompt)
+        response_dict = await self.generate(prompt, system_prompt)
+        response = response_dict.get("response", "")
+        thinking = response_dict.get("thinking", "")
+        
+        if thinking:
+            self.logger.info(f"LLM思考过程: {thinking[:500]}...")
+        
+        self.logger.info(f"LLM原始响应: {response[:200]}...")
         response = self.clean_json_response(response)
+        self.logger.info(f"清理后的响应: {response[:200]}...")
         
         try:
-            return json.loads(response)
+            result = json.loads(response)
+            self.logger.info(f"JSON解析结果: {result}")
+            return result
         except json.JSONDecodeError as e:
             self.logger.error(f"解析意图响应失败: {e}, 原始响应: {response}")
-            return {
-                "intent": "task",
-                "entities": {},
-                "confidence": 0.5
-            }
+            raise Exception(f"意图解析失败：无法解析LLM返回的JSON格式。错误信息：{e}")
     
     def format_tools_for_llm(self, tools) -> str:
         """将MCP工具列表格式化为LLM可理解的文本格式
@@ -354,7 +370,7 @@ class LLMClient:
         """规划任务步骤
         
         Args:
-            intent: 用户意图
+            intent: 用户意图（包含user_input）
             tools: 可用工具列表（从server获取）
         """
         system_prompt = """
@@ -370,21 +386,57 @@ class LLMClient:
         # 格式化工具列表
         available_tools = self.format_tools_for_llm(tools) if tools else "没有可用的工具"
         
-        # 提取entities信息
-        entities = intent.get("entities", {})
-        entities_info = ""
-        if entities:
-            entities_info = "\n\n已提取的参数信息：\n"
-            for key, value in entities.items():
-                entities_info += f"- {key}: {value}\n"
+        # 获取用户输入
+        user_input = intent.get("user_input", "")
         
-        prompt = f"""请根据以下用户意图，生成详细的任务执行计划：\n\n用户意图：{intent}{entities_info}\n\n{available_tools}\n\n重要规则：
+        prompt = f"""请根据以下用户输入，生成详细的任务执行计划：
+
+用户输入：{user_input}
+
+{available_tools}
+
+重要规则：
 1. 优先使用上面列出的专用工具
 2. 不要使用不存在的工具，只能使用上面列出的工具
 3. 如果可用工具无法完成用户任务，请返回空的steps数组，并在plan字段说明无法完成的原因
-4. 如果已提取的参数信息中包含了工具所需的参数，请直接使用这些参数值\n\n请严格按照以下JSON格式返回结果，不要添加任何其他内容：\n{{\n  \"plan\": \"任务计划概述\",\n  \"steps\": [\n    {{\n      \"tool\": \"工具名称\",\n      \"args\": {{\n        \"参数名\": \"参数值\"\n      }},\n      \"description\": \"步骤描述\"\n    }}\n  ]\n}}\n\n注意：只返回JSON，不要包含任何解释、注释或其他文字。"""
+4. 根据用户输入，智能提取工具所需的参数：
+   - 仔细分析用户输入中的关键信息（如文件路径、城市名称、操作类型等）
+   - 将提取的信息映射到工具参数
+   - 如果用户输入包含多个操作或多个对象，生成多个步骤
+   - 每个步骤只使用一个工具，完成一个明确的任务
+   - 例如：如果用户输入"东京天气怎么样，长沙呢？"，应该识别出两个地点，生成两个天气查询步骤
+   - 例如：如果用户输入"把桌面上的PDF转成Word，再把Word转成PDF"，应该识别出两个转换操作，生成两个转换步骤
+5. 对于天气查询：
+   - 区分国内和国外地点
+   - 国内地点使用domestic_weather操作，需要province和city参数
+   - 国外地点使用foreign_weather操作，只需要city参数
+6. 对于文档转换：
+   - 确保output_path包含完整的文件名和扩展名
+   - 如果用户只指定了输出文件夹，根据输入文件名自动生成输出文件名
+
+请严格按照以下JSON格式返回结果，不要添加任何其他内容：
+{{
+  "plan": "任务计划概述",
+  "steps": [
+    {{
+      "tool": "工具名称",
+      "args": {{
+        "参数名": "参数值"
+      }},
+      "description": "步骤描述"
+    }}
+  ]
+}}
+
+注意：只返回JSON，不要包含任何解释、注释或其他文字。"""
         
-        response = self.generate(prompt, system_prompt)
+        response_dict = await self.generate(prompt, system_prompt)
+        response = response_dict.get("response", "")
+        thinking = response_dict.get("thinking", "")
+        
+        if thinking:
+            self.logger.info(f"LLM思考过程: {thinking[:500]}...")
+        
         response = self.clean_json_response(response)
         
         try:
@@ -402,7 +454,8 @@ class LLMClient:
         
         prompt = f"请根据以下信息，生成一个清晰的执行结果总结：\n\n用户输入：{user_input}\n\n任务计划：{plan}\n\n执行结果：{results}\n\n请用自然语言总结执行过程和结果，确保用户能够理解。"
         
-        return self.generate(prompt, system_prompt)
+        response_dict = await self.generate(prompt, system_prompt)
+        return response_dict.get("response", "")
     
     async def generate_python_code(self, task_description: str) -> str:
         """生成Python代码"""
@@ -420,7 +473,13 @@ class LLMClient:
         try:
             self.logger.info(f"开始调用LLM生成代码")
             # 移除超时设置
-            result = await loop.run_in_executor(None, self.generate, prompt, system_prompt)
+            response_dict = await loop.run_in_executor(None, self.generate, prompt, system_prompt)
+            result = response_dict.get("response", "")
+            thinking = response_dict.get("thinking", "")
+            
+            if thinking:
+                self.logger.info(f"LLM思考过程: {thinking[:500]}...")
+            
             self.logger.info(f"LLM生成代码完成，结果长度: {len(result)}")
             # 不要使用clean_json_response清理Python代码
             return result

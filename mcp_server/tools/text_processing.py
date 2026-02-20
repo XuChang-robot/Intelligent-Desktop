@@ -52,12 +52,8 @@ def register_text_processing_tools(mcp):
             }
         
         Examples:
-            - 文字转语音: text_processing("to_audio", "你好世界", lang="zh")
             - 文字转语音（自定义参数）: text_processing("to_audio", "你好世界", lang="zh", rate=150, volume=0.8)
-            - 文本摘要: text_processing("summarize", "这是一段很长的文本...")
-            - 文本格式化: text_processing("format", "hello world", format_type="upper")
             - 统计信息: text_processing("count", "hello world")
-            - 从Word文档转语音: text_processing("to_audio", input_file="桌面/说明.docx", output_path="桌面/cx/说明.wav")
         """
         try:
             import os
@@ -88,12 +84,24 @@ def register_text_processing_tools(mcp):
                             doc = Document(input_file)
                             file_text = '\n'.join([paragraph.text for paragraph in doc.paragraphs])
                         except ImportError:
-                            return {"success": False, "error": "未安装python-docx库，请运行: pip install python-docx"}
+                            return {
+                                "success": False, 
+                                "error": "未安装python-docx库，请运行: pip install python-docx",
+                                "formatted_message": "❌ 错误: 未安装python-docx库，请运行: pip install python-docx"
+                            }
                         except Exception as e:
-                            return {"success": False, "error": f"读取Word文档失败: {str(e)}"}
+                            return {
+                                "success": False, 
+                                "error": f"读取Word文档失败: {str(e)}",
+                                "formatted_message": f"❌ 错误: 读取Word文档失败: {str(e)}"
+                            }
                     elif file_ext in ['.doc', '.pdf', '.pptx']:
                         # 其他Office文档，暂不支持
-                        return {"success": False, "error": f"暂不支持{file_ext}文件格式，请使用文本文件或.docx文件"}
+                        return {
+                            "success": False, 
+                            "error": f"暂不支持{file_ext}文件格式，请使用文本文件或.docx文件",
+                            "formatted_message": f"❌ 错误: 暂不支持{file_ext}文件格式，请使用文本文件或.docx文件"
+                        }
                     else:
                         # 普通文本文件
                         with open(input_file, 'r', encoding='utf-8') as f:
@@ -105,11 +113,19 @@ def register_text_processing_tools(mcp):
                         warnings.warn("同时提供了text和input_file参数，将优先使用input_file的内容")
                     text = file_text
                 except Exception as e:
-                    return {"success": False, "error": f"读取输入文件失败: {str(e)}"}
+                    return {
+                        "success": False, 
+                        "error": f"读取输入文件失败: {str(e)}",
+                        "formatted_message": f"❌ 错误: 读取输入文件失败: {str(e)}"
+                    }
             
             # 验证文本输入
             if not text:
-                return {"success": False, "error": "必须提供text或input_file参数"}
+                return {
+                    "success": False, 
+                    "error": "必须提供text或input_file参数",
+                    "formatted_message": "❌ 错误: 必须提供text或input_file参数"
+                }
             
             if operation == "to_audio":
                 # 确定输出文件路径
@@ -168,19 +184,29 @@ def register_text_processing_tools(mcp):
                         "success": True,
                         "result": "音频生成成功（使用pyttsx3）",
                         "file": output_file,
-                        "duration": len(text) * 0.1
+                        "duration": len(text) * 0.1,
+                        "formatted_message": f"🎵 音频生成成功\n📄 文本长度: {len(text)} 字符\n📁 输出文件: {os.path.basename(output_file)}\n📍 保存路径: {output_file}\n⚙️ 语速: {rate}\n🔊 音量: {volume}"
                     }
                 except ImportError:
-                    return {"success": False, "error": "未安装pyttsx3库，请运行: pip install pyttsx3"}
+                    return {
+                        "success": False, 
+                        "error": "未安装pyttsx3库，请运行: pip install pyttsx3",
+                        "formatted_message": "❌ 错误: 未安装pyttsx3库，请运行: pip install pyttsx3"
+                    }
                 except Exception as e:
-                    return {"success": False, "error": f"音频生成失败: {str(e)}"}
+                    return {
+                        "success": False, 
+                        "error": f"音频生成失败: {str(e)}",
+                        "formatted_message": f"❌ 错误: 音频生成失败: {str(e)}"
+                    }
             
             elif operation == "summarize":
                 summary = text[:100] + "..." if len(text) > 100 else text
                 return {
                     "success": True,
                     "result": summary,
-                    "original_length": len(text)
+                    "original_length": len(text),
+                    "formatted_message": f"📝 文本摘要\n📊 原始长度: {len(text)} 字符\n📊 摘要长度: {len(summary)} 字符\n\n摘要内容:\n{summary}"
                 }
             
             elif operation == "format":
@@ -195,7 +221,8 @@ def register_text_processing_tools(mcp):
                 return {
                     "success": True,
                     "result": result,
-                    "format_type": format_type
+                    "format_type": format_type,
+                    "formatted_message": f"📄 文本格式化\n🔧 格式类型: {format_type}\n📊 文本长度: {len(result)} 字符\n\n格式化结果:\n{result[:200]}{'...' if len(result) > 200 else ''}"
                 }
             
             elif operation == "count":
@@ -207,11 +234,20 @@ def register_text_processing_tools(mcp):
                 }
                 return {
                     "success": True,
-                    "result": result
+                    "result": result,
+                    "formatted_message": f"📊 文本统计\n📝 总字符数: {result['characters']}\n📝 不含空格: {result['characters_no_spaces']}\n📖 单词数: {result['words']}\n📏 行数: {result['lines']}"
                 }
             
             else:
-                return {"success": False, "error": f"不支持的操作: {operation}"}
+                return {
+                    "success": False, 
+                    "error": f"不支持的操作: {operation}",
+                    "formatted_message": f"❌ 错误: 不支持的操作 '{operation}'"
+                }
         
         except Exception as e:
-            return {"success": False, "error": str(e)}
+            return {
+                "success": False, 
+                "error": str(e),
+                "formatted_message": f"❌ 错误: {str(e)}"
+            }

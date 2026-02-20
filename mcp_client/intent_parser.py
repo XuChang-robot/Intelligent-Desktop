@@ -1,6 +1,9 @@
 # 意图解析器模块
 
+import json
 import logging
+import os
+import platform
 from typing import Dict, Any
 from mcp_client.llm import LLMClient
 
@@ -9,8 +12,64 @@ class IntentParser:
         self.llm_client = llm_client
         self.logger = logging.getLogger(__name__)
     
+    def _get_desktop_path(self) -> str:
+        """获取当前系统的桌面路径"""
+        system = platform.system()
+        
+        if system == "Windows":
+            # Windows: C:\Users\<username>\Desktop
+            return os.path.join(os.path.expanduser("~"), "Desktop")
+        elif system == "Darwin":
+            # macOS: /Users/<username>/Desktop
+            return os.path.join(os.path.expanduser("~"), "Desktop")
+        else:
+            # Linux: /home/<username>/Desktop
+            return os.path.join(os.path.expanduser("~"), "Desktop")
+    
+    def _fix_desktop_path(self, path: str) -> str:
+        """修复路径中的"桌面"或"Desktop"为实际的桌面路径
+        
+        Args:
+            path: 原始路径
+        
+        Returns:
+            修复后的路径
+        """
+        if not path:
+            return path
+        
+        # 检查路径中是否包含"桌面"或"Desktop"
+        import re
+        
+        # 匹配模式：/桌面/、/Desktop/、桌面/、Desktop/ 等
+        if "桌面" in path or "Desktop" in path or "desktop" in path:
+            # 替换为实际的桌面路径
+            desktop_path = self._get_desktop_path()
+            self.logger.info(f"检测到桌面路径，准备替换: {path} -> {desktop_path}")
+            
+            # 使用正则表达式替换（只替换第一个匹配）
+            # 匹配：桌面/、Desktop/、\桌面\、\Desktop\ 等
+            pattern = r'[/\\]?(?:桌面|Desktop|desktop)[/\\]?'
+            
+            # 查找第一个匹配
+            match = re.search(pattern, path, flags=re.IGNORECASE)
+            if match:
+                # 获取匹配后的部分
+                rest_of_path = path[match.end():]
+                
+                # 构建新路径
+                if rest_of_path:
+                    new_path = os.path.join(desktop_path, rest_of_path)
+                else:
+                    new_path = desktop_path
+                
+                self.logger.info(f"桌面路径已替换: {new_path}")
+                return new_path
+        
+        return path
+    
     async def parse_intent(self, user_input: str, tools=None) -> Dict[str, Any]:
-        """解析用户意图"""
+        """解析用户意图（提取意图类型和关键实体）"""
         try:
             # 使用LLM解析意图
             intent = await self.llm_client.parse_intent(user_input, tools)
@@ -20,7 +79,6 @@ class IntentParser:
             self.logger.error(f"解析意图失败: {e}")
             return {
                 "intent": "unknown",
-                "entities": {},
                 "confidence": 0.5
             }
     
@@ -48,21 +106,18 @@ class IntentParser:
         """
         self.logger.info(f"开始解析用户意图: {user_input[:50]}...")
         try:
-            # 调用现有的parse_intent方法，传入tools参数
+            # 调用parse_intent，获取意图类型和entities
             intent_result = await self.parse_intent(user_input, tools)
             self.logger.info(f"parse_intent返回: {intent_result}")
             
-            # 如果意图解析失败，使用简单的fallback逻辑
-            if intent_result.get("intent") == "unknown" or intent_result.get("confidence", 0) < 0.5:
-                self.logger.warning(f"意图解析失败或置信度低，使用task_planner")
-                # 使用task_planner生成任务计划，传入工具列表
-                plan = await self.llm_client.plan_task(intent_result, tools)
-                self.logger.info(f"任务计划生成完成: {plan}")
+            # 检查意图是否有效
+            if intent_result.get("intent") == "unknown":
+                # 解析失败，返回错误信息
+                self.logger.error("意图解析失败：LLM返回了未知意图")
                 return {
-                    "type": "task",
-                    "plan": plan,
-                    "entities": intent_result.get("entities", {}),
-                    "confidence": intent_result.get("confidence", 0.5)
+                    "type": "error",
+                    "user_input": user_input,
+                    "error": "意图解析失败：无法理解您的输入，请重新表述"
                 }
             
             # 转换为client.py期望的格式
@@ -71,47 +126,42 @@ class IntentParser:
                 self.logger.info("意图是chat，直接返回聊天内容")
                 return {
                     "type": "chat",
-                    "entities": intent_result.get("entities", {}),
+                    "user_input": user_input,
                     "confidence": intent_result.get("confidence", 0.5)
                 }
+            elif intent_result.get("intent") == "cannot_execute":
+                # 无法执行型意图，返回原因
+                self.logger.info("意图是cannot_execute，返回无法执行的原因")
+                return {
+                    "type": "cannot_execute",
+                    "user_input": user_input,
+                    "confidence": intent_result.get("confidence", 0.5),
+                    "reason": intent_result.get("reason", "当前工具无法完成此任务")
+                }
             elif intent_result.get("intent") == "task":
-                # 只返回entities，不生成任务计划（让task_planner处理缓存）
-                self.logger.info("意图是task，返回entities让task_planner处理缓存")
+                # 任务型意图，返回task类型，包含entities
+                self.logger.info("意图是task，返回task类型和entities")
                 return {
                     "type": "task",
+                    "user_input": user_input,
                     "entities": intent_result.get("entities", {}),
                     "confidence": intent_result.get("confidence", 0.5)
                 }
             else:
-                # 对于其他意图，也转换为task类型，使用task_planner生成任务计划
-                # 这样可以利用专用工具而不是直接生成Python代码
-                self.logger.info(f"其他意图: {intent_result.get('intent')}, 调用task_planner生成任务计划")
-                plan = await self.llm_client.plan_task(intent_result, tools)
-                self.logger.info(f"任务计划生成完成: {plan}")
+                # 未知意图，返回错误信息
+                self.logger.error(f"未知意图: {intent_result.get('intent')}")
                 return {
-                    "type": "task",
-                    "plan": plan,
-                    "entities": intent_result.get("entities", {}),
-                    "confidence": intent_result.get("confidence", 0.5)
+                    "type": "error",
+                    "user_input": user_input,
+                    "error": f"意图解析失败：未知的意图类型 {intent_result.get('intent')}"
                 }
         except Exception as e:
-            self.logger.error(f"解析意图失败: {e}")
+            self.logger.error(f"解析用户意图时出错: {e}")
             import traceback
             traceback.print_exc()
-            # 即使出现异常，也尝试调用task_planner生成任务计划
-            try:
-                self.logger.info("尝试调用task_planner生成任务计划（fallback）")
-                plan = await self.llm_client.plan_task(intent_result, tools)
-                return {
-                    "type": "task",
-                    "plan": plan,
-                    "entities": intent_result.get("entities", {}),
-                    "confidence": 0.5
-                }
-            except Exception as e2:
-                self.logger.error(f"生成任务计划失败: {e2}")
-                return {
-                    "type": "chat",
-                    "entities": {},
-                    "confidence": 0.5
-                }
+            # 出错时返回错误信息
+            return {
+                "type": "error",
+                "user_input": user_input,
+                "error": f"意图解析失败：{str(e)}"
+            }

@@ -66,11 +66,8 @@ def register_pdf_processor_tools(mcp, security_checker=None, output_callback=Non
             }
         
         Examples:
-            - PDF 合并: pdf_processor("merge", "input1.pdf;input2.pdf", "output.pdf")
-            - PDF 插入页: pdf_processor("insert", "input1.pdf;input2.pdf", "output.pdf", 2)
             - PDF 打印: pdf_processor("print", "input.pdf", "")
             - PDF 提取页: pdf_processor("extract", "input.pdf", "output.pdf", pages="1-3,5")
-            - PDF 拆分: pdf_processor("split", "input.pdf", "output_", pages="1,3-4")
         """
         try:
             # 获取桌面路径
@@ -102,26 +99,46 @@ def register_pdf_processor_tools(mcp, security_checker=None, output_callback=Non
             # 检查文件扩展名是否正确
             for p in input_paths:
                 if not p.lower().endswith(".pdf"):
-                    return {"success": False, "error": f"输入文件必须是PDF格式: {p}", "input_path": input_path, "output_path": output_path}
+                    return {
+                        "success": False, 
+                        "error": f"输入文件必须是PDF格式: {p}", 
+                        "input_path": input_path, 
+                        "output_path": output_path,
+                        "formatted_message": f"❌ 错误: 输入文件必须是PDF格式\n📄 文件: {os.path.basename(p)}"
+                    }
             
             if operation != "print" and output_path and not output_path.lower().endswith(".pdf"):
-                return {"success": False, "error": "输出文件必须是PDF格式", "input_path": input_path, "output_path": output_path}
+                return {
+                    "success": False, 
+                    "error": "输出文件必须是PDF格式", 
+                    "input_path": input_path, 
+                    "output_path": output_path,
+                    "formatted_message": f"❌ 错误: 输出文件必须是PDF格式\n📄 输出文件: {os.path.basename(output_path)}"
+                }
             
             # 尝试使用不同的方法进行 PDF 处理
             if operation == "merge":
                 # 尝试使用 pypdf 或其他库
                 try:
                     if not PDF_AVAILABLE:
-                        return {"success": False, "error": "缺少必要的库，请安装 pypdf", "input_path": input_path, "output_path": output_path}
+                        return {
+                            "success": False, 
+                            "error": "缺少必要的库，请安装 pypdf", 
+                            "input_path": input_path, 
+                            "output_path": output_path,
+                            "formatted_message": "❌ 错误: 缺少必要的库，请安装 pypdf"
+                        }
                     
                     # 创建一个 PDF 写入器
                     pdf_writer = PdfWriter()
+                    total_pages = 0
                     
                     # 遍历所有输入 PDF 文件
                     for pdf_path in input_paths:
                         # 打开当前 PDF 文件
                         with open(pdf_path, 'rb') as f:
                             pdf_reader = PdfReader(f)
+                            total_pages += len(pdf_reader.pages)
                             
                             # 遍历 PDF 中的每一页
                             for page_num in range(len(pdf_reader.pages)):
@@ -132,27 +149,53 @@ def register_pdf_processor_tools(mcp, security_checker=None, output_callback=Non
                     with open(output_path, 'wb') as f:
                         pdf_writer.write(f)
                     
-                    return {"success": True, "result": f"PDF 合并成功，共 {len(input_paths)} 个文件", "input_path": input_path, "output_path": output_path}
+                    return {
+                        "success": True, 
+                        "result": f"PDF 合并成功，共 {len(input_paths)} 个文件", 
+                        "input_path": input_path, 
+                        "output_path": output_path,
+                        "formatted_message": f"✅ PDF 合并成功\n📁 输入文件数: {len(input_paths)}\n📄 输入文件:\n" + "\n".join([f"  - {os.path.basename(p)}" for p in input_paths]) + f"\n📄 输出文件: {os.path.basename(output_path)}\n📁 输出路径: {output_path}\n📊 总页数: {total_pages}"
+                    }
                 except Exception as e:
-                    return {"success": False, "error": f"合并失败: {str(e)}", "input_path": input_path, "output_path": output_path}
+                    return {
+                        "success": False, 
+                        "error": f"合并失败: {str(e)}", 
+                        "input_path": input_path, 
+                        "output_path": output_path,
+                        "formatted_message": f"❌ 合并失败: {str(e)}"
+                    }
             elif operation == "insert":
                 # 尝试使用 pypdf 或其他库
                 try:
                     if not PDF_AVAILABLE:
-                        return {"success": False, "error": "缺少必要的库，请安装 pypdf", "input_path": input_path, "output_path": output_path}
+                        return {
+                            "success": False, 
+                            "error": "缺少必要的库，请安装 pypdf", 
+                            "input_path": input_path, 
+                            "output_path": output_path,
+                            "formatted_message": "❌ 错误: 缺少必要的库，请安装 pypdf"
+                        }
                     
                     if len(input_paths) < 2:
-                        return {"success": False, "error": "PDF 插入操作需要至少两个输入文件", "input_path": input_path, "output_path": output_path}
+                        return {
+                            "success": False, 
+                            "error": "PDF 插入操作需要至少两个输入文件", 
+                            "input_path": input_path, 
+                            "output_path": output_path,
+                            "formatted_message": "❌ 错误: PDF 插入操作需要至少两个输入文件"
+                        }
                     
                     # 创建一个 PDF 写入器
                     pdf_writer = PdfWriter()
+                    inserted_pages = 0
                     
                     # 打开第一个 PDF 文件（目标文件）
                     with open(input_paths[0], 'rb') as f:
                         target_reader = PdfReader(f)
+                        target_pages = len(target_reader.pages)
                         
                         # 添加目标文件中插入位置之前的所有页
-                        for page_num in range(min(insert_position - 1, len(target_reader.pages))):
+                        for page_num in range(min(insert_position - 1, target_pages)):
                             page = target_reader.pages[page_num]
                             pdf_writer.add_page(page)
                     
@@ -160,6 +203,7 @@ def register_pdf_processor_tools(mcp, security_checker=None, output_callback=Non
                     for pdf_path in input_paths[1:]:
                         with open(pdf_path, 'rb') as f:
                             insert_reader = PdfReader(f)
+                            inserted_pages += len(insert_reader.pages)
                             
                             # 添加要插入的文件的所有页
                             for page_num in range(len(insert_reader.pages)):
@@ -170,7 +214,7 @@ def register_pdf_processor_tools(mcp, security_checker=None, output_callback=Non
                     with open(input_paths[0], 'rb') as f:
                         target_reader = PdfReader(f)
                         
-                        for page_num in range(insert_position - 1, len(target_reader.pages)):
+                        for page_num in range(insert_position - 1, target_pages):
                             page = target_reader.pages[page_num]
                             pdf_writer.add_page(page)
                     
@@ -178,9 +222,21 @@ def register_pdf_processor_tools(mcp, security_checker=None, output_callback=Non
                     with open(output_path, 'wb') as f:
                         pdf_writer.write(f)
                     
-                    return {"success": True, "result": f"PDF 插入成功，插入位置: {insert_position}", "input_path": input_path, "output_path": output_path}
+                    return {
+                        "success": True, 
+                        "result": f"PDF 插入成功，插入位置: {insert_position}", 
+                        "input_path": input_path, 
+                        "output_path": output_path,
+                        "formatted_message": f"✅ PDF 插入成功\n📄 目标文件: {os.path.basename(input_paths[0])}\n📄 插入文件数: {len(input_paths) - 1}\n" + "\n".join([f"  - {os.path.basename(p)}" for p in input_paths[1:]]) + f"\n📍 插入位置: 第 {insert_position} 页\n📊 插入页数: {inserted_pages}\n📄 输出文件: {os.path.basename(output_path)}"
+                    }
                 except Exception as e:
-                    return {"success": False, "error": f"插入失败: {str(e)}", "input_path": input_path, "output_path": output_path}
+                    return {
+                        "success": False, 
+                        "error": f"插入失败: {str(e)}", 
+                        "input_path": input_path, 
+                        "output_path": output_path,
+                        "formatted_message": f"❌ 插入失败: {str(e)}"
+                    }
             elif operation == "print":
                 # 尝试使用系统默认打印机打印 PDF
                 try:
@@ -190,17 +246,41 @@ def register_pdf_processor_tools(mcp, security_checker=None, output_callback=Non
                     else:  # Unix/Linux
                         subprocess.run(['lp', input_paths[0]], check=True)
                     
-                    return {"success": True, "result": "PDF 打印成功", "input_path": input_path, "output_path": output_path}
+                    return {
+                        "success": True, 
+                        "result": "PDF 打印成功", 
+                        "input_path": input_path, 
+                        "output_path": output_path,
+                        "formatted_message": f"✅ PDF 打印成功\n📄 文件: {os.path.basename(input_paths[0])}\n📁 路径: {input_paths[0]}"
+                    }
                 except Exception as e:
-                    return {"success": False, "error": f"打印失败: {str(e)}", "input_path": input_path, "output_path": output_path}
+                    return {
+                        "success": False, 
+                        "error": f"打印失败: {str(e)}", 
+                        "input_path": input_path, 
+                        "output_path": output_path,
+                        "formatted_message": f"❌ 打印失败: {str(e)}"
+                    }
             elif operation == "extract":
                 # 尝试使用 pypdf 或其他库
                 try:
                     if not PDF_AVAILABLE:
-                        return {"success": False, "error": "缺少必要的库，请安装 pypdf", "input_path": input_path, "output_path": output_path}
+                        return {
+                            "success": False, 
+                            "error": "缺少必要的库，请安装 pypdf", 
+                            "input_path": input_path, 
+                            "output_path": output_path,
+                            "formatted_message": "❌ 错误: 缺少必要的库，请安装 pypdf"
+                        }
                     
                     if not pages:
-                        return {"success": False, "error": "PDF 提取页操作需要指定页面范围", "input_path": input_path, "output_path": output_path}
+                        return {
+                            "success": False, 
+                            "error": "PDF 提取页操作需要指定页面范围", 
+                            "input_path": input_path, 
+                            "output_path": output_path,
+                            "formatted_message": "❌ 错误: PDF 提取页操作需要指定页面范围"
+                        }
                     
                     # 解析页面范围
                     page_numbers = []
@@ -213,32 +293,59 @@ def register_pdf_processor_tools(mcp, security_checker=None, output_callback=Non
                     
                     # 创建一个 PDF 写入器
                     pdf_writer = PdfWriter()
+                    extracted_count = 0
                     
                     # 打开输入 PDF 文件
                     with open(input_paths[0], 'rb') as f:
                         pdf_reader = PdfReader(f)
+                        total_pages = len(pdf_reader.pages)
                         
                         # 添加指定的页面
                         for page_num in page_numbers:
-                            if 0 <= page_num < len(pdf_reader.pages):
+                            if 0 <= page_num < total_pages:
                                 page = pdf_reader.pages[page_num]
                                 pdf_writer.add_page(page)
+                                extracted_count += 1
                     
                     # 保存提取后的 PDF 文件
                     with open(output_path, 'wb') as f:
                         pdf_writer.write(f)
                     
-                    return {"success": True, "result": f"PDF 提取页成功，页面范围: {pages}", "input_path": input_path, "output_path": output_path}
+                    return {
+                        "success": True, 
+                        "result": f"PDF 提取页成功，页面范围: {pages}", 
+                        "input_path": input_path, 
+                        "output_path": output_path,
+                        "formatted_message": f"✅ PDF 提取页成功\n📄 源文件: {os.path.basename(input_paths[0])}\n📊 源文件页数: {total_pages}\n🔢 提取页面范围: {pages}\n📊 成功提取页数: {extracted_count}\n📄 输出文件: {os.path.basename(output_path)}\n📍 输出路径: {output_path}"
+                    }
                 except Exception as e:
-                    return {"success": False, "error": f"提取失败: {str(e)}", "input_path": input_path, "output_path": output_path}
+                    return {
+                        "success": False, 
+                        "error": f"提取失败: {str(e)}", 
+                        "input_path": input_path, 
+                        "output_path": output_path,
+                        "formatted_message": f"❌ 提取失败: {str(e)}"
+                    }
             elif operation == "split":
                 # 尝试使用 pypdf 或其他库
                 try:
                     if not PDF_AVAILABLE:
-                        return {"success": False, "error": "缺少必要的库，请安装 pypdf", "input_path": input_path, "output_path": output_path}
+                        return {
+                            "success": False, 
+                            "error": "缺少必要的库，请安装 pypdf", 
+                            "input_path": input_path, 
+                            "output_path": output_path,
+                            "formatted_message": "❌ 错误: 缺少必要的库，请安装 pypdf"
+                        }
                     
                     if not pages:
-                        return {"success": False, "error": "PDF 拆分操作需要指定页面范围", "input_path": input_path, "output_path": output_path}
+                        return {
+                            "success": False, 
+                            "error": "PDF 拆分操作需要指定页面范围", 
+                            "input_path": input_path, 
+                            "output_path": output_path,
+                            "formatted_message": "❌ 错误: PDF 拆分操作需要指定页面范围"
+                        }
                     
                     # 解析页面范围
                     page_numbers = []
@@ -250,12 +357,14 @@ def register_pdf_processor_tools(mcp, security_checker=None, output_callback=Non
                             page_numbers.append(int(part) - 1)
                     
                     # 打开输入 PDF 文件
+                    split_files = []
                     with open(input_paths[0], 'rb') as f:
                         pdf_reader = PdfReader(f)
+                        total_pages = len(pdf_reader.pages)
                         
                         # 为每个指定的页面创建一个新的 PDF 文件
                         for page_num in page_numbers:
-                            if 0 <= page_num < len(pdf_reader.pages):
+                            if 0 <= page_num < total_pages:
                                 # 创建一个 PDF 写入器
                                 pdf_writer = PdfWriter()
                                 
@@ -267,12 +376,37 @@ def register_pdf_processor_tools(mcp, security_checker=None, output_callback=Non
                                 split_output_path = f"{output_path}_{page_num + 1}.pdf"
                                 with open(split_output_path, 'wb') as split_f:
                                     pdf_writer.write(split_f)
+                                split_files.append(os.path.basename(split_output_path))
                     
-                    return {"success": True, "result": f"PDF 拆分成功，页面范围: {pages}", "input_path": input_path, "output_path": output_path}
+                    return {
+                        "success": True, 
+                        "result": f"PDF 拆分成功，页面范围: {pages}", 
+                        "input_path": input_path, 
+                        "output_path": output_path,
+                        "formatted_message": f"✅ PDF 拆分成功\n📄 源文件: {os.path.basename(input_paths[0])}\n📊 源文件页数: {total_pages}\n🔢 拆分页面范围: {pages}\n📊 成功拆分页数: {len(split_files)}\n📄 输出文件:\n" + "\n".join([f"  - {f}" for f in split_files])
+                    }
                 except Exception as e:
-                    return {"success": False, "error": f"拆分失败: {str(e)}", "input_path": input_path, "output_path": output_path}
+                    return {
+                        "success": False, 
+                        "error": f"拆分失败: {str(e)}", 
+                        "input_path": input_path, 
+                        "output_path": output_path,
+                        "formatted_message": f"❌ 拆分失败: {str(e)}"
+                    }
             else:
-                return {"success": False, "error": f"不支持的操作: {operation}", "input_path": input_path, "output_path": output_path}
+                return {
+                    "success": False, 
+                    "error": f"不支持的操作: {operation}", 
+                    "input_path": input_path, 
+                    "output_path": output_path,
+                    "formatted_message": f"❌ 错误: 不支持的操作 '{operation}'"
+                }
         
         except Exception as e:
-            return {"success": False, "error": str(e), "input_path": input_path, "output_path": output_path}
+            return {
+                "success": False, 
+                "error": str(e), 
+                "input_path": input_path, 
+                "output_path": output_path,
+                "formatted_message": f"❌ 错误: {str(e)}"
+            }

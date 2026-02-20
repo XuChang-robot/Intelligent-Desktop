@@ -1,0 +1,36 @@
+warning: in the working copy of 'mcp_client/client.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'mcp_client/hybrid_cache.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'mcp_client/intent_parser.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'mcp_client/llm.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'mcp_client/task_planner.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'mcp_server/server.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'mcp_server/tools/__init__.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'mcp_server/tools/document_converter.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'mcp_server/tools/email_processor.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'mcp_server/tools/file_operations.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'mcp_server/tools/network_request.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'mcp_server/tools/pdf_processor.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'mcp_server/tools/system_info.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'mcp_server/tools/text_processing.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'ui/pyqt_app.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'ui/pyqt_main_window.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'user_config/config.yaml', LF will be replaced by CRLF the next time Git touches it
+ mcp_client/client.py                   | 117 [32m++++++++[m[31m-[m
+ mcp_client/hybrid_cache.py             | 218 [32m++++++++[m[31m-------[m
+ mcp_client/intent_parser.py            | 136 [32m+++++++[m[31m---[m
+ mcp_client/llm.py                      | 345 [32m++++++++++++++[m[31m----------[m
+ mcp_client/task_planner.py             | 246 [32m++++++++++++++++[m[31m-[m
+ mcp_server/server.py                   |   5 [32m+[m[31m-[m
+ mcp_server/tools/__init__.py           |   4 [32m+[m[31m-[m
+ mcp_server/tools/document_converter.py | 467 [32m++++++++++++++++++++++++++[m[31m-------[m
+ mcp_server/tools/email_processor.py    | 163 [32m+++++++++[m[31m---[m
+ mcp_server/tools/file_operations.py    | 147 [32m+++++++++[m[31m--[m
+ mcp_server/tools/network_request.py    |  48 [32m+++[m[31m-[m
+ mcp_server/tools/pdf_processor.py      | 190 [32m++++++++++++[m[31m--[m
+ mcp_server/tools/system_info.py        |  60 [32m++++[m[31m-[m
+ mcp_server/tools/text_processing.py    |  70 [32m+++[m[31m--[m
+ ui/pyqt_app.py                         |  43 [32m++[m[31m-[m
+ ui/pyqt_main_window.py                 |  43 [32m++[m[31m-[m
+ user_config/config.yaml                |  10 [32m+[m[31m-[m
+ view_cache_detailed.py                 |  41 [31m---[m
+ 18 files changed, 1758 insertions(+), 595 deletions(-)

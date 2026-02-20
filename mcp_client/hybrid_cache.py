@@ -147,29 +147,68 @@ class HybridTaskPlanCache:
         return " ".join(parts)
     
     def _extract_template(self, plan: Dict[str, Any]) -> Dict[str, Any]:
-        """从执行计划中提取模板（忽略具体参数值）"""
+        """从执行计划中提取模板（只保存工具和关键参数）"""
         template = {
             "plan": plan.get("plan", ""),
             "steps": []
         }
         
         for step in plan.get("steps", []):
+            args = step.get("args", {})
+            tool_name = step.get("tool", "")
             step_template = {
-                "tool": step.get("tool", ""),
-                "args_template": list(step.get("args", {}).keys()),
-                "description": step.get("description", "")
+                "tool": tool_name,
+                "args": {}
             }
+            
+            # 获取该工具的关键参数配置
+            key_params = self._get_key_params(tool_name)
+            
+            # 只保存关键参数，其他参数不保存
+            for key, value in args.items():
+                if key in key_params:
+                    step_template["args"][key] = value
+            
             template["steps"].append(step_template)
         
         return template
+    
+    def _get_key_params(self, tool_name: str) -> list:
+        """获取工具的关键参数列表
+        
+        Args:
+            tool_name: 工具名称
+        
+        Returns:
+            关键参数列表
+        """
+        # 首先检查工具特定的配置
+        tools_config = self.cache_key_params.get("tools", {})
+        if tool_name in tools_config:
+            return tools_config[tool_name]
+        
+        # 如果没有工具特定配置，使用全局配置
+        global_config = self.cache_key_params.get("global", [])
+        return global_config
     
     def _template_to_string(self, template: Dict[str, Any]) -> str:
         """将模板转换为字符串（用于embedding）"""
         parts = [template.get("plan", "")]
         for step in template.get("steps", []):
             tool = step.get("tool", "")
-            args = ",".join(step.get("args_template", []))
-            parts.append(f"{tool}({args})")
+            args = step.get("args", {})
+            
+            # 构建参数字符串，只包含关键参数
+            args_list = []
+            for key, value in args.items():
+                args_list.append(f"{key}={value}")
+            
+            if args_list:
+                args_str = ",".join(args_list)
+                parts.append(f"{tool}({args_str})")
+            else:
+                parts.append(tool)
+        
         return " ".join(parts)
     
     def _intent_to_template_string(self, intent: Dict[str, Any]) -> str:
@@ -214,31 +253,41 @@ class HybridTaskPlanCache:
         """从intent中提取entities模板
         
         支持两种intent格式：
-        1. {"intent": "task", "entities": {...}, "confidence": 0.9}  (LLM原始格式)
-        2. {"type": "task", "entities": {...}, "confidence": 0.5}   (intent_parser转换后的格式)
+        1. {"type": "task", "user_input": "...", "entities": {...}}  (intent_parser转换后的格式)
+        2. {"intent": "task", "entities": {...}}  (LLM原始格式)
+        3. {"type": "task", "user_input": "...", "entities": [...]}  (entities是列表的格式)
         
-        注意：为了区分不同的操作类型，entities_template需要包含关键参数的值（如operation）
-        关键参数从配置文件中读取，用户不应该修改
+        新架构：
+        - 基于entities生成缓存键（tool + 关键参数）
+        - 缓存基于工具和关键参数，而不是完整用户输入
+        - 使用时根据entities重新生成完整计划
         """
         entities = intent.get("entities", {})
+        intent_type = intent.get("intent") or intent.get("type", "")
         
-        # 从配置中获取关键参数列表
-        key_param_names = self.cache_key_params.get("global", ["operation"])
+        # 如果entities是列表，为每个元素提取模板（只包含 tool + operation）
+        if isinstance(entities, list):
+            entities_list = []
+            for entity in entities:
+                if isinstance(entity, dict):
+                    entities_list.append({
+                        "tool": entity.get("tool", ""),
+                        "operation": entity.get("operation", "")
+                    })
+            entities_template = {
+                "intent": intent_type,
+                "entities": entities_list,
+                "confidence": intent.get("confidence", 0.0)
+            }
+        else:
+            # entities是字典的情况
+            entities_template = {
+                "intent": intent_type,
+                "tool": entities.get("tool", ""),
+                "operation": entities.get("operation", ""),
+                "confidence": intent.get("confidence", 0.0)
+            }
         
-        # 提取关键参数的值（用于区分不同的操作类型）
-        key_params = {}
-        for param_name in key_param_names:
-            if param_name in entities:
-                key_params[param_name] = entities[param_name]
-        
-        entities_template = {
-            "intent": intent.get("intent") or intent.get("type", ""),
-            "entities": {
-                "keys": list(entities.keys()),
-                "key_params": key_params
-            },
-            "confidence": intent.get("confidence", 0.0)
-        }
         return entities_template
     
     def _get_embedding(self, text: str) -> np.ndarray:
@@ -314,95 +363,64 @@ class HybridTaskPlanCache:
                 return embedding
     
     def get(self, intent: Dict[str, Any], tools: Any = None) -> Optional[Dict[str, Any]]:
-        """获取缓存的计划（支持模板化匹配）"""
+        """获取缓存的计划（基于语义结构）
+        
+        新架构：
+        1. 基于语义结构查询缓存模板
+        2. 如果命中，返回缓存的模板（不包含具体参数）
+        3. 调用方根据用户输入和模板重新生成完整计划
+        """
         conn = None
         try:
-            intent_str = self._intent_to_string(intent)
-            intent_hash = hashlib.md5(intent_str.encode()).hexdigest()
-            
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
-            
-            # 方法1：精确匹配（完整计划）
-            cursor.execute('''
-                SELECT plan FROM cache 
-                WHERE intent_hash = ? AND datetime(timestamp, '+' || ? || ' seconds') > datetime('now')
-            ''', (intent_hash, self.ttl))
-            
-            result = cursor.fetchone()
-            if result:
-                # 更新最后访问时间
-                cursor.execute('UPDATE cache SET last_accessed = datetime("now") WHERE intent_hash = ?', (intent_hash,))
-                conn.commit()
-                self.logger.info("缓存精确命中（完整计划）")
-                return json.loads(result[0])
-            
-            # 方法2：FAISS语义匹配（基于entities模板）
-            # 提取entities模板（只包含参数名称）
+            # 提取语义结构
             entities_template = self._extract_entities_template(intent)
             entities_template_str = json.dumps(entities_template, ensure_ascii=False)
             self.logger.info(f"查询entities_template: {entities_template_str}")
+            
+            # 生成embedding
             embedding = self._get_embedding(entities_template_str)
             embedding = embedding.reshape(1, -1)
             
-            # 在FAISS中搜索最相似的向量（只搜索1个，因为索引和数据库已一致）
+            # 在FAISS中搜索最相似的向量
             if self.faiss_index.ntotal > 0:
                 self.logger.info(f"FAISS索引中有 {self.faiss_index.ntotal} 个向量")
                 distances, indices = self.faiss_index.search(embedding, k=1)
                 faiss_id = int(indices[0][0])
-                similarity = float(distances[0][0])  # 内积直接等于余弦相似度（因为向量已归一化）
-                self.logger.info(f"FAISS搜索结果: faiss_id={faiss_id}, similarity={similarity:.2f}, threshold={self.similarity_threshold}")
+                similarity = float(distances[0][0])
+                self.logger.info(f"FAISS搜索结果: faiss_id={faiss_id}, similarity={similarity:.10f}, threshold={self.similarity_threshold:.10f}, comparison={similarity >= self.similarity_threshold}")
                 
                 # 检查相似度是否超过阈值
                 if similarity >= self.similarity_threshold:
                     self.logger.info(f"相似度检查通过，开始查询数据库")
-                    # 检查faiss_id是否在数据库中存在（防止LRU删除导致的不一致）
+                    
+                    conn = sqlite3.connect(self.db_path)
+                    cursor = conn.cursor()
+                    
+                    # 检查faiss_id是否在数据库中存在
                     cursor.execute('SELECT COUNT(*) FROM cache WHERE faiss_id = ?', (faiss_id,))
                     count = cursor.fetchone()[0]
                     self.logger.info(f"数据库中faiss_id={faiss_id}的记录数: {count}")
                     
                     if count > 0:
-                        self.logger.info(f"开始获取完整计划")
-                        # 获取完整计划和entities_template
-                        cursor.execute('SELECT plan, entities_template FROM cache WHERE faiss_id = ?', (faiss_id,))
+                        self.logger.info(f"开始获取缓存模板")
+                        # 获取缓存模板（只包含工具名称和关键参数）
+                        cursor.execute('SELECT plan_template FROM cache WHERE faiss_id = ?', (faiss_id,))
                         result = cursor.fetchone()
                         if result:
-                            # 验证关键参数是否匹配（如operation）
-                            cached_entities_template = json.loads(result[1])
-                            cached_key_params = cached_entities_template.get("entities", {}).get("key_params", {})
-                            current_entities = intent.get("entities", {})
-                            
-                            # 检查关键参数是否匹配
-                            key_params_match = True
-                            for param_name, param_value in cached_key_params.items():
-                                if param_name in current_entities:
-                                    if current_entities[param_name] != param_value:
-                                        key_params_match = False
-                                        self.logger.info(f"关键参数不匹配: {param_name} (缓存={param_value}, 当前={current_entities[param_name]})")
-                                        break
-                            
-                            if not key_params_match:
-                                self.logger.info(f"关键参数不匹配，跳过缓存")
-                                return None
-                            
-                            self.logger.info(f"关键参数匹配成功")
-                            self.logger.info(f"成功获取到缓存计划")
                             # 更新最后访问时间
                             cursor.execute('UPDATE cache SET last_accessed = datetime("now") WHERE faiss_id = ?', (faiss_id,))
                             conn.commit()
                             self.logger.info(f"缓存模板命中（相似度: {similarity:.2f}）")
                             
-                            # 替换plan中的参数值
-                            plan = json.loads(result[0])
-                            self.logger.info(f"开始替换参数: {intent.get('entities', {})}")
-                            plan = self._replace_plan_params(plan, intent)
-                            self.logger.info(f"参数替换完成: {plan}")
-                            
-                            return plan
+                            # 返回缓存模板（不包含具体参数）
+                            return {
+                                "template": json.loads(result[0]),
+                                "from_cache": True,
+                                "similarity": similarity
+                            }
                         else:
                             self.logger.warning(f"数据库查询返回None，faiss_id={faiss_id}")
                     else:
-                        # faiss_id在数据库中不存在（已被LRU删除），记录日志
                         self.logger.debug(f"FAISS返回的faiss_id={faiss_id}在数据库中不存在（已被LRU删除），跳过缓存")
                 else:
                     self.logger.info(f"相似度未达到阈值，跳过缓存")
@@ -412,40 +430,12 @@ class HybridTaskPlanCache:
             return None
         except Exception as e:
             self.logger.error(f"缓存查询失败: {e}")
+            import traceback
+            traceback.print_exc()
             return None
         finally:
             if conn:
                 conn.close()
-    
-    def _replace_plan_params(self, plan: Dict[str, Any], intent: Dict[str, Any]) -> Dict[str, Any]:
-        """替换plan中的参数值（基于intent中的entities）
-        
-        由于LLM已经根据工具的参数名生成了正确的entities，这里只需要直接替换参数值即可。
-        """
-        try:
-            # 从intent中提取entities
-            entities = intent.get("entities", {})
-            if not entities:
-                return plan
-            
-            # 深拷贝plan，避免修改原始数据
-            import copy
-            new_plan = copy.deepcopy(plan)
-            
-            # 直接替换参数值（LLM已经生成了正确的参数名）
-            for step in new_plan.get("steps", []):
-                args = step.get("args", {})
-                
-                # 遍历entities，直接替换参数值
-                for param_name, param_value in entities.items():
-                    if param_name in args:
-                        args[param_name] = param_value
-                        self.logger.debug(f"替换参数: {param_name} = {param_value}")
-            
-            return new_plan
-        except Exception as e:
-            self.logger.error(f"替换参数值失败: {e}")
-            return plan
     
     def set(self, intent: Dict[str, Any], tools: Any = None, plan: Dict[str, Any] = None):
         """设置缓存（支持模板化存储）"""

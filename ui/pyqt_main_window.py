@@ -181,6 +181,13 @@ class MainWindow(QMainWindow):
         self.elicitation_callback = None  # 当前elicitation回调
         self.elicitation_handled = False  # 是否已处理elicitation响应
         
+        # 流式消息管理
+        self.stream_message_id = None  # 当前流式消息的ID
+        self.stream_message_cursor = None  # 流式消息的游标位置
+        self.stream_message_sender = None  # 流式消息的发送者
+        self.stream_message_thinking = None  # 流式消息的思考过程
+        self.stream_message_thinking_cursor = None  # 流式消息思考过程的游标位置
+        
         self.init_ui()
         
     def init_ui(self):
@@ -563,25 +570,25 @@ class MainWindow(QMainWindow):
             # 用户消息：右对齐
             message_html = f"<div style='margin: 5px 0;'>"
             message_html += f"<div style='color: #2196F3; font-weight: bold; text-align: right; margin-bottom: 3px;'>用户:</div>"
-            message_html += f"<div style='text-align: right; padding: 8px; max-width: 80%; margin-left: auto;'>{processed_message}{thinking_html}</div>"
+            message_html += f"<div style='text-align: right; padding: 8px; max-width: 80%; margin-left: auto;'>{thinking_html}{processed_message}</div>"
             message_html += "</div>"
         elif sender == "系统":
             # 系统消息：左对齐
             message_html = f"<div style='margin: 5px 0;'>"
             message_html += f"<div style='color: #4CAF50; font-weight: bold; text-align: left; margin-bottom: 3px;'>系统:</div>"
-            message_html += f"<div style='text-align: left; padding: 8px; max-width: 80%; margin-right: auto;'>{processed_message}{thinking_html}</div>"
+            message_html += f"<div style='text-align: left; padding: 8px; max-width: 80%; margin-right: auto;'>{thinking_html}{processed_message}</div>"
             message_html += "</div>"
         elif sender == "系统确认":
             # 系统确认消息：左对齐，橙色高亮
             message_html = f"<div style='margin: 5px 0;'>"
             message_html += f"<div style='color: #FF9800; font-weight: bold; text-align: left; margin-bottom: 3px;'>⚠️ 系统确认:</div>"
-            message_html += f"<div style='text-align: left; padding: 12px; background-color: #FFF3E0; border-radius: 10px; max-width: 80%; margin-right: auto; border-left: 4px solid #FF9800;'>{processed_message}{thinking_html}</div>"
+            message_html += f"<div style='text-align: left; padding: 12px; background-color: #FFF3E0; border-radius: 10px; max-width: 80%; margin-right: auto; border-left: 4px solid #FF9800;'>{thinking_html}{processed_message}</div>"
             message_html += "</div>"
         else:
             # 其他消息：左对齐
             message_html = f"<div style='margin: 5px 0;'>"
             message_html += f"<div style='color: #757575; font-weight: bold; text-align: left; margin-bottom: 3px;'>{sender}:</div>"
-            message_html += f"<div style='text-align: left; padding: 8px; max-width: 80%; margin-right: auto;'>{processed_message}{thinking_html}</div>"
+            message_html += f"<div style='text-align: left; padding: 8px; max-width: 80%; margin-right: auto;'>{thinking_html}{processed_message}</div>"
             message_html += "</div>"
         
         # 将新消息插入到HTML中
@@ -592,6 +599,150 @@ class MainWindow(QMainWindow):
         
         # 确保滚动到底部
         self.chat_area.moveCursor(QTextCursor.MoveOperation.End)
+    
+    def start_stream_message(self, sender: str, initial_message: str = "", thinking: str = None):
+        """开始一个新的流式消息
+        
+        Args:
+            sender: 发送者名称
+            initial_message: 初始消息内容
+            thinking: 思考过程（可选）
+        """
+        # 结束之前的流式消息
+        if self.end_stream_message():
+            pass
+        
+        # 生成新的消息ID
+        import time
+        self.stream_message_id = f"stream_{int(time.time() * 1000)}"
+        self.stream_message_sender = sender
+        self.stream_message_thinking = thinking or ""
+        
+        # 创建初始消息HTML
+        import html
+        processed_message = html.escape(initial_message)
+        processed_message = processed_message.replace('\n', '<br>')
+        
+        # 创建消息容器
+        message_html = f"<div id='{self.stream_message_id}' style='margin: 5px 0;'>"
+        
+        # 根据发送者设置样式
+        if sender == "用户":
+            message_html += f"<div style='color: #2196F3; font-weight: bold; text-align: right; margin-bottom: 3px;'>用户:</div>"
+            message_html += f"<div style='text-align: right; padding: 8px; max-width: 80%; margin-left: auto;'>"
+        elif sender == "系统":
+            message_html += f"<div style='color: #4CAF50; font-weight: bold; text-align: left; margin-bottom: 3px;'>系统:</div>"
+            message_html += f"<div style='text-align: left; padding: 8px; max-width: 80%; margin-right: auto;'>"
+        elif sender == "系统确认":
+            message_html += f"<div style='color: #FF9800; font-weight: bold; text-align: left; margin-bottom: 3px;'>⚠️ 系统确认:</div>"
+            message_html += f"<div style='text-align: left; padding: 12px; background-color: #FFF3E0; border-radius: 10px; max-width: 80%; margin-right: auto; border-left: 4px solid #FF9800;'>"
+        else:
+            message_html += f"<div style='color: #757575; font-weight: bold; text-align: left; margin-bottom: 3px;'>{sender}:</div>"
+            message_html += f"<div style='text-align: left; padding: 8px; max-width: 80%; margin-right: auto;'>"
+        
+        # 添加聊天内容容器
+        message_html += f"<div id='{self.stream_message_id}_content'>{processed_message}</div>"
+        message_html += "</div></div>"
+        
+        # 添加到聊天区域
+        current_html = self.chat_area.toHtml()
+        if "</body>" not in current_html:
+            current_html = "<html><body style='font-family: Arial, sans-serif; font-size: 14px;'></body></html>"
+        
+        new_html = current_html.replace("</body>", message_html + "</body>")
+        self.chat_area.setHtml(new_html)
+        
+        # 强制刷新UI，确保文档完全渲染
+        from PyQt6.QtWidgets import QApplication
+        QApplication.processEvents()
+        
+        # 保存游标位置用于后续更新
+        # 1. 保存聊天内容的游标位置（移动到文档末尾）
+        self.chat_area.moveCursor(QTextCursor.MoveOperation.End)
+        self.stream_message_cursor = self.chat_area.textCursor()
+        
+        # 2. 保存思考过程内容的游标位置（使用更简单的方法）
+        # 直接保存思考过程的完整内容，后续更新时直接替换
+        self.stream_message_thinking = thinking or ""
+    
+    def update_stream_message(self, message: str, thinking: str = None):
+        """更新流式消息内容
+        
+        Args:
+            message: 新的消息内容
+            thinking: 思考过程（可选）
+        """
+        print(f"[DEBUG] update_stream_message 被调用: message='{message}', thinking='{thinking}'")
+        
+        if self.stream_message_id is None:
+            # 如果没有流式消息，开始一个新的
+            print(f"[DEBUG] stream_message_id 为 None，开始新的流式消息")
+            self.start_stream_message(self.stream_message_sender or "系统", message, thinking)
+            return
+        
+        # 保存思考过程（但不显示）
+        if thinking:
+            print(f"[DEBUG] 保存思考过程: '{thinking}'")
+            self.stream_message_thinking += thinking
+            print(f"[DEBUG] 思考过程长度: {len(self.stream_message_thinking)}")
+        
+        # 更新聊天内容
+        if message:
+            print(f"[DEBUG] 更新聊天内容: '{message}'")
+            # 使用保存的游标位置来插入新内容
+            if self.stream_message_cursor is not None:
+                # 使用保存的游标
+                cursor = QTextCursor(self.stream_message_cursor)
+                cursor.movePosition(QTextCursor.MoveOperation.End)
+                
+                # 插入新内容（使用 insertHtml 保持格式一致）
+                import html
+                processed_message = html.escape(message)
+                processed_message = processed_message.replace('\n', '<br>')
+                cursor.insertHtml(processed_message)
+                
+                # 更新保存的游标位置
+                self.stream_message_cursor = QTextCursor(cursor)
+                
+                # 确保滚动到底部
+                self.chat_area.ensureCursorVisible()
+                
+                # 强制刷新 UI
+                from PyQt6.QtWidgets import QApplication
+                QApplication.processEvents()
+            else:
+                # 如果没有保存的游标，移动到文档末尾
+                cursor = QTextCursor(self.chat_area.document())
+                cursor.movePosition(QTextCursor.MoveOperation.End)
+                
+                # 插入新内容
+                import html
+                processed_message = html.escape(message)
+                processed_message = processed_message.replace('\n', '<br>')
+                cursor.insertHtml(processed_message)
+                
+                # 确保滚动到底部
+                self.chat_area.ensureCursorVisible()
+                
+                # 强制刷新 UI
+                from PyQt6.QtWidgets import QApplication
+                QApplication.processEvents()
+    
+    def end_stream_message(self):
+        """结束当前的流式消息
+        
+        Returns:
+            bool: 是否成功结束（如果有流式消息）
+        """
+        if self.stream_message_id is None:
+            return False
+        
+        # 重置流式消息状态
+        self.stream_message_id = None
+        self.stream_message_cursor = None
+        self.stream_message_sender = None
+        self.stream_message_thinking = None
+        return True
     
     def add_elicitation_message(self, message: str, callback: Callable[[bool], None]):
         """添加交互式确认消息到聊天区域"""

@@ -71,7 +71,7 @@ cache:
   embedding_model: "nomic-embed-text"
   
   # 相似度阈值
-  similarity_threshold: 0.999
+  similarity_threshold: 0.90
 
 # 接口盒子API配置，官网https://www.apihz.cn/
 interfacebox:

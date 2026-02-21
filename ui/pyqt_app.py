@@ -18,6 +18,9 @@ from user_config.config import load_config
 class WorkerSignals(QObject):
     """工作线程信号"""
     message = pyqtSignal(str, str, str)  # sender, message, thinking
+    stream_start = pyqtSignal(str, str, str)  # sender, initial_message, thinking
+    stream_update = pyqtSignal(str, str)  # message, thinking
+    stream_end = pyqtSignal()  # 结束流式消息
     task = pyqtSignal(dict)
     task_update = pyqtSignal(dict)
     status = pyqtSignal(str)
@@ -139,14 +142,81 @@ class WorkerThread(QThread):
         self.signals.progress.emit(True, 0)
         self.signals.loading.emit(True, '正在分析您的意图...')
         
-        try:
-            # 处理用户意图
-            result = await self.client.process_user_intent(user_input)
+        # 流式输出相关
+        stream_started = False
+        current_response = ""
+        current_thinking = ""
+        buffer = ""  # 缓冲区
+        buffer_size = 0  # 缓冲区大小
+        buffer_threshold = 5  # 缓冲区阈值（字符数）
+        
+        def stream_callback(chunk):
+            """流式输出回调（同步函数）"""
+            nonlocal stream_started, current_response, current_thinking, buffer, buffer_size
             
-            # 显示处理结果
+            # 调试信息
+            self.logger.info(f"stream_callback 被调用: chunk={chunk}")
+            
+            # 获取当前chunk的内容
+            chunk_response = chunk.get("response", "")
+            chunk_thinking = chunk.get("thinking", "")
+            
+            # 累加响应
+            current_response += chunk_response
+            current_thinking += chunk_thinking
+            
+            # 如果是第一次收到数据，开始流式消息
+            if not stream_started and (chunk_response or chunk_thinking):
+                # 开始流式消息
+                self.logger.info(f"开始流式消息: response='{chunk_response}', thinking='{chunk_thinking}'")
+                self.signals.stream_start.emit('系统', chunk_response, chunk_thinking)
+                stream_started = True
+                buffer = ""
+                buffer_size = 0
+            # 如果不是第一次，更新流式消息
+            elif stream_started:
+                # 如果有思考过程，立即发送
+                if chunk_thinking:
+                    # 先发送缓冲区中的内容
+                    if buffer:
+                        self.logger.info(f"发送缓冲区: '{buffer}'")
+                        self.signals.stream_update.emit(buffer, "")
+                        buffer = ""
+                        buffer_size = 0
+                    # 发送思考过程
+                    self.logger.info(f"发送思考过程: '{chunk_thinking}'")
+                    self.signals.stream_update.emit("", chunk_thinking)
+                
+                # 如果有响应内容，添加到缓冲区
+                if chunk_response:
+                    buffer += chunk_response
+                    buffer_size += len(chunk_response)
+                    
+                    # 如果缓冲区达到阈值，发送更新
+                    if buffer_size >= buffer_threshold:
+                        self.logger.info(f"发送更新: '{buffer}'")
+                        self.signals.stream_update.emit(buffer, "")
+                        buffer = ""
+                        buffer_size = 0
+        
+        try:
+            # 处理用户意图，传入流式回调
+            result = await self.client.process_user_intent(user_input, stream_callback=stream_callback)
+            
+            # 结束流式消息
+            if stream_started:
+                # 发送缓冲区中剩余的内容
+                if buffer:
+                    self.signals.stream_update.emit(buffer, "")
+                    buffer = ""
+                    buffer_size = 0
+                self.signals.stream_end.emit()
+            
+            # 显示处理结果（如果流式输出已经显示了完整内容，这里可能不需要重复显示）
             summary = result.get('summary', '')
             thinking = result.get('thinking', '')
-            if summary:
+            if summary and not stream_started:
+                # 如果没有通过流式输出显示，这里显示完整结果
                 self.signals.message.emit('系统', summary, thinking)
             
             # 显示任务计划
@@ -184,6 +254,9 @@ class WorkerThread(QThread):
                     self.logger.info(f"content是字符串: {content[:50]}...")
                 
         except Exception as e:
+            # 结束流式消息
+            if stream_started:
+                self.signals.stream_end.emit()
             self.signals.message.emit('系统', f'处理失败: {str(e)}')
             self.logger.error(f"处理用户输入失败: {e}", exc_info=True)
         finally:
@@ -306,16 +379,20 @@ class App(QObject):
         self.worker = WorkerThread(self.client)
         
         # 连接工作线程信号
-        self.worker.signals.message.connect(self.on_message)
-        self.worker.signals.task.connect(self.on_task)
-        self.worker.signals.task_update.connect(self.on_task_update)
-        self.worker.signals.status.connect(self.on_status)
-        self.worker.signals.progress.connect(self.on_progress)
-        self.worker.signals.loading.connect(self.on_loading)
-        self.worker.signals.system_status.connect(self.on_system_status)
-        self.worker.signals.error.connect(self.on_error)
-        self.worker.signals.log.connect(self.on_log)
-        self.worker.signals.elicitation_request.connect(self.on_elicitation_request)
+        from PyQt6.QtCore import Qt
+        self.worker.signals.message.connect(self.on_message, Qt.ConnectionType.QueuedConnection)
+        self.worker.signals.stream_start.connect(self.on_stream_start, Qt.ConnectionType.QueuedConnection)
+        self.worker.signals.stream_update.connect(self.on_stream_update, Qt.ConnectionType.QueuedConnection)
+        self.worker.signals.stream_end.connect(self.on_stream_end, Qt.ConnectionType.QueuedConnection)
+        self.worker.signals.task.connect(self.on_task, Qt.ConnectionType.QueuedConnection)
+        self.worker.signals.task_update.connect(self.on_task_update, Qt.ConnectionType.QueuedConnection)
+        self.worker.signals.status.connect(self.on_status, Qt.ConnectionType.QueuedConnection)
+        self.worker.signals.progress.connect(self.on_progress, Qt.ConnectionType.QueuedConnection)
+        self.worker.signals.loading.connect(self.on_loading, Qt.ConnectionType.QueuedConnection)
+        self.worker.signals.system_status.connect(self.on_system_status, Qt.ConnectionType.QueuedConnection)
+        self.worker.signals.error.connect(self.on_error, Qt.ConnectionType.QueuedConnection)
+        self.worker.signals.log.connect(self.on_log, Qt.ConnectionType.QueuedConnection)
+        self.worker.signals.elicitation_request.connect(self.on_elicitation_request, Qt.ConnectionType.QueuedConnection)
         
         self.worker.start()
         
@@ -364,6 +441,21 @@ class App(QObject):
     def on_message(self, sender: str, message: str, thinking: str = None):
         """消息信号处理"""
         self.main_window.add_message(sender, message, thinking)
+    
+    def on_stream_start(self, sender: str, initial_message: str, thinking: str = None):
+        """流式消息开始信号处理"""
+        self.logger.info(f"on_stream_start 被调用: sender='{sender}', initial_message='{initial_message}', thinking='{thinking}'")
+        self.main_window.start_stream_message(sender, initial_message, thinking)
+    
+    def on_stream_update(self, message: str, thinking: str = None):
+        """流式消息更新信号处理"""
+        self.logger.info(f"on_stream_update 被调用: message='{message}', thinking='{thinking}'")
+        self.main_window.update_stream_message(message, thinking)
+    
+    def on_stream_end(self):
+        """流式消息结束信号处理"""
+        self.logger.info("on_stream_end 被调用")
+        self.main_window.end_stream_message()
     
     def on_task(self, task: dict):
         """任务信号处理"""

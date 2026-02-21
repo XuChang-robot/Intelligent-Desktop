@@ -48,8 +48,10 @@ class TaskPlanner:
             # 获取entities
             entities = intent.get("entities", {})
             
-            # 先尝试从缓存获取
+            # 先尝试从缓存获取（语义匹配）
             self.logger.info(f"开始查询缓存，intent: {intent}")
+            
+            # 查询缓存（只进行语义匹配，哈希精确匹配已在client.py中完成）
             cached_plan = self.cache.get(intent, tools)
             if cached_plan:
                 self.logger.info("缓存命中，使用缓存的模板")
@@ -63,6 +65,7 @@ class TaskPlanner:
                 # 添加from_cache标志和相似度
                 complete_plan["from_cache"] = True
                 complete_plan["similarity"] = cached_plan.get("similarity", 0.0)
+                complete_plan["match_type"] = "semantic"
                 
                 self.logger.info(f"使用缓存模板生成的完整计划: {complete_plan}")
                 
@@ -299,14 +302,26 @@ class TaskPlanner:
         """Cache task plan (called after successful execution)
         
         Args:
-            intent: User intent
+            intent: User intent (must contain user_input for hash matching)
             plan: Task plan
             tools: Available tools list
         """
         try:
+            # 只有当意图类型为task时才缓存
+            intent_type = intent.get("intent") or intent.get("type", "")
+            if intent_type != "task":
+                self.logger.info(f"意图类型为 {intent_type}，不是task类型，不缓存")
+                return
+            
             self.logger.info(f"开始缓存任务计划: {plan.get('plan', 'N/A')}")
-            # Store result in cache
-            self.cache.set(intent, tools, plan)
+            
+            # 获取用户原始输入
+            user_input = intent.get("user_input", "")
+            if not user_input:
+                self.logger.warning("intent中缺少user_input，无法进行哈希精确匹配")
+            
+            # Store result in cache (with user_input for exact hash matching)
+            self.cache.set(intent, tools, plan, user_input)
             self.logger.info(f"Task plan cached: {plan.get('plan', 'N/A')}")
         except Exception as e:
             self.logger.error(f"Failed to cache task plan: {e}")

@@ -46,6 +46,11 @@ class HybridTaskPlanCache:
         self.embedding_dim = None
         self._init_faiss()
         
+        # 初始化user_input的FAISS索引（用于在意图识别前的匹配）
+        self.user_input_faiss_index_path = os.path.join(cache_dir, "user_input_faiss.index")
+        self.user_input_faiss_index = None
+        self._init_user_input_faiss()
+        
         # 清理线程控制
         self._cleanup_thread = None
         self._cleanup_stop_event = threading.Event()
@@ -95,12 +100,19 @@ class HybridTaskPlanCache:
         if 'entities_template' not in columns:
             cursor.execute('ALTER TABLE cache ADD COLUMN entities_template TEXT')
             conn.commit()
+        if 'user_input_hash' not in columns:
+            cursor.execute('ALTER TABLE cache ADD COLUMN user_input_hash TEXT')
+            conn.commit()
+        if 'user_input_embedding' not in columns:
+            cursor.execute('ALTER TABLE cache ADD COLUMN user_input_embedding BLOB')
+            conn.commit()
         
         # 创建索引
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_timestamp ON cache(timestamp)')
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_intent_hash ON cache(intent_hash)')
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_faiss_id ON cache(faiss_id)')
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_last_accessed ON cache(last_accessed)')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_user_input_hash ON cache(user_input_hash)')
         
         conn.commit()
         conn.close()
@@ -135,6 +147,36 @@ class HybridTaskPlanCache:
             faiss.write_index(self.faiss_index, self.faiss_index_path)
         except Exception as e:
             self.logger.error(f"保存FAISS索引失败: {e}")
+    
+    def _init_user_input_faiss(self):
+        """初始化user_input的FAISS索引（用于在意图识别前的匹配）"""
+        try:
+            # 尝试加载已存在的索引
+            if os.path.exists(self.user_input_faiss_index_path):
+                self.user_input_faiss_index = faiss.read_index(self.user_input_faiss_index_path)
+                self.logger.info(f"user_input FAISS索引加载成功: {self.user_input_faiss_index_path}, 维度: {self.user_input_faiss_index.d}")
+            else:
+                # 创建新的索引（使用IndexFlatIP + IndexIDMap，支持删除）
+                # 使用与entities相同的维度
+                embedding_dim = self.embedding_dim or 768
+                
+                # 使用IndexIDMap包装IndexFlatIP，支持自定义ID和删除操作
+                index = faiss.IndexFlatIP(embedding_dim)
+                self.user_input_faiss_index = faiss.IndexIDMap(index)
+                
+                self.logger.info(f"user_input FAISS IndexFlatIP + IndexIDMap索引创建成功, 维度: {embedding_dim}")
+        except Exception as e:
+            self.logger.error(f"user_input FAISS索引初始化失败: {e}")
+            embedding_dim = self.embedding_dim or 768
+            index = faiss.IndexFlatIP(embedding_dim)
+            self.user_input_faiss_index = faiss.IndexIDMap(index)
+    
+    def _save_user_input_faiss_index(self):
+        """保存user_input FAISS索引到文件"""
+        try:
+            faiss.write_index(self.user_input_faiss_index, self.user_input_faiss_index_path)
+        except Exception as e:
+            self.logger.error(f"保存user_input FAISS索引失败: {e}")
     
     def _intent_to_string(self, intent: Dict[str, Any]) -> str:
         """将意图转换为字符串"""
@@ -362,16 +404,27 @@ class HybridTaskPlanCache:
                     embedding = embedding / norm
                 return embedding
     
-    def get(self, intent: Dict[str, Any], tools: Any = None) -> Optional[Dict[str, Any]]:
+    def get(self, intent: Dict[str, Any], tools: Any = None, user_input: str = None) -> Optional[Dict[str, Any]]:
         """获取缓存的计划（基于语义结构）
         
         新架构：
         1. 基于语义结构查询缓存模板
         2. 如果命中，返回缓存的模板（不包含具体参数）
         3. 调用方根据用户输入和模板重新生成完整计划
+        
+        注意：哈希精确匹配已在client.py中完成，这里只进行语义匹配
+        
+        Args:
+            intent: 意图字典
+            tools: 工具列表
+            user_input: 用户原始输入（保留参数以兼容旧接口）
+        
+        Returns:
+            如果语义匹配，返回模板；否则返回None
         """
         conn = None
         try:
+            # 语义结构匹配
             # 提取语义结构
             entities_template = self._extract_entities_template(intent)
             entities_template_str = json.dumps(entities_template, ensure_ascii=False)
@@ -416,7 +469,8 @@ class HybridTaskPlanCache:
                             return {
                                 "template": json.loads(result[0]),
                                 "from_cache": True,
-                                "similarity": similarity
+                                "similarity": similarity,
+                                "match_type": "semantic"
                             }
                         else:
                             self.logger.warning(f"数据库查询返回None，faiss_id={faiss_id}")
@@ -437,14 +491,33 @@ class HybridTaskPlanCache:
             if conn:
                 conn.close()
     
-    def set(self, intent: Dict[str, Any], tools: Any = None, plan: Dict[str, Any] = None):
-        """设置缓存（支持模板化存储）"""
+    def set(self, intent: Dict[str, Any], tools: Any = None, plan: Dict[str, Any] = None, user_input: str = None):
+        """设置缓存（支持模板化存储）
+        
+        Args:
+            intent: 意图字典
+            tools: 工具列表
+            plan: 执行计划
+            user_input: 用户原始输入（用于精确匹配和FAISS匹配）
+        """
         conn = None
         try:
             self.logger.info(f"开始缓存: intent={intent}, plan={plan}")
             
             intent_str = self._intent_to_string(intent)
             intent_hash = hashlib.md5(intent_str.encode()).hexdigest()
+            
+            # 计算用户原始输入的哈希值
+            user_input_hash = None
+            user_input_embedding_blob = None
+            if user_input:
+                user_input_hash = hashlib.md5(user_input.strip().encode()).hexdigest()
+                self.logger.info(f"user_input: '{user_input}', user_input_hash: {user_input_hash}")
+                
+                # 计算user_input的embedding
+                user_input_embedding = self._get_embedding(user_input.strip())
+                user_input_embedding_blob = pickle.dumps(user_input_embedding)
+                self.logger.info(f"user_input_embedding shape: {user_input_embedding.shape}")
             
             self.logger.info(f"intent_str: {intent_str}")
             self.logger.info(f"intent_hash: {intent_hash}")
@@ -482,9 +555,9 @@ class HybridTaskPlanCache:
                 faiss_id = result[0]
                 cursor.execute('''
                     UPDATE cache 
-                    SET intent_str = ?, plan = ?, plan_template = ?, entities_template = ?, embedding_vector = ?, timestamp = datetime('now')
+                    SET intent_str = ?, plan = ?, plan_template = ?, entities_template = ?, embedding_vector = ?, user_input_hash = ?, user_input_embedding = ?, timestamp = datetime('now')
                     WHERE intent_hash = ?
-                ''', (intent_str, json.dumps(plan, ensure_ascii=False), json.dumps(plan_template, ensure_ascii=False), entities_template_str, embedding_blob, intent_hash))
+                ''', (intent_str, json.dumps(plan, ensure_ascii=False), json.dumps(plan_template, ensure_ascii=False), entities_template_str, embedding_blob, user_input_hash, user_input_embedding_blob, intent_hash))
                 self.logger.debug("更新缓存记录")
             else:
                 # 添加新记录
@@ -498,9 +571,9 @@ class HybridTaskPlanCache:
                 self.logger.info(f"准备添加新记录: faiss_id={faiss_id}")
                 
                 cursor.execute('''
-                    INSERT INTO cache (faiss_id, intent_hash, intent_str, plan, plan_template, entities_template, embedding_vector, timestamp)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))
-                ''', (faiss_id, intent_hash, intent_str, json.dumps(plan, ensure_ascii=False), json.dumps(plan_template, ensure_ascii=False), entities_template_str, embedding_blob))
+                    INSERT INTO cache (faiss_id, intent_hash, intent_str, plan, plan_template, entities_template, embedding_vector, user_input_hash, user_input_embedding, timestamp)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+                ''', (faiss_id, intent_hash, intent_str, json.dumps(plan, ensure_ascii=False), json.dumps(plan_template, ensure_ascii=False), entities_template_str, embedding_blob, user_input_hash, user_input_embedding_blob))
                 
                 self.logger.info(f"数据库插入成功: faiss_id={faiss_id}")
                 
@@ -509,6 +582,14 @@ class HybridTaskPlanCache:
                 self.faiss_index.add_with_ids(embedding, np.array([faiss_id], dtype=np.int64))
                 self._save_faiss_index()
                 self.logger.debug(f"添加新缓存记录，faiss_id={faiss_id}, intent: {intent_str}")
+                
+                # 添加到user_input FAISS索引（如果有user_input_embedding）
+                if user_input_embedding_blob is not None:
+                    user_input_embedding = pickle.loads(user_input_embedding_blob)
+                    user_input_embedding = user_input_embedding.reshape(1, -1)
+                    self.user_input_faiss_index.add_with_ids(user_input_embedding, np.array([faiss_id], dtype=np.int64))
+                    self._save_user_input_faiss_index()
+                    self.logger.debug(f"添加user_input到FAISS索引，faiss_id={faiss_id}")
             
             conn.commit()
             self.logger.info("缓存保存成功")

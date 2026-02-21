@@ -108,7 +108,6 @@ class IntentParser:
         try:
             # 调用parse_intent，获取意图类型和entities
             intent_result = await self.parse_intent(user_input, tools)
-            self.logger.info(f"parse_intent返回: {intent_result}")
             
             # 检查意图是否有效
             if intent_result.get("intent") == "unknown":
@@ -123,7 +122,6 @@ class IntentParser:
             # 转换为client.py期望的格式
             if intent_result.get("intent") == "chat":
                 # 聊天型意图，直接返回
-                self.logger.info("意图是chat，直接返回聊天内容")
                 return {
                     "type": "chat",
                     "user_input": user_input,
@@ -131,7 +129,6 @@ class IntentParser:
                 }
             elif intent_result.get("intent") == "cannot_execute":
                 # 无法执行型意图，返回原因
-                self.logger.info("意图是cannot_execute，返回无法执行的原因")
                 return {
                     "type": "cannot_execute",
                     "user_input": user_input,
@@ -139,14 +136,19 @@ class IntentParser:
                     "reason": intent_result.get("reason", "当前工具无法完成此任务")
                 }
             elif intent_result.get("intent") == "task":
-                # 任务型意图，返回task类型，包含entities
-                self.logger.info("意图是task，返回task类型和entities")
-                return {
+                # 任务型意图，返回task类型，包含entities和plan（如果有）
+                result = {
                     "type": "task",
                     "user_input": user_input,
                     "entities": intent_result.get("entities", {}),
                     "confidence": intent_result.get("confidence", 0.5)
                 }
+                # 如果LLM返回了plan，添加到结果中
+                if "plan" in intent_result:
+                    result["plan"] = intent_result["plan"]
+                if "steps" in intent_result:
+                    result["steps"] = intent_result["steps"]
+                return result
             else:
                 # 未知意图，返回错误信息
                 self.logger.error(f"未知意图: {intent_result.get('intent')}")

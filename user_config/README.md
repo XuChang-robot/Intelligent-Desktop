@@ -93,15 +93,17 @@ email:
 ##### 缓存配置
 ```yaml
 cache:
-  enabled: true                  # 是否启用缓存
+  enabled: true                  # 是否启用缓存（总开关）
+  enable_hash_match: true         # 哈希精确匹配开关
+  enable_faiss_match: false       # FAISS语义匹配开关
   type: "faiss"                 # 缓存类型
   cache_dir: "cache"            # 缓存目录
   
   ttl: 604800                   # 缓存过期时间（秒），默认一周
   max_total_size_mb: 1024       # 总大小限制（1GB）
-  max_db_size_mb: 512           # SQLite数据库最大512MB
-  max_faiss_size_mb: 512        # FAISS索引最大512MB
-  max_records: 10000            # 最多10000条记录
+  max_db_size_mb: 768           # SQLite数据库最大768MB
+  max_faiss_size_mb: 392       # FAISS索引最大392MB
+  max_records: 100000           # 最多100000条记录
   
   cleanup_interval: 3600        # 清理间隔（秒），默认1小时
   cleanup_on_startup: true     # 启动时清理过期缓存
@@ -112,10 +114,19 @@ cache:
 
 **影响**：控制缓存系统的行为和性能
 - `enabled`: 是否启用缓存，禁用后每次都会重新生成计划
+- `enable_hash_match`: 是否启用哈希精确匹配
+- `enable_faiss_match`: 是否启用FAISS语义匹配
 - `ttl`: 缓存过期时间，过期后缓存会被清理
 - `max_total_size_mb`: 缓存总大小限制，超过后会清理旧缓存
 - `similarity_threshold`: 相似度阈值，越高匹配越严格
 - `embedding_model`: 用于向量搜索的模型
+
+**缓存禁用场景**：
+- **禁用FAISS语义匹配**（`enable_faiss_match: false`）：资源受限、精确性要求高、调试测试、Embedding模型不可用
+- **禁用哈希精确匹配**（`enable_hash_match: false`）：仅依赖语义匹配、特殊测试场景
+- **全局禁用缓存**（`enabled: false`）：调试开发、测试新功能、缓存问题排查、存储空间不足
+
+详细配置指南请参考：[缓存配置指南](./CACHE_CONFIG_GUIDE.md)
 
 ### config.py
 配置加载器模块，提供配置读取接口。

@@ -512,15 +512,15 @@ class HybridTaskPlanCache:
             user_input_embedding_blob = None
             if user_input:
                 user_input_hash = hashlib.md5(user_input.strip().encode()).hexdigest()
-                self.logger.info(f"user_input: '{user_input}', user_input_hash: {user_input_hash}")
+                self.logger.debug(f"user_input: '{user_input}', user_input_hash: {user_input_hash}")
                 
                 # 计算user_input的embedding
                 user_input_embedding = self._get_embedding(user_input.strip())
                 user_input_embedding_blob = pickle.dumps(user_input_embedding)
-                self.logger.info(f"user_input_embedding shape: {user_input_embedding.shape}")
+                self.logger.debug(f"user_input_embedding shape: {user_input_embedding.shape}")
             
-            self.logger.info(f"intent_str: {intent_str}")
-            self.logger.info(f"intent_hash: {intent_hash}")
+            self.logger.debug(f"intent_str: {intent_str}")
+            self.logger.debug(f"intent_hash: {intent_hash}")
             
             # 提取模板
             plan_template = self._extract_template(plan)
@@ -530,18 +530,18 @@ class HybridTaskPlanCache:
             entities_template = self._extract_entities_template(intent)
             entities_template_str = json.dumps(entities_template, ensure_ascii=False)
             
-            self.logger.info(f"template_str: {template_str}")
-            self.logger.info(f"entities_template: {entities_template_str}")
+            self.logger.debug(f"template_str: {template_str}")
+            self.logger.debug(f"entities_template: {entities_template_str}")
             
             # 使用entities模板生成embedding向量
             embedding = self._get_embedding(entities_template_str)
             
-            self.logger.info(f"embedding shape: {embedding.shape}")
+            self.logger.debug(f"embedding shape: {embedding.shape}")
             
             # 将embedding向量序列化为二进制
             embedding_blob = pickle.dumps(embedding)
             
-            self.logger.info(f"embedding_blob size: {len(embedding_blob)}")
+            self.logger.debug(f"embedding_blob size: {len(embedding_blob)}")
             
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
@@ -568,14 +568,12 @@ class HybridTaskPlanCache:
                 max_faiss_id = cursor.fetchone()[0]
                 faiss_id = (max_faiss_id + 1) if max_faiss_id is not None else 0
                 
-                self.logger.info(f"准备添加新记录: faiss_id={faiss_id}")
+                self.logger.debug(f"准备添加新记录: faiss_id={faiss_id}")
                 
                 cursor.execute('''
                     INSERT INTO cache (faiss_id, intent_hash, intent_str, plan, plan_template, entities_template, embedding_vector, user_input_hash, user_input_embedding, timestamp)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
                 ''', (faiss_id, intent_hash, intent_str, json.dumps(plan, ensure_ascii=False), json.dumps(plan_template, ensure_ascii=False), entities_template_str, embedding_blob, user_input_hash, user_input_embedding_blob))
-                
-                self.logger.info(f"数据库插入成功: faiss_id={faiss_id}")
                 
                 # 添加到FAISS索引（使用add_with_ids指定自定义ID）
                 embedding = embedding.reshape(1, -1)
@@ -592,7 +590,7 @@ class HybridTaskPlanCache:
                     self.logger.debug(f"添加user_input到FAISS索引，faiss_id={faiss_id}")
             
             conn.commit()
-            self.logger.info("缓存保存成功")
+            self.logger.debug("缓存保存成功")
         except Exception as e:
             self.logger.error(f"缓存存储失败: {e}")
             import traceback

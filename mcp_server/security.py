@@ -185,13 +185,7 @@ class SecurityChecker:
         """检查工具调用是否安全"""
         try:
             self.logger.info(f"检查工具调用: {tool_name}, 参数: {tool_args}")
-            if tool_name == "execute_python":
-                code = tool_args.get("code", "")
-                self.logger.info(f"检查Python代码: {code}")
-                result = self._check_python_code(code)
-                self.logger.info(f"Python代码检查结果: {result}")
-                return result
-            elif tool_name == "system_command":
+            if tool_name == "system_command":
                 command = tool_args.get("command", "")
                 self.logger.info(f"检查系统命令: {command}")
                 result = self._check_system_command(command)
@@ -205,53 +199,6 @@ class SecurityChecker:
             import traceback
             traceback.print_exc()
             return False
-    
-    def _check_python_code(self, code: str) -> bool:
-        """检查Python代码是否安全
-        
-        采用白箱模式，允许绝大部分Python代码通过安全检查
-        对于危险代码，返回False，触发elicitation模式与用户进行交互获取权限
-        """
-        code_lower = code.lower()
-        
-        # 只检查真正危险的操作
-        dangerous_keywords = [
-            "os.system", "subprocess", "eval(", "exec(", "__import__",
-            "compile(", "pickle", "marshal",
-            "socket", "urllib", "requests", "http.client", "https.client"
-        ]
-        
-        for keyword in dangerous_keywords:
-            if keyword in code_lower:
-                self.logger.warning(f"检测到危险Python代码: {keyword}")
-                self.logger.warning(f"匹配的代码: {code}")
-                # 返回False，触发elicitation模式
-                return False
-        
-        # 对于导入os模块的检查，只允许基本使用，不允许危险操作
-        # 使用正则表达式匹配真正的import语句，避免误判
-        import_pattern = r'\bimport\s+os\b'
-        if re.search(import_pattern, code_lower):
-            # 检查是否有危险的os操作
-            dangerous_os_patterns = ["os.system", "os.popen", "os.spawn", "os.exec", "os.fork", "os.kill"]
-            has_dangerous_os = any(pattern in code_lower for pattern in dangerous_os_patterns)
-            if has_dangerous_os:
-                self.logger.warning(f"检测到危险的os模块使用")
-                self.logger.warning(f"匹配的代码: {code}")
-                return False
-        
-        # 对于open()函数的检查，只允许读取操作，不允许写入操作
-        if "open(" in code_lower:
-            # 检查是否有写入模式
-            write_modes = ["'w'", '"w"', "'a'", '"a"', "'x'", '"x"']
-            has_write_mode = any(mode in code_lower for mode in write_modes)
-            if has_write_mode:
-                self.logger.warning(f"检测到文件写入操作")
-                self.logger.warning(f"匹配的代码: {code}")
-                return False
-        
-        # 对于所有其他代码，默认允许通过安全检查
-        return True
     
     def _check_system_command(self, command: str) -> bool:
         """检查系统命令是否安全"""

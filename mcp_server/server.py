@@ -82,40 +82,40 @@ class MCPServer:
         query.weather_query.register_weather_query_tools(self.mcp)
         
         # 注册execute_python工具（兜底工具）
-        @self.mcp.tool()
-        async def execute_python(code: str, ctx: Context) -> Dict[str, Any]:
-            """执行Python代码
+        # @self.mcp.tool()
+        # async def execute_python(code: str, ctx: Context) -> Dict[str, Any]:
+        #     """执行Python代码
             
-            Args:
-                code: 要执行的Python代码
-                ctx: FastMCP上下文，用于elicitation
+        #     Args:
+        #         code: 要执行的Python代码
+        #         ctx: FastMCP上下文，用于elicitation
                 
-            Returns:
-                执行结果，包含success、output、error等字段
-            """
-            # 检查是否为危险操作
-            dangerous_message = self.security_checker.check_dangerous_operation(code)
-            if dangerous_message:
-                # 使用MCP官方的elicitation机制请求用户确认
-                result = await ctx.elicit(
-                    message=dangerous_message,
-                    schema=ConfirmModel
-                )
+        #     Returns:
+        #         执行结果，包含success、output、error等字段
+        #     """
+        #     # 检查是否为危险操作
+        #     dangerous_message = self.security_checker.check_dangerous_operation(code)
+        #     if dangerous_message:
+        #         # 使用MCP官方的elicitation机制请求用户确认
+        #         result = await ctx.elicit(
+        #             message=dangerous_message,
+        #             schema=ConfirmModel
+        #         )
                 
-                if result.action != "accept" or not getattr(result.data, "confirmed", False):
-                    return {
-                        "success": False,
-                        "error": "用户取消执行"
-                    }
+        #         if result.action != "accept" or not getattr(result.data, "confirmed", False):
+        #             return {
+        #                 "success": False,
+        #                 "error": "用户取消执行"
+        #             }
             
-            # 创建输出回调函数
-            def output_callback(text: str):
-                if self.output_callback:
-                    self.output_callback(text)
+        #     # 创建输出回调函数
+        #     def output_callback(text: str):
+        #         if self.output_callback:
+        #             self.output_callback(text)
             
-            # 在沙箱中执行，使用输出回调
-            result = await self.sandbox.execute_code(code, output_callback=output_callback)
-            return result
+        #     # 在沙箱中执行，使用输出回调
+        #     result = await self.sandbox.execute_code(code, output_callback=output_callback)
+        #     return result
     
     def start(self):
         """启动服务器"""

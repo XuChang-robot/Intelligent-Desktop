@@ -129,7 +129,7 @@ class WorkerThread(QThread):
                 "status": "就绪",
                 "model": self.client.llm_client.get_current_model() if hasattr(self.client, 'llm_client') and self.client.llm_client else "未知",
                 "connected": True,
-                "tools": ["execute_python"]
+                "tools": []
             }
             self.signals.system_status.emit(status_info)
         except Exception as e:

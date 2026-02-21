@@ -13,7 +13,6 @@ class ElicitationManager:
         """检查是否为危险操作"""
         dangerous_patterns = [
             # 文件系统危险操作
-            ("execute_python", "code", ["rm -rf", "os.system", "subprocess.run"]),
             ("system_command", "command", ["rm -rf", "format", "shutdown", "reboot"]),
         ]
         
@@ -24,23 +23,6 @@ class ElicitationManager:
                     for keyword in dangerous_keywords:
                         if keyword in arg_value:
                             return f"检测到危险操作: {keyword}，是否确认执行？"
-        
-        # 检查文件操作
-        if tool_name == "execute_python":
-            code = tool_args.get("code", "")
-            if isinstance(code, str):
-                # 检查文件写入操作
-                if "open(" in code.lower() or "with open(" in code.lower():
-                    if any(mode in code.lower() for mode in ["'w'", "'w", '"w"', '"w', "'a'", "'a", '"a"', '"a']):
-                        return "检测到文件写入操作，是否确认执行？"
-                
-                # 检查文件删除操作
-                if any(keyword in code.lower() for keyword in ["os.remove", "os.unlink", "os.rmdir", "os.removedirs", "shutil.rmtree"]):
-                    return "检测到文件删除操作，是否确认执行？"
-                
-                # 检查目录操作
-                if any(keyword in code.lower() for keyword in ["os.mkdir", "os.makedirs", "os.listdir", "os.walk"]):
-                    return "检测到目录操作，是否确认执行？"
         
         return None
     

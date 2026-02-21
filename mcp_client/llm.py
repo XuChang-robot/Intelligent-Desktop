@@ -4,7 +4,7 @@ import ollama
 import logging
 import json
 import asyncio
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Callable
 from user_config.config import load_config
 
 class LLMClient:
@@ -49,9 +49,15 @@ class LLMClient:
             self.logger.error(f"获取模型列表异常: {e}")
             return ["qwen3:30b", "qwen3:7b", "llama2:7b"]
     
-    async def generate(self, prompt: str, system_prompt: Optional[str] = None, timeout: int = 120) -> Dict[str, Any]:
+    async def generate(self, prompt: str, system_prompt: Optional[str] = None, timeout: int = 120, stream_callback: Optional[Callable] = None) -> Dict[str, Any]:
         """生成LLM响应
         
+        Args:
+            prompt: 提示词
+            system_prompt: 系统提示词
+            timeout: 超时时间
+            stream_callback: 流式输出回调函数，接收chunk数据
+            
         Returns:
             Dict[str, Any]: 包含response和thinking的字典
         """
@@ -70,28 +76,93 @@ class LLMClient:
             
             # 使用asyncio.run_in_executor在后台线程中运行同步的ollama.generate
             loop = asyncio.get_event_loop()
-            response = await loop.run_in_executor(
+            
+            # 存储完整响应
+            full_response = ""
+            full_thinking = ""
+            
+            def stream_handler():
+                nonlocal full_response, full_thinking
+                try:
+                    # 使用ollama的流式生成
+                    # 添加keep_alive参数，避免上下文缓存
+                    chunk_count = 0
+                    for chunk in ollama.generate(
+                        model=self.model,
+                        prompt=prompt,
+                        system=system_prompt,
+                        options=options,
+                        stream=True,
+                        keep_alive=0,  # 不保留上下文
+                        context=None  # 明确不传递上下文
+                    ):
+                        chunk_count += 1
+                        # 获取chunk数据
+                        chunk_response = chunk.get("response", "")
+                        chunk_thinking = chunk.get("thinking", "")
+                        
+                        # 确保是字符串类型
+                        if chunk_response is None:
+                            chunk_response = ""
+                        if chunk_thinking is None:
+                            chunk_thinking = ""
+                        
+                        # 调试信息：打印每个chunk的内容
+                        # if chunk_count <= 5 or chunk_count % 10 == 0:
+                        #     self.logger.info(f"Chunk {chunk_count}: response='{chunk_response}', thinking='{chunk_thinking}', done={chunk.get('done', False)}")
+                        
+                        # 累加到完整响应
+                        full_response += chunk_response
+                        if chunk_thinking:
+                            full_thinking += chunk_thinking
+                        
+                        # 调用回调函数（同步调用）
+                        if stream_callback:
+                            stream_callback({
+                                "response": chunk_response,
+                                "thinking": chunk_thinking,
+                                "done": False
+                            })
+                    
+                    #self.logger.info(f"流式生成完成，共收到 {chunk_count} 个 chunk，总长度: {len(full_response)}")
+                    
+                    # 完成时调用回调
+                    if stream_callback:
+                        stream_callback({
+                            "response": "",
+                            "thinking": "",
+                            "done": True
+                        })
+                except Exception as e:
+                    self.logger.error(f"流式生成失败: {e}")
+                    import traceback
+                    traceback.print_exc()
+                    # 发生错误时也调用回调
+                    if stream_callback:
+                        stream_callback({
+                            "response": "",
+                            "thinking": "",
+                            "done": True,
+                            "error": str(e)
+                        })
+            
+            # 运行流式处理
+            await loop.run_in_executor(
                 None,  # 使用默认的线程池
-                lambda: ollama.generate(
-                    model=self.model,
-                    prompt=prompt,
-                    system=system_prompt,
-                    options=options
-                )
+                stream_handler
             )
             
             elapsed_time = time.time() - start_time
             self.logger.info(f"LLM生成完成，耗时: {elapsed_time:.2f}秒")
             
             # 检查响应中是否包含思考过程
-            thinking = response.get("thinking", "")
+            thinking = full_thinking
             if not thinking:
                 # 尝试其他可能的字段名
-                thinking = response.get("thought", "")
-                thinking = response.get("reasoning", "")
+                thinking = ""
             
             return {
-                "response": response.get("response", ""),
+                "response": full_response,
                 "thinking": thinking
             }
         except Exception as e:
@@ -184,8 +255,8 @@ class LLMClient:
         return response
     
     async def parse_intent(self, user_input: str, tools=None) -> Dict[str, Any]:
-        """解析用户意图（提取意图类型和关键实体）"""
-        system_prompt = "你是一个智能桌面系统的意图解析器，负责分析用户的自然语言输入并判断意图类型和提取关键实体。你必须只返回有效的JSON格式，不要包含任何其他文字、解释或markdown标记。"
+        """解析用户意图（提取意图类型和关键实体，task类型时同时生成任务计划）"""
+        system_prompt = "你是一个智能桌面系统的意图解析器，负责分析用户的自然语言输入并判断意图类型、提取关键实体，如果是task类型则同时生成任务执行计划。你必须只返回有效的JSON格式，不要包含任何其他文字、解释或markdown标记。"
         
         # 如果提供了tools，格式化工具信息
         tools_info = ""
@@ -196,9 +267,10 @@ class LLMClient:
                 tool_desc = tool.description if hasattr(tool, 'description') else ""
                 tools_info += f"- {tool_name}: {tool_desc}\n"
         
-        prompt = f"""请分析以下用户输入，判断用户的意图类型并提取关键实体：
+        prompt = f"""请分析以下用户输入，判断用户的意图类型、根据工具信息提取关键实体并根据意图类型生成任务计划（如果是task类型）：
 
-用户输入：{user_input}{tools_info}
+用户输入：{user_input}
+工具信息：{tools_info}
 
 重要规则：
 1. 意图类型只能是以下三种：
@@ -209,8 +281,11 @@ class LLMClient:
 2. 判断是否为"task"的标准：
    - 当前可用工具可以完成用户的请求（如文件操作、系统信息、文本处理、网络请求、邮件发送、天气查询、股票查询、新闻查询、快递查询等）
    - 用户明确要求执行某个操作（如"转换"、"发送"、"处理"、"生成"、"删除"、"打开"、"查询"等）
+   - **重要：如果用户输入只是简单的问候语（如"你好"、"早上好"等），不要识别为task**
 
 3. 判断是否为"chat"的标准：
+   - **优先判断**：如果用户输入是问候语，直接识别为chat类型
+   - 问候语包括："你好"、"早上好"、"下午好"、"晚上好"、"嗨"、"hello"、"hi"、"在吗"、"你好吗"、"在吗"等
    - 当前可用工具无法完成用户的请求
    - 用户只是问候（如"你好"、"早上好"等）
    - 用户只是提问（如"什么是"、"如何"、"为什么"等）
@@ -223,54 +298,53 @@ class LLMClient:
    - 用户提到的任务需要多个步骤，但当前工具无法组合完成
    - 用户提到的功能超出了当前工具的能力范围
 
-5. 提取关键实体（entities）：
-   - 对于task型意图，必须根据可用工具的描述提取关键实体：
-     * 首先确定要使用的工具（tool）
-     * 根据工具的描述，提取用户输入中提到的所有参数
-     * 例如：如果工具是 weather_query，需要提取 operation、city、province 等参数
-     * 例如：如果工具是 document_converter，需要提取 operation、input_path、output_path 等参数
-     * 重要：如果用户输入包含多个输入，必须提取所有输入，不能遗漏
-     * 识别多个输入的关键词：
-       - "两个"、"多个"、"三个"等数量词
-       - 使用顿号"、""、"、"等分隔符
-       - 使用"和"、"以及"等连接词
-     * 对于entitiesr的单个元素有多个输入的情况，使用数组格式，键值为num_inputs
-     * 根据工具的调用需要，entities可包含多个元素
-   - 对于chat和cannot_execute型意图，entities可以为空对象
+
+5. **如果意图类型是"task"，则同时生成任务执行计划**：
+   - 根据提取的entities，生成详细的任务执行计划
+   - 计划格式如下：
+     {{
+       "plan": "任务概述",
+       "steps": [
+         {{
+           "tool": "工具名称",
+           "args": {{
+             "参数名": "参数值"
+           }},
+           "description": "步骤描述"
+         }}
+       ]
+     }}
+   - 生成任务计划的重要规则：
+     * 不要使用不存在的工具，只能使用上面列出的工具
+     * 根据用户输入，智能提取工具所需的参数
+     * 如果用户输入包含多个操作或多个对象，生成多个步骤
+     * 每个步骤只使用一个工具，完成一个明确的任务
+     * 例如：如果用户输入"东京天气怎么样，长沙呢？"，应该识别出两个地点，生成两个天气查询步骤
+     * 例如：如果用户输入"把桌面上的PDF转成Word，再把Word转成PDF"，应该识别出两个转换操作，生成两个转换步骤
+     * 对于天气查询：
+       - 区分国内和国外地点
+       - 国内地点使用domestic_weather操作，需要province和city参数
+       - 国外地点使用foreign_weather操作，只需要city参数
+     * 对于文档转换：
+       - 确保output_path包含完整的文件名和扩展名
+       - 如果用户只指定了输出文件夹，根据输入文件名自动生成输出文件名
 
 请严格按照以下JSON格式返回结果，不要添加任何其他内容：
 {{
   "intent": "用户的主要意图（只能是task、chat或cannot_execute）",
   "confidence": 0.9,
   "reason": "无法执行的原因（仅当intent为cannot_execute时提供）",
-  "entities": [{{
-    "tool": "工具名称1",
-    "operation": "操作类型1",
-    "num_inputs": [
-      {{
-        "参数1": "值1",
-        "参数2": "值2"
+  
+  "plan": "任务计划概述（仅当intent为task时提供）",
+  "steps": [
+    {{
+      "tool": "工具名称",
+      "args": {{
+        "参数名": "参数值"
       }},
-      {{
-        "参数1": "值3",
-        "参数2": "值4"
-      }}
-    ]
-  }},
-  {{
-    "tool": "工具名称2",
-    "operation": "操作类型2",
-    "num_inputs": [
-      {{
-        "参数3": "值5",
-        "参数4": "值6"
-      }},
-      {{
-        "参数3": "值7",
-        "参数4": "值8"
-      }}
-    ]
-  }}]
+      "description": "步骤描述"
+    }}
+  ]
 }}
 
 **示例**：
@@ -279,20 +353,28 @@ class LLMClient:
 {{
   "intent": "task",
   "confidence": 0.95,
-  "entities": {{
-    "tool": "document_converter",
-    "operation": "word_to_pdf",
-    "num_inputs": [
-      {{
+  
+  "plan": "将两个Word文档转换为PDF格式",
+  "steps": [
+    {{
+      "tool": "document_converter",
+      "args": {{
+        "operation": "word_to_pdf",
         "input_path": "桌面/证明.docx",
         "output_path": "桌面/证明.pdf"
       }},
-      {{
+      "description": "将证明.docx转换为PDF"
+    }},
+    {{
+      "tool": "document_converter",
+      "args": {{
+        "operation": "word_to_pdf",
         "input_path": "桌面/说明.docx",
         "output_path": "桌面/说明.pdf"
-      }}
-    ]
-  }}
+      }},
+      "description": "将说明.docx转换为PDF"
+    }}
+  ]
 }}
 
 注意：只返回JSON，不要包含任何解释、注释或其他文字。"""
@@ -304,13 +386,13 @@ class LLMClient:
         if thinking:
             self.logger.info(f"LLM思考过程: {thinking[:500]}...")
         
-        self.logger.info(f"LLM原始响应: {response[:200]}...")
+        self.logger.debug(f"LLM原始响应: {response[:200]}...")
         response = self.clean_json_response(response)
-        self.logger.info(f"清理后的响应: {response[:200]}...")
+        self.logger.debug(f"修复后的响应: {response[:200]}...")
         
         try:
             result = json.loads(response)
-            self.logger.info(f"JSON解析结果: {result}")
+            self.logger.debug(f"JSON解析结果: {result}")
             return result
         except json.JSONDecodeError as e:
             self.logger.error(f"解析意图响应失败: {e}, 原始响应: {response}")

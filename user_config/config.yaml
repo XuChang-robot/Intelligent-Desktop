@@ -48,7 +48,10 @@ email:
 
 # 缓存配置
 cache:
-  enabled: true
+  enabled: true  #总开关
+  # 匹配策略开关
+  enable_hash_match: true  # 哈希精确匹配开关
+  enable_faiss_match: false  # FAISS语义匹配开关
   type: "faiss"  # FAISS向量搜索 + SQLite元数据存储
   cache_dir: "cache"
   

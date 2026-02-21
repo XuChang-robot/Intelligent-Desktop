@@ -12,7 +12,7 @@ from mcp.client.streamable_http import streamable_http_client
 from mcp.types import ElicitRequestParams, ElicitResult
 from mcp_client.llm import LLMClient
 from mcp_client.intent_parser import IntentParser
-from mcp_client.task_planner import TaskPlanner
+from mcp_client.hybrid_cache import HybridTaskPlanCache
 from mcp_client.elicitation import ElicitationManager
 from user_config.config import load_config
 
@@ -191,19 +191,25 @@ class MCPClient:
         
         # 从config中读取缓存配置
         cache_config = self.config.get('cache', {})
-        self.task_planner = TaskPlanner(
-            llm_client=self.llm_client,
-            cache_dir=cache_config.get('cache_dir', 'cache'),
-            cache_ttl=cache_config.get('ttl', 604800),
-            similarity_threshold=cache_config.get('similarity_threshold', 0.85),
-            max_total_size_mb=cache_config.get('max_total_size_mb', 1024),
-            max_db_size_mb=cache_config.get('max_db_size_mb', 512),
-            max_faiss_size_mb=cache_config.get('max_faiss_size_mb', 512),
-            max_records=cache_config.get('max_records', 10000),
-            cleanup_interval=cache_config.get('cleanup_interval', 3600),
-            cleanup_on_startup=cache_config.get('cleanup_on_startup', True),
-            embedding_model=cache_config.get('embedding_model', 'nomic-embed-text')
-        )
+        self.enable_hash_match = cache_config.get('enable_hash_match', True)
+        self.enable_faiss_match = cache_config.get('enable_faiss_match', True)
+
+        if cache_config.get('enabled', True):
+            self.cache = HybridTaskPlanCache(
+                cache_dir=cache_config.get('cache_dir', 'cache'),
+                ttl=cache_config.get('ttl', 604800),
+                similarity_threshold=cache_config.get('similarity_threshold', 0.85),
+                max_total_size_mb=cache_config.get('max_total_size_mb', 1024),
+                max_db_size_mb=cache_config.get('max_db_size_mb', 512),
+                max_faiss_size_mb=cache_config.get('max_faiss_size_mb', 512),
+                max_records=cache_config.get('max_records', 10000),
+                cleanup_interval=cache_config.get('cleanup_interval', 3600),
+                cleanup_on_startup=cache_config.get('cleanup_on_startup', True),
+                embedding_model=cache_config.get('embedding_model', 'nomic-embed-text'),
+                llm_client=self.llm_client
+            )
+        else:
+            self.cache = None
         self.elicitation_manager = ElicitationManager(self.llm_client)
         self.session_manager: Optional[SessionManager] = None
         self.logger = logging.getLogger(__name__)
@@ -370,406 +376,9 @@ class MCPClient:
                 summary = f"{prefix} 错误: {error}" if prefix else f"执行错误: {error}"
                 return {"summary": summary, "plan": plan if plan else {}}
         
-        # 处理execute_python工具的返回格式：{"result": {"output": "...", "error": "..."}}
-        elif isinstance(result_text, str):
-            try:
-                execution_result = json.loads(result_text)
-                output = execution_result.get("output", "")
-                error = execution_result.get("error", "")
-                if output:
-                    summary = f"{prefix}: {output}" if prefix else output
-                    return {"summary": summary, "plan": plan if plan else {}}
-                elif error:
-                    summary = f"{prefix} 错误: {error}" if prefix else f"执行错误: {error}"
-                    return {"summary": summary, "plan": plan if plan else {}}
-                else:
-                    summary = f"{prefix}: 执行成功！" if prefix else "执行成功！"
-                    return {"summary": summary, "plan": plan if plan else {}}
-            except json.JSONDecodeError:
-                summary = f"{prefix}: {result_text}" if prefix else result_text
-                return {"summary": summary, "plan": plan if plan else {}}
         else:
             summary = f"{prefix}: {str(result)}" if prefix else str(result)
             return {"summary": summary, "plan": plan if plan else {}}
-
-    async def process_user_query(self, query: str) -> Dict[str, Any]:
-        """处理用户查询"""
-        try:
-            # 第一步：哈希精确匹配（在意图识别之前进行）
-            if self.ui_callback:
-                self.ui_callback("task_update", {"description": f"检查缓存: {query}"})
-            
-            # 计算用户输入的哈希值
-            user_input_hash = hashlib.md5(query.strip().encode()).hexdigest()
-            
-            # 查询缓存中是否有精确匹配的task类型任务
-            conn = None
-            try:
-                conn = sqlite3.connect(self.task_planner.cache.db_path)
-                cursor = conn.cursor()
-                
-                # 查询是否有精确匹配的缓存（只查询task类型的）
-                cursor.execute('''
-                    SELECT plan, intent_hash 
-                    FROM cache 
-                    WHERE user_input_hash = ? 
-                ''', (user_input_hash,))
-                result = cursor.fetchone()
-                
-                if result:
-                    plan_json, intent_hash = result
-                    # 更新最后访问时间
-                    cursor.execute('UPDATE cache SET last_accessed = datetime("now") WHERE user_input_hash = ?', (user_input_hash,))
-                    conn.commit()
-                    
-                    self.logger.info(f"哈希精确匹配成功！直接执行缓存的任务计划，user_input_hash={user_input_hash}")
-                    
-                    if self.ui_callback:
-                        self.ui_callback("task_update", {"description": "缓存命中，直接执行任务计划"})
-                    
-                    # 解析缓存的计划
-                    plan = json.loads(plan_json)
-                    
-                    # 执行任务计划
-                    results = []
-                    execution_success = True
-                    
-                    steps = plan.get("steps", [])
-                    self.logger.info(f"缓存的任务计划步骤数: {len(steps)}")
-                    
-                    # 判断是否为单步任务
-                    is_single_step = len(steps) == 1
-                    
-                    for i, step in enumerate(steps):
-                        if self.ui_callback:
-                            # 单步任务不显示步骤编号
-                            if is_single_step:
-                                self.ui_callback("task_update", {"description": f"正在执行: {step['tool']}"})
-                            else:
-                                step_num = chr(0x2460 + i)  # ①②③...
-                                self.ui_callback("task_update", {"description": f"执行任务步骤 {step_num}/{len(plan['steps'])}: {step['tool']}"})
-                        
-                        result = await self.send_tool_call(step["tool"], step.get("args", {}))
-                        results.append(result)
-                        
-                        # 检查步骤是否执行成功
-                        if not result.get("success", True):
-                            execution_success = False
-                            self.logger.warning(f"任务步骤 {i+1} 执行失败: {step['tool']}")
-                        
-                        if self.ui_callback:
-                            # 单步任务不显示步骤编号
-                            if is_single_step:
-                                self.ui_callback("task_update", {"description": "执行完成", "result": result})
-                            else:
-                                step_num = chr(0x2460 + i)  # ①②③...
-                                self.ui_callback("task_update", {"description": f"任务步骤 {step_num} 完成", "result": result})
-                    
-                    if execution_success:
-                        self.logger.info("缓存的任务计划执行成功")
-                    else:
-                        self.logger.warning("缓存的任务计划执行失败")
-                    
-                    return {
-                        "type": "response",
-                        "content": {
-                            "plan": plan,
-                            "results": results,
-                            "from_cache": True,
-                            "match_type": "exact_hash"
-                        }
-                    }
-                else:
-                    self.logger.info(f"哈希精确匹配未命中，继续FAISS匹配")
-            except Exception as e:
-                self.logger.error(f"哈希精确匹配失败: {e}")
-            finally:
-                if conn:
-                    conn.close()
-            
-            # 第二步：FAISS语义匹配（基于用户原始输入）
-            try:
-                if self.ui_callback:
-                    self.ui_callback("task_update", {"description": "FAISS语义匹配中..."})
-                
-                # 计算用户输入的embedding
-                user_input_embedding = self.task_planner.cache._get_embedding(query.strip())
-                user_input_embedding = user_input_embedding.reshape(1, -1)
-                
-                # 在user_input FAISS索引中搜索最相似的向量
-                if self.task_planner.cache.user_input_faiss_index.ntotal > 0:
-                    self.logger.info(f"user_input FAISS索引中有 {self.task_planner.cache.user_input_faiss_index.ntotal} 个向量")
-                    distances, indices = self.task_planner.cache.user_input_faiss_index.search(user_input_embedding, k=1)
-                    faiss_id = int(indices[0][0])
-                    similarity = float(distances[0][0])
-                    self.logger.info(f"FAISS搜索结果: faiss_id={faiss_id}, similarity={similarity:.10f}, threshold={self.task_planner.cache.similarity_threshold:.10f}")
-                    
-                    # 检查相似度是否超过阈值
-                    if similarity >= self.task_planner.cache.similarity_threshold:
-                        self.logger.info(f"FAISS相似度检查通过，开始查询数据库")
-                        
-                        conn = sqlite3.connect(self.task_planner.cache.db_path)
-                        cursor = conn.cursor()
-                        
-                        # 检查faiss_id是否在数据库中存在
-                        cursor.execute('SELECT COUNT(*) FROM cache WHERE faiss_id = ?', (faiss_id,))
-                        count = cursor.fetchone()[0]
-                        self.logger.info(f"数据库中faiss_id={faiss_id}的记录数: {count}")
-                        
-                        if count > 0:
-                            # 获取缓存的任务计划
-                            cursor.execute('SELECT plan, intent_hash FROM cache WHERE faiss_id = ?', (faiss_id,))
-                            result = cursor.fetchone()
-                            if result:
-                                plan_json, intent_hash = result
-                                # 更新最后访问时间
-                                cursor.execute('UPDATE cache SET last_accessed = datetime("now") WHERE faiss_id = ?', (faiss_id,))
-                                conn.commit()
-                                
-                                self.logger.info(f"FAISS语义匹配成功！直接执行缓存的任务计划，similarity={similarity:.2f}")
-                                
-                                if self.ui_callback:
-                                    self.ui_callback("task_update", {"description": "FAISS缓存命中，直接执行任务计划"})
-                                
-                                # 解析缓存的计划
-                                plan = json.loads(plan_json)
-                                
-                                # 执行任务计划
-                                results = []
-                                execution_success = True
-                                
-                                steps = plan.get("steps", [])
-                                self.logger.info(f"缓存的任务计划步骤数: {len(steps)}")
-                                
-                                # 判断是否为单步任务
-                                is_single_step = len(steps) == 1
-                                
-                                for i, step in enumerate(steps):
-                                    if self.ui_callback:
-                                        # 单步任务不显示步骤编号
-                                        if is_single_step:
-                                            self.ui_callback("task_update", {"description": f"正在执行: {step['tool']}"})
-                                        else:
-                                            step_num = chr(0x2460 + i)  # ①②③...
-                                            self.ui_callback("task_update", {"description": f"执行任务步骤 {step_num}/{len(plan['steps'])}: {step['tool']}"})
-                                    
-                                    result = await self.send_tool_call(step["tool"], step.get("args", {}))
-                                    results.append(result)
-                                    
-                                    # 检查步骤是否执行成功
-                                    if not result.get("success", True):
-                                        execution_success = False
-                                        self.logger.warning(f"任务步骤 {i+1} 执行失败: {step['tool']}")
-                                    
-                                    if self.ui_callback:
-                                        # 单步任务不显示步骤编号
-                                        if is_single_step:
-                                            self.ui_callback("task_update", {"description": "执行完成", "result": result})
-                                        else:
-                                            step_num = chr(0x2460 + i)  # ①②③...
-                                            self.ui_callback("task_update", {"description": f"任务步骤 {step_num} 完成", "result": result})
-                                
-                                if execution_success:
-                                    self.logger.info("FAISS缓存的任务计划执行成功")
-                                else:
-                                    self.logger.warning("FAISS缓存的任务计划执行失败")
-                                
-                                return {
-                                    "type": "response",
-                                    "content": {
-                                        "plan": plan,
-                                        "results": results,
-                                        "from_cache": True,
-                                        "match_type": "faiss",
-                                        "similarity": similarity
-                                    }
-                                }
-                            else:
-                                self.logger.warning(f"数据库查询返回None，faiss_id={faiss_id}")
-                        else:
-                            self.logger.debug(f"FAISS返回的faiss_id={faiss_id}在数据库中不存在（已被LRU删除），跳过缓存")
-                    else:
-                        self.logger.info(f"FAISS相似度未达到阈值，继续意图识别")
-                else:
-                    self.logger.info("user_input FAISS索引为空，跳过语义匹配")
-            except Exception as e:
-                self.logger.error(f"FAISS语义匹配失败: {e}")
-            
-            # 第三步：解析用户意图并更新UI
-            if self.ui_callback:
-                self.ui_callback("task_update", {"description": f"解析用户意图: {query}"})
-            
-            intent = await self.intent_parser.parse(query, self.tools)
-            
-            if self.ui_callback:
-                self.ui_callback("task_update", {"description": f"识别意图: {intent['type']}", "tool": intent.get("tool", "")})
-            
-            self.logger.info(f"解析到的意图: {intent}")
-            
-            # 根据意图执行相应的操作
-            if intent["type"] == "tool_call":
-                # 直接调用工具
-                if self.ui_callback:
-                    self.ui_callback("task_update", {"description": f"执行工具: {intent['tool']}"})
-                
-                result = await self.send_tool_call(intent["tool"], intent.get("args", {}))
-                
-                if self.ui_callback:
-                    self.ui_callback("task_update", {"description": f"工具执行完成: {intent['tool']}", "result": result})
-                
-                return {
-                    "type": "response",
-                    "content": result
-                }
-            elif intent["type"] == "chat":
-                # 聊天型意图，直接使用LLM回答
-                if self.ui_callback:
-                    self.ui_callback("task_update", {"description": "使用LLM生成回答"})
-                
-                response_dict = await self.llm_client.generate(query)
-                response = response_dict.get("response", "")
-                
-                if self.ui_callback:
-                    self.ui_callback("task_update", {"description": "LLM回答生成完成"})
-                
-                return {
-                    "type": "response",
-                    "content": response
-                }
-            elif intent["type"] == "cannot_execute":
-                # 无法执行型意图，告诉用户当前任务不能执行并给出原因
-                if self.ui_callback:
-                    self.ui_callback("task_update", {"description": "分析任务可行性"})
-                
-                reason = intent.get("reason", "当前工具无法完成此任务")
-                self.logger.info(f"任务无法执行，原因: {reason}")
-                
-                # 使用LLM生成友好的拒绝消息
-                prompt = f"""用户请求执行某个任务，但当前可用工具无法完成。请生成一个友好、礼貌的拒绝消息，告诉用户当前任务不能执行，并给出具体原因。
-
-用户请求：{query}
-
-无法执行的原因：{reason}
-
-请生成一个友好、礼貌的回复，包含以下内容：
-1. 明确告诉用户当前任务无法执行
-2. 解释具体原因
-3. 如果可能，提供替代方案或建议
-4. 保持友好和礼貌的语气
-
-请直接返回回复内容，不要包含任何其他文字或解释。"""
-                
-                response_dict = await self.llm_client.generate(prompt)
-                response = response_dict.get("response", "")
-                
-                if self.ui_callback:
-                    self.ui_callback("task_update", {"description": "生成拒绝消息完成"})
-                
-                return {
-                    "type": "response",
-                    "content": response
-                }
-            elif intent["type"] == "task":
-                # 任务规划
-                if self.ui_callback:
-                    self.ui_callback("task_update", {"description": "生成任务计划"})
-                
-                # 如果intent中已经包含了plan，直接使用
-                if "plan" in intent:
-                    plan = intent["plan"]
-                    self.logger.info(f"使用intent中的任务计划: {plan}")
-                else:
-                    # 否则调用task_planner生成任务计划，传入intent（包含entities）
-                    plan = await self.task_planner.plan_task(intent, self.tools)
-                    self.logger.info(f"调用task_planner生成任务计划: {plan}")
-                
-                if self.ui_callback:
-                    self.ui_callback("task_update", {"description": f"任务计划生成完成，共{len(plan['steps'])}个步骤", "plan": plan})
-                
-                self.logger.info(f"生成的任务计划: {plan}")
-                
-                # 执行任务计划
-                results = []
-                execution_success = True  # 标记所有步骤是否执行成功
-                
-                steps = plan.get("steps", [])
-                self.logger.info(f"任务计划步骤数: {len(steps)}")
-                
-                # 判断是否为单步任务
-                is_single_step = len(steps) == 1
-                
-                for i, step in enumerate(steps):
-                    if self.ui_callback:
-                        # 单步任务不显示步骤编号
-                        if is_single_step:
-                            self.ui_callback("task_update", {"description": f"正在执行: {step['tool']}"})
-                        else:
-                            step_num = chr(0x2460 + i)  # ①②③...
-                            self.ui_callback("task_update", {"description": f"执行任务步骤 {step_num}/{len(plan['steps'])}: {step['tool']}"})
-                    
-                    result = await self.send_tool_call(step["tool"], step.get("args", {}))
-                    results.append(result)
-                    
-                    # 检查步骤是否执行成功
-                    if not result.get("success", True):
-                        execution_success = False
-                        self.logger.warning(f"任务步骤 {i+1} 执行失败: {step['tool']}")
-                    
-                    if self.ui_callback:
-                        # 单步任务不显示步骤编号
-                        if is_single_step:
-                            self.ui_callback("task_update", {"description": "执行完成", "result": result})
-                        else:
-                            step_num = chr(0x2460 + i)  # ①②③...
-                            self.ui_callback("task_update", {"description": f"任务步骤 {step_num} 完成", "result": result})
-                
-                # 如果所有步骤执行成功，缓存任务计划（只有当计划不是来自缓存时）
-                if execution_success and not plan.get("from_cache", False):
-                    # 构建intent字典用于缓存，包含user_input以便后续参数提取
-                    cache_intent = {
-                        "intent": "task",
-                        "user_input": intent.get("user_input", ""),
-                        "entities": intent.get("entities", {}),
-                        "confidence": intent.get("confidence", 0.9)
-                    }
-                    self.task_planner.cache_plan(cache_intent, plan, self.tools)
-                    self.logger.info("任务执行成功，已缓存任务计划")
-                elif execution_success and plan.get("from_cache", False):
-                    self.logger.info("任务执行成功，但计划来自缓存，无需再次缓存")
-                else:
-                    self.logger.warning("任务执行失败，不缓存任务计划")
-                
-                return {
-                    "type": "response",
-                    "content": {
-                        "plan": plan,
-                        "results": results
-                    }
-                }
-            else:
-                # 直接使用LLM回答
-                if self.ui_callback:
-                    self.ui_callback("task_update", {"description": "使用LLM生成回答"})
-                
-                response_dict = await self.llm_client.generate(query)
-                response = response_dict.get("response", "")
-                
-                if self.ui_callback:
-                    self.ui_callback("task_update", {"description": "LLM回答生成完成"})
-                
-                return {
-                    "type": "response",
-                    "content": response
-                }
-                
-        except Exception as e:
-            self.logger.error(f"处理用户查询时出错: {e}")
-            if self.ui_callback:
-                self.ui_callback("task_update", {"description": f"处理出错: {str(e)}"})
-            return {
-                "type": "error",
-                "error": str(e)
-            }
     
     async def process_user_intent(self, query: str, stream_callback: Optional[Callable] = None) -> Dict[str, Any]:
         """处理用户意图（UI调用接口）
@@ -777,290 +386,274 @@ class MCPClient:
         工作流程：
         1. 用户输入自然语言
         2. 优先进行哈希精确匹配，如果命中则直接执行缓存的任务计划
-        3. 如果哈希不匹配，通过 LLM 解析用户意图
-        4. 根据用户意图生成 Python 能够执行的任务
-        5. 复杂的任务由 LLM 拆解
-        6. 将拆解的任务按 MCP 协议发送给 MCP server 执行
-        7. 将执行结果按 MCP 协议返回给 MCP client
-        8. 显示在输出 UI 上
+        3. 如果哈希不匹配，通过FIASS匹配
+        4. 都不匹配由LLM解析
+        6. 显示在输出 UI 上
         """
         try:
             # 重置中断标志
             self.interrupted = False
             
             # 第一步：哈希精确匹配（在意图识别之前进行）
-            if self.ui_callback:
-                self.ui_callback("task_update", {"description": f"检查缓存: {query}"})
-            
-            # 计算用户输入的哈希值
-            user_input_hash = hashlib.md5(query.strip().encode()).hexdigest()
-            
-            # 查询缓存中是否有精确匹配的task类型任务
-            conn = None
-            try:
-                conn = sqlite3.connect(self.task_planner.cache.db_path)
-                cursor = conn.cursor()
-                
-                # 查询是否有精确匹配的缓存
-                cursor.execute('''
-                    SELECT plan, intent_hash 
-                    FROM cache 
-                    WHERE user_input_hash = ? 
-                ''', (user_input_hash,))
-                result = cursor.fetchone()
-                
-                if result:
-                    plan_json, intent_hash = result
-                    # 更新最后访问时间
-                    cursor.execute('UPDATE cache SET last_accessed = datetime("now") WHERE user_input_hash = ?', (user_input_hash,))
-                    conn.commit()
-                    
-                    self.logger.info(f"哈希精确匹配成功！直接执行缓存的任务计划，user_input_hash={user_input_hash}")
-                    
-                    if self.ui_callback:
-                        self.ui_callback("task_update", {"description": "缓存命中，直接执行任务计划"})
-                    
-                    # 解析缓存的计划
-                    plan = json.loads(plan_json)
-                    
-                    # 执行任务计划
-                    results = []
-                    execution_success = True
-                    
-                    steps = plan.get("steps", [])
-                    self.logger.info(f"缓存的任务计划步骤数: {len(steps)}")
-                    
-                    # 判断是否为单步任务
-                    is_single_step = len(steps) == 1
-                    
-                    for i, step in enumerate(steps):
-                        # 检查是否中断
-                        if self.interrupted:
-                            return {"summary": "任务已被用户中断", "plan": plan, "results": results}
-                        
-                        if self.ui_callback:
-                            # 单步任务不显示步骤编号
-                            if is_single_step:
-                                self.ui_callback("task_update", {"description": f"正在执行: {step['tool']}"})
-                            else:
-                                step_num = chr(0x2460 + i)  # ①②③...
-                                self.ui_callback("task_update", {"description": f"执行任务步骤 {step_num}/{len(plan['steps'])}: {step['tool']}"})
-                        
-                        result = await self.send_tool_call(step["tool"], step.get("args", {}))
-                        results.append(result)
-                        
-                        # 检查步骤是否执行成功
-                        if not result.get("success", True):
-                            execution_success = False
-                            self.logger.warning(f"任务步骤 {i+1} 执行失败: {step['tool']}")
-                        
-                        if self.ui_callback:
-                            # 单步任务不显示步骤编号
-                            if is_single_step:
-                                self.ui_callback("task_update", {"description": "执行完成", "result": result})
-                            else:
-                                step_num = chr(0x2460 + i)  # ①②③...
-                                self.ui_callback("task_update", {"description": f"任务步骤 {step_num} 完成", "result": result})
-                    
-                    if execution_success:
-                        self.logger.info("缓存的任务计划执行成功")
-                    else:
-                        self.logger.warning("缓存的任务计划执行失败")
-                    
-                    # 提取所有步骤的执行结果
-                    execution_results = []
-                    total_steps = len(results)
-                    is_single_step = total_steps == 1
-                    
-                    for i, result in enumerate(results):
-                        if is_single_step:
-                            # 单步任务不显示步骤编号
-                            parsed = self._parse_mcp_result(result)
-                        else:
-                            # 多步任务显示圆圈数字编号
-                            step_num = chr(0x2460 + i)  # ①②③...
-                            parsed = self._parse_mcp_result(result, prefix=f"{step_num}")
-                        execution_results.append(parsed["summary"])
-                    
-                    if self.ui_callback:
-                        self.ui_callback("loading", True, "任务执行完成...")
-                        self.ui_callback("progress", True, 100)
-                        # 添加任务完成提示
-                        self.ui_callback("task_update", {"description": "🎉 任务执行完成！", "status": "完成"})
-                    
-                    # 将执行结果按 MCP 协议返回给 MCP client，确保步骤分开显示
-                    final_summary = "\n\n".join(execution_results)
-                    
-                    return {
-                        "summary": final_summary,
-                        "plan": plan,
-                        "results": results,
-                        "from_cache": True,
-                        "match_type": "exact_hash"
-                    }
-                else:
-                    self.logger.info(f"哈希精确匹配未命中，继续FAISS匹配")
-            except Exception as e:
-                self.logger.error(f"哈希精确匹配失败: {e}")
-            finally:
-                if conn:
-                    conn.close()
-            
-            # 第二步：FAISS语义匹配（基于用户原始输入）
-            try:
+            if self.enable_hash_match and self.cache is not None:
                 if self.ui_callback:
-                    self.ui_callback("task_update", {"description": "FAISS语义匹配中..."})
+                    self.ui_callback("task_update", {"description": f"检查缓存: {query}"})
                 
-                # 计算用户输入的embedding
-                user_input_embedding = self.task_planner.cache._get_embedding(query.strip())
-                user_input_embedding = user_input_embedding.reshape(1, -1)
+                # 计算用户输入的哈希值
+                user_input_hash = hashlib.md5(query.strip().encode()).hexdigest()
                 
-                # 在user_input FAISS索引中搜索最相似的向量
-                if self.task_planner.cache.user_input_faiss_index.ntotal > 0:
-                    self.logger.info(f"user_input FAISS索引中有 {self.task_planner.cache.user_input_faiss_index.ntotal} 个向量")
-                    distances, indices = self.task_planner.cache.user_input_faiss_index.search(user_input_embedding, k=1)
-                    faiss_id = int(indices[0][0])
-                    similarity = float(distances[0][0])
-                    self.logger.info(f"FAISS搜索结果: faiss_id={faiss_id}, similarity={similarity:.10f}, threshold={self.task_planner.cache.similarity_threshold:.10f}")
+                # 查询缓存中是否有精确匹配的task类型任务
+                conn = None
+                try:
+                    conn = sqlite3.connect(self.cache.db_path)
+                    cursor = conn.cursor()
                     
-                    # 检查相似度是否超过阈值
-                    if similarity >= self.task_planner.cache.similarity_threshold:
-                        self.logger.info(f"FAISS相似度检查通过，开始查询数据库")
+                    # 查询是否有精确匹配的缓存
+                    cursor.execute('''
+                        SELECT plan, intent_hash 
+                        FROM cache 
+                        WHERE user_input_hash = ? 
+                    ''', (user_input_hash,))
+                    result = cursor.fetchone()
+                    
+                    if result:
+                        plan_json, intent_hash = result
+                        # 更新最后访问时间
+                        cursor.execute('UPDATE cache SET last_accessed = datetime("now") WHERE user_input_hash = ?', (user_input_hash,))
+                        conn.commit()
                         
-                        conn = sqlite3.connect(self.task_planner.cache.db_path)
-                        cursor = conn.cursor()
+                        self.logger.info(f"哈希精确匹配成功！直接执行缓存的任务计划，user_input_hash={user_input_hash}")
                         
-                        # 检查faiss_id是否在数据库中存在
-                        cursor.execute('SELECT COUNT(*) FROM cache WHERE faiss_id = ?', (faiss_id,))
-                        count = cursor.fetchone()[0]
-                        self.logger.info(f"数据库中faiss_id={faiss_id}的记录数: {count}")
+                        # 解析缓存的计划
+                        plan = json.loads(plan_json)
                         
-                        if count > 0:
-                            # 获取缓存的任务计划
-                            cursor.execute('SELECT plan, intent_hash FROM cache WHERE faiss_id = ?', (faiss_id,))
-                            result = cursor.fetchone()
-                            if result:
-                                plan_json, intent_hash = result
-                                # 更新最后访问时间
-                                cursor.execute('UPDATE cache SET last_accessed = datetime("now") WHERE faiss_id = ?', (faiss_id,))
-                                conn.commit()
-                                
-                                self.logger.info(f"FAISS语义匹配成功！直接执行缓存的任务计划，similarity={similarity:.2f}")
-                                
-                                if self.ui_callback:
-                                    self.ui_callback("task_update", {"description": "FAISS缓存命中，直接执行任务计划"})
-                                
-                                # 解析缓存的计划
-                                plan = json.loads(plan_json)
-                                
-                                # 执行任务计划
-                                results = []
-                                execution_success = True
-                                
-                                steps = plan.get("steps", [])
-                                self.logger.info(f"缓存的任务计划步骤数: {len(steps)}")
-                                
-                                # 判断是否为单步任务
-                                is_single_step = len(steps) == 1
-                                
-                                for i, step in enumerate(steps):
-                                    # 检查是否中断
-                                    if self.interrupted:
-                                        return {"summary": "任务已被用户中断", "plan": plan, "results": results}
-                                    
-                                    if self.ui_callback:
-                                        # 单步任务不显示步骤编号
-                                        if is_single_step:
-                                            self.ui_callback("task_update", {"description": f"正在执行: {step['tool']}"})
-                                        else:
-                                            step_num = chr(0x2460 + i)  # ①②③...
-                                            self.ui_callback("task_update", {"description": f"执行任务步骤 {step_num}/{len(plan['steps'])}: {step['tool']}"})
-                                    
-                                    result = await self.send_tool_call(step["tool"], step.get("args", {}))
-                                    results.append(result)
-                                    
-                                    # 检查步骤是否执行成功
-                                    if not result.get("success", True):
-                                        execution_success = False
-                                        self.logger.warning(f"任务步骤 {i+1} 执行失败: {step['tool']}")
-                                    
-                                    if self.ui_callback:
-                                        # 单步任务不显示步骤编号
-                                        if is_single_step:
-                                            self.ui_callback("task_update", {"description": "执行完成", "result": result})
-                                        else:
-                                            step_num = chr(0x2460 + i)  # ①②③...
-                                            self.ui_callback("task_update", {"description": f"任务步骤 {step_num} 完成", "result": result})
-                                
-                                if execution_success:
-                                    self.logger.info("FAISS缓存的任务计划执行成功")
+                        # 执行任务计划
+                        results = []
+                        execution_success = True
+                        
+                        steps = plan.get("steps", [])
+                        
+                        # 判断是否为单步任务
+                        is_single_step = len(steps) == 1
+                        
+                        for i, step in enumerate(steps):
+                            # 检查是否中断
+                            if self.interrupted:
+                                return {"summary": "任务已被用户中断", "plan": plan, "results": results}
+                            
+                            if self.ui_callback:
+                                # 单步任务不显示步骤编号
+                                if is_single_step:
+                                    self.ui_callback("task_update", {"description": f"正在执行: {step['tool']}"})
                                 else:
-                                    self.logger.warning("FAISS缓存的任务计划执行失败")
-                                
-                                # 提取所有步骤的执行结果
-                                execution_results = []
-                                total_steps = len(results)
-                                is_single_step = total_steps == 1
-                                
-                                for i, result in enumerate(results):
-                                    if is_single_step:
-                                        # 单步任务不显示步骤编号
-                                        parsed = self._parse_mcp_result(result)
-                                    else:
-                                        # 多步任务显示圆圈数字编号
-                                        step_num = chr(0x2460 + i)  # ①②③...
-                                        parsed = self._parse_mcp_result(result, prefix=f"{step_num}")
-                                    execution_results.append(parsed["summary"])
-                                
-                                if self.ui_callback:
-                                    self.ui_callback("loading", True, "任务执行完成...")
-                                    self.ui_callback("progress", True, 100)
-                                    # 添加任务完成提示
-                                    self.ui_callback("task_update", {"description": "🎉 任务执行完成！", "status": "完成"})
-                                
-                                # 将执行结果按 MCP 协议返回给 MCP client，确保步骤分开显示
-                                final_summary = "\n\n".join(execution_results)
-                                
-                                return {
-                                    "summary": final_summary,
-                                    "plan": plan,
-                                    "results": results,
-                                    "from_cache": True,
-                                    "match_type": "faiss",
-                                    "similarity": similarity
-                                }
-                            else:
-                                self.logger.warning(f"数据库查询返回None，faiss_id={faiss_id}")
+                                    step_num = chr(0x2460 + i)  # ①②③...
+                                    self.ui_callback("task_update", {"description": f"执行任务步骤 {step_num}/{len(plan['steps'])}: {step['tool']}"})
+                            
+                            result = await self.send_tool_call(step["tool"], step.get("args", {}))
+                            results.append(result)
+                            
+                            # 检查步骤是否执行成功
+                            if not result.get("success", True):
+                                execution_success = False
+                                self.logger.warning(f"任务步骤 {i+1} 执行失败: {step['tool']}")
+                            
+                            if self.ui_callback:
+                                # 单步任务不显示步骤编号
+                                if is_single_step:
+                                    self.ui_callback("task_update", {"description": "执行完成", "result": result})
+                                else:
+                                    step_num = chr(0x2460 + i)  # ①②③...
+                                    self.ui_callback("task_update", {"description": f"任务步骤 {step_num} 完成", "result": result})
+                        
+                        if execution_success:
+                            self.logger.info("缓存的任务计划执行成功")
                         else:
-                            self.logger.debug(f"FAISS返回的faiss_id={faiss_id}在数据库中不存在（已被LRU删除），跳过缓存")
+                            self.logger.warning("缓存的任务计划执行失败")
+                        
+                        # 提取所有步骤的执行结果
+                        execution_results = []
+                        total_steps = len(results)
+                        is_single_step = total_steps == 1
+                        
+                        for i, result in enumerate(results):
+                            if is_single_step:
+                                # 单步任务不显示步骤编号
+                                parsed = self._parse_mcp_result(result)
+                            else:
+                                # 多步任务显示圆圈数字编号
+                                step_num = chr(0x2460 + i)  # ①②③...
+                                parsed = self._parse_mcp_result(result, prefix=f"{step_num}")
+                            execution_results.append(parsed["summary"])
+                        
+                        if self.ui_callback:
+                            self.ui_callback("loading", True, "任务执行完成...")
+                            self.ui_callback("progress", True, 100)
+                            # 添加任务完成提示
+                            self.ui_callback("task_update", {"description": "🎉 任务执行完成！", "status": "完成"})
+                        
+                        # 将执行结果按 MCP 协议返回给 MCP client，确保步骤分开显示
+                        final_summary = "\n\n".join(execution_results)
+                        
+                        return {
+                            "summary": final_summary,
+                            "plan": plan,
+                            "results": results,
+                            "from_cache": True,
+                            "match_type": "exact_hash"
+                        }
                     else:
-                        self.logger.info(f"FAISS相似度未达到阈值，继续意图识别")
-                else:
-                    self.logger.info("user_input FAISS索引为空，跳过语义匹配")
-            except Exception as e:
-                self.logger.error(f"FAISS语义匹配失败: {e}")
+                        self.logger.info(f"哈希精确匹配未命中，继续FAISS匹配")
+                except Exception as e:
+                    self.logger.error(f"哈希精确匹配失败: {e}")
+                finally:
+                    if conn:
+                        conn.close()
+            else:
+                self.logger.info("哈希精确匹配已禁用")
+
+            # 第二步：FAISS语义匹配（基于用户原始输入）
+            if self.enable_faiss_match and self.cache is not None:
+                try:
+                    if self.ui_callback:
+                        self.ui_callback("task_update", {"description": "FAISS语义匹配中..."})
+                    
+                    # 计算用户输入的embedding
+                    user_input_embedding = self.cache._get_embedding(query.strip())
+                    user_input_embedding = user_input_embedding.reshape(1, -1)
+                    
+                    # 在user_input FAISS索引中搜索最相似的向量
+                    if self.cache.user_input_faiss_index.ntotal > 0:
+                        distances, indices = self.cache.user_input_faiss_index.search(user_input_embedding, k=1)
+                        faiss_id = int(indices[0][0])
+                        similarity = float(distances[0][0])
+                        self.logger.debug(f"FAISS搜索结果: faiss_id={faiss_id}, similarity={similarity:.10f}, threshold={self.cache.similarity_threshold:.10f}")
+                        
+                        # 检查相似度是否超过阈值
+                        if similarity >= self.cache.similarity_threshold:
+                            
+                            conn = sqlite3.connect(self.cache.db_path)
+                            cursor = conn.cursor()
+                            
+                            # 检查faiss_id是否在数据库中存在
+                            cursor.execute('SELECT COUNT(*) FROM cache WHERE faiss_id = ?', (faiss_id,))
+                            count = cursor.fetchone()[0]
+                            self.logger.debug(f"数据库中faiss_id={faiss_id}的记录数: {count}")
+                            
+                            if count > 0:
+                                # 获取缓存的任务计划
+                                cursor.execute('SELECT plan, intent_hash FROM cache WHERE faiss_id = ?', (faiss_id,))
+                                result = cursor.fetchone()
+                                if result:
+                                    plan_json, intent_hash = result
+                                    # 更新最后访问时间
+                                    cursor.execute('UPDATE cache SET last_accessed = datetime("now") WHERE faiss_id = ?', (faiss_id,))
+                                    conn.commit()
+                                    
+                                    self.logger.info(f"FAISS语义匹配成功！直接执行缓存的任务计划，similarity={similarity:.2f}")
+                                    
+                                    # 解析缓存的计划
+                                    plan = json.loads(plan_json)
+                                    
+                                    # 执行任务计划
+                                    results = []
+                                    execution_success = True
+                                    
+                                    steps = plan.get("steps", [])
+                                    
+                                    # 判断是否为单步任务
+                                    is_single_step = len(steps) == 1
+                                    
+                                    for i, step in enumerate(steps):
+                                        # 检查是否中断
+                                        if self.interrupted:
+                                            return {"summary": "任务已被用户中断", "plan": plan, "results": results}
+                                        
+                                        if self.ui_callback:
+                                            # 单步任务不显示步骤编号
+                                            if is_single_step:
+                                                self.ui_callback("task_update", {"description": f"正在执行: {step['tool']}"})
+                                            else:
+                                                step_num = chr(0x2460 + i)  # ①②③...
+                                                self.ui_callback("task_update", {"description": f"执行任务步骤 {step_num}/{len(plan['steps'])}: {step['tool']}"})
+                                        
+                                        result = await self.send_tool_call(step["tool"], step.get("args", {}))
+                                        results.append(result)
+                                        
+                                        # 检查步骤是否执行成功
+                                        if not result.get("success", True):
+                                            execution_success = False
+                                            self.logger.warning(f"任务步骤 {i+1} 执行失败: {step['tool']}")
+                                        
+                                        if self.ui_callback:
+                                            # 单步任务不显示步骤编号
+                                            if is_single_step:
+                                                self.ui_callback("task_update", {"description": "执行完成", "result": result})
+                                            else:
+                                                step_num = chr(0x2460 + i)  # ①②③...
+                                                self.ui_callback("task_update", {"description": f"任务步骤 {step_num} 完成", "result": result})
+                                    
+                                    if execution_success:
+                                        self.logger.debug("FAISS缓存的任务计划执行成功")
+                                    else:
+                                        self.logger.debug("FAISS缓存的任务计划执行失败")
+                                    
+                                    # 提取所有步骤的执行结果
+                                    execution_results = []
+                                    total_steps = len(results)
+                                    is_single_step = total_steps == 1
+                                    
+                                    for i, result in enumerate(results):
+                                        if is_single_step:
+                                            # 单步任务不显示步骤编号
+                                            parsed = self._parse_mcp_result(result)
+                                        else:
+                                            # 多步任务显示圆圈数字编号
+                                            step_num = chr(0x2460 + i)  # ①②③...
+                                            parsed = self._parse_mcp_result(result, prefix=f"{step_num}")
+                                        execution_results.append(parsed["summary"])
+                                    
+                                    if self.ui_callback:
+                                        self.ui_callback("loading", True, "任务执行完成...")
+                                        self.ui_callback("progress", True, 100)
+                                        # 添加任务完成提示
+                                        self.ui_callback("task_update", {"description": "🎉 任务执行完成！", "status": "完成"})
+                                    
+                                    # 将执行结果按 MCP 协议返回给 MCP client，确保步骤分开显示
+                                    final_summary = "\n\n".join(execution_results)
+                                    
+                                    return {
+                                        "summary": final_summary,
+                                        "plan": plan,
+                                        "results": results,
+                                        "from_cache": True,
+                                        "match_type": "faiss",
+                                        "similarity": similarity
+                                    }
+                                else:
+                                    self.logger.warning(f"数据库查询返回None，faiss_id={faiss_id}")
+                            else:
+                                self.logger.debug(f"FAISS返回的faiss_id={faiss_id}在数据库中不存在（已被LRU删除），跳过缓存")
+                        else:
+                            self.logger.info(f"FAISS相似度未达到阈值，继续意图识别")
+                    else:
+                        self.logger.info("user_input FAISS索引为空，跳过语义匹配")
+                except Exception as e:
+                    self.logger.error(f"FAISS语义匹配失败: {e}")
+            else:
+                self.logger.info("FAISS语义匹配已禁用")
             
-            # 第三步：使用 LLM 解析用户意图
-            if self.ui_callback:
-                self.ui_callback("task_update", {"description": f"解析用户意图: {query}"})
-            
+            # 第三步：使用 LLM 解析用户意图   
             # 检查是否中断
             if self.interrupted:
                 return {"summary": "任务已被用户中断", "plan": {}}
             
             intent = await self.intent_parser.parse(query, self.tools)
             
-            if self.ui_callback:
-                self.ui_callback("task_update", {"description": f"识别意图: {intent['type']}", "tool": intent.get("tool", "")})
-            
-            self.logger.info(f"解析到的意图: {intent}")
+            self.logger.debug(f"解析到的意图: {intent}")
             
             # 根据用户意图执行相应的操作
             if intent["type"] == "chat":
-                # 聊天型意图，直接使用LLM回答
-                if self.ui_callback:
-                    self.ui_callback("task_update", {"description": "使用LLM生成回答"})
-                
+                # 聊天型意图，直接使用LLM回答       
                 # 流式生成回答
                 def llm_stream_callback(chunk):
                     """LLM流式回调（同步函数）"""
@@ -1076,30 +669,27 @@ class MCPClient:
                 response = response_dict.get("response", "")
                 thinking = response_dict.get("thinking", "")
                 
-                if self.ui_callback:
-                    self.ui_callback("task_update", {"description": "LLM回答生成完成"})
-                
                 return {
                     "summary": response,
                     "thinking": thinking,
                     "plan": {}
                 }
-            elif intent["type"] == "task":
-                # 复杂的任务由 LLM 拆解
-                if self.ui_callback:
-                    self.ui_callback("task_update", {"description": "复杂任务，使用 LLM 拆解"})
-                    self.ui_callback("loading", True, "正在分析任务...")
-                
-                self.logger.info(f"复杂任务，使用 LLM 拆解")
-                
+            elif intent["type"] == "task":        
                 # 使用 LLM 生成任务计划，传入intent（包含entities）
-                if self.ui_callback:
-                    self.ui_callback("task_update", {"description": "生成任务计划"})
-                    self.ui_callback("loading", True, "正在生成任务计划...")
-                    self.ui_callback("progress", True, 10)
                 
-                plan = await self.task_planner.plan_task(intent, self.tools)
                 
+                # 如果intent中已经包含了plan和steps，直接使用（意图识别时已生成）
+                if "plan" in intent and "steps" in intent:
+                    plan = {
+                        "plan": intent["plan"],
+                        "steps": intent["steps"]
+                    }
+                    self.logger.info(f"使用intent中的任务计划: {plan}")
+                else:
+                    self.ui_callback("task_update", True, "任务计划生成格式错误！")
+                    self.logger.info(f"任务计划生成格式错误！")
+                    return
+
                 if self.ui_callback:
                     self.ui_callback("task_update", {"description": f"任务计划生成完成，共{len(plan.get('steps', []))}个步骤", "plan": plan})
                     self.ui_callback("loading", True, "任务计划生成完成...")
@@ -1157,15 +747,16 @@ class MCPClient:
                 
                 # 如果所有步骤执行成功，缓存任务计划（只有当计划不是来自缓存时）
                 if execution_success and not plan.get("from_cache", False):
-                    # 构建intent字典用于缓存，使用intent_parser返回的entities和user_input
-                    cache_intent = {
-                        "intent": "task",
-                        "user_input": intent.get("user_input", ""),
-                        "entities": intent.get("entities", {}),
-                        "confidence": intent.get("confidence", 0.9)
-                    }
-                    self.task_planner.cache_plan(cache_intent, plan, self.tools)
-                    self.logger.info("任务执行成功，已缓存任务计划")
+                    if self.cache is not None:
+                        # 构建intent字典用于缓存，使用intent_parser返回的entities和user_input
+                        cache_intent = {
+                            "intent": "task",
+                            "user_input": intent.get("user_input", "")
+                        }
+                        self.cache.set(cache_intent, self.tools, plan, intent.get("user_input", ""))
+                        self.logger.info("任务执行成功，已缓存任务计划")
+                    else:
+                        self.logger.info("缓存已禁用，不缓存任务计划")
                 elif execution_success and plan.get("from_cache", False):
                     self.logger.info("任务执行成功，但计划来自缓存，无需再次缓存")
                 else:
@@ -1198,30 +789,9 @@ class MCPClient:
                     "summary": "\n\n\n".join(execution_results),
                     "plan": plan
                 }
-            elif intent["type"] == "chat":
-                # 聊天型意图，直接使用LLM回答
-                if self.ui_callback:
-                    self.ui_callback("task_update", {"description": "使用LLM生成回答"})
-                
-                # 流式生成回答
-                async def llm_stream_callback(chunk):
-                    """LLM流式回调"""
-                    if stream_callback:
-                        stream_callback({
-                            "type": "stream",
-                            "response": chunk.get("response", ""),
-                            "thinking": chunk.get("thinking", ""),
-                            "done": chunk.get("done", False)
-                        })
-                
-                response_dict = await self.llm_client.generate(query, stream_callback=llm_stream_callback)
-                response = response_dict.get("response", "")
-                
-                if self.ui_callback:
-                    self.ui_callback("task_update", {"description": "LLM回答生成完成"})
-                
+            elif intent["type"] == "cannot_execute":
                 return {
-                    "summary": response,
+                    "summary": intent.get("reason", ""),
                     "plan": {}
                 }
         

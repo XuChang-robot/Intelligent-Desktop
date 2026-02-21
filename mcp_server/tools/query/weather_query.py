@@ -145,6 +145,8 @@ def query_ip_weather(detail_level: str = "simple", ip: str = None, day: int = No
         
         today_weather = data.get('weather1', '未知')
         tomorrow_weather = data.get('weather2', '未知')
+        today_weather_img = data.get('weather1img', '')
+        tomorrow_weather_img = data.get('weather2img', '')
         
         hourly_data = data.get('hour1', [])
         today_temp_high, today_temp_low = parse_hourly_temperature(hourly_data)
@@ -161,8 +163,12 @@ def query_ip_weather(detail_level: str = "simple", ip: str = None, day: int = No
         formatted_message += f"🌧️ 降水量: {precipitation}mm\n"
         formatted_message += f"🌊 气压: {pressure}百帕\n"
         formatted_message += f"🕐 更新时间: {update_time}\n\n"
-        formatted_message += f"☀️ 今天: {today_weather}，{today_temp_high}℃/{today_temp_low}℃\n"
-        formatted_message += f"🌙 明天: {tomorrow_weather}"
+        formatted_message += f"☀️ 今天: {today_weather}，{today_temp_high}℃/{today_temp_low}℃"
+        if today_weather_img:
+            formatted_message += f"\n   {today_weather_img}"
+        formatted_message += f"\n🌙 明天: {tomorrow_weather}"
+        if tomorrow_weather_img:
+            formatted_message += f"\n   {tomorrow_weather_img}"
         
         result = {
             "success": True,
@@ -334,6 +340,8 @@ def query_domestic_weather(province: str, city: str, detail_level: str = "simple
         
         today_weather = data.get('weather1', '未知')
         tomorrow_weather = data.get('weather2', '未知')
+        today_weather_img = data.get('weather1img', '')
+        tomorrow_weather_img = data.get('weather2img', '')
         
         hourly_data = data.get('hour1', [])
         today_temp_high, today_temp_low = parse_hourly_temperature(hourly_data)
@@ -350,8 +358,12 @@ def query_domestic_weather(province: str, city: str, detail_level: str = "simple
         formatted_message += f"🌧️ 降水量: {precipitation}mm\n"
         formatted_message += f"🌊 气压: {pressure}百帕\n"
         formatted_message += f"🕐 更新时间: {update_time}\n\n"
-        formatted_message += f"☀️ 今天: {today_weather}，{today_temp_high}℃/{today_temp_low}℃\n"
-        formatted_message += f"🌙 明天: {tomorrow_weather}"
+        formatted_message += f"☀️ 今天: {today_weather}，{today_temp_high}℃/{today_temp_low}℃"
+        if today_weather_img:
+            formatted_message += f"\n   {today_weather_img}"
+        formatted_message += f"\n🌙 明天: {tomorrow_weather}"
+        if tomorrow_weather_img:
+            formatted_message += f"\n   {tomorrow_weather_img}"
         
         result = {
             "success": True,
@@ -546,6 +558,8 @@ def query_foreign_weather(city: str, detail_level: str = "simple", dkey: str = N
                     "weekday_cn": day_data.get('weekday_cn', ''),
                     "day_weather": day_data.get('weather1', ''),
                     "night_weather": day_data.get('weather2', ''),
+                    "day_weather_img": day_data.get('weather1img', ''),
+                    "night_weather_img": day_data.get('weather2img', ''),
                     "day_temp_high": day_data.get('wd1', ''),
                     "night_temp_low": day_data.get('wd2', ''),
                     "wind_direction": day_data.get('winddirection', ''),
@@ -561,14 +575,27 @@ def query_foreign_weather(city: str, detail_level: str = "simple", dkey: str = N
                 today = forecast_list[0]
                 tomorrow = forecast_list[1] if len(forecast_list) > 1 else None
                 
-                formatted_message += f"☀️ 今天: {today['day_weather']}转{today['night_weather']}, {today['day_temp_high']}℃/{today['night_temp_low']}℃, {today['wind_direction']} {today['wind_scale']}\n"
+                formatted_message += f"☀️ 今天: {today['day_weather']}转{today['night_weather']}, {today['day_temp_high']}℃/{today['night_temp_low']}℃, {today['wind_direction']} {today['wind_scale']}"
+                if today.get('day_weather_img'):
+                    formatted_message += f"\n   {today['day_weather_img']}"
+                if today.get('night_weather_img'):
+                    formatted_message += f"\n   {today['night_weather_img']}"
                 if tomorrow:
-                    formatted_message += f"🌙 明天: {tomorrow['day_weather']}转{tomorrow['night_weather']}, {tomorrow['day_temp_high']}℃/{tomorrow['night_temp_low']}℃, {tomorrow['wind_direction']} {tomorrow['wind_scale']}"
+                    formatted_message += f"\n🌙 明天: {tomorrow['day_weather']}转{tomorrow['night_weather']}, {tomorrow['day_temp_high']}℃/{tomorrow['night_temp_low']}℃, {tomorrow['wind_direction']} {tomorrow['wind_scale']}"
+                    if tomorrow.get('day_weather_img'):
+                        formatted_message += f"\n   {tomorrow['day_weather_img']}"
+                    if tomorrow.get('night_weather_img'):
+                        formatted_message += f"\n   {tomorrow['night_weather_img']}"
             else:
                 # 显示全部6天预报
                 formatted_message += "📅 未来6天预报:\n"
                 for day in forecast_list:
-                    formatted_message += f"• {day['date_formatted']} ({day['weekday_cn']}): {day['day_weather']}转{day['night_weather']}, {day['day_temp_high']}℃/{day['night_temp_low']}℃, {day['wind_direction']} {day['wind_scale']}\n"
+                    formatted_message += f"• {day['date_formatted']} ({day['weekday_cn']}): {day['day_weather']}转{day['night_weather']}, {day['day_temp_high']}℃/{day['night_temp_low']}℃, {day['wind_direction']} {day['wind_scale']}"
+                    if day.get('day_weather_img'):
+                        formatted_message += f"\n   {day['day_weather_img']}"
+                    if day.get('night_weather_img'):
+                        formatted_message += f"\n   {day['night_weather_img']}"
+                    formatted_message += "\n"
             
             result = {
                 "success": True,

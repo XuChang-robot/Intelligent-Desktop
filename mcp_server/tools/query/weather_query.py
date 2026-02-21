@@ -54,6 +54,34 @@ def get_weather_api_config():
     return user_id, api_key
 
 
+def parse_hourly_temperature(hourly_data: list) -> tuple:
+    """从小时预报数据中解析日内最高温和最低温
+    
+    Args:
+        hourly_data: 小时预报数据列表，每个元素包含"气温"字段
+        
+    Returns:
+        (最高温度, 最低温度) 元组，如果解析失败返回 (None, None)
+    """
+    if not hourly_data:
+        return None, None
+    
+    temperatures = []
+    for hour in hourly_data:
+        temp_str = hour.get('气温', '')
+        if temp_str:
+            try:
+                temp = float(temp_str.replace('℃', '').strip())
+                temperatures.append(temp)
+            except (ValueError, AttributeError):
+                continue
+    
+    if not temperatures:
+        return None, None
+    
+    return max(temperatures), min(temperatures)
+
+
 def query_ip_weather(detail_level: str = "simple", ip: str = None, day: int = None, hourtype: int = None, suntimetype: int = None, dkey: str = None, uip: str = None) -> Dict[str, Any]:
     """根据当前IP地址自动查询天气信息
     
@@ -116,9 +144,15 @@ def query_ip_weather(detail_level: str = "simple", ip: str = None, day: int = No
         update_time = now.get('uptime', data.get('uptime', '未知'))
         
         today_weather = data.get('weather1', '未知')
-        today_temp_high = data.get('wd1', '未知')
         tomorrow_weather = data.get('weather2', '未知')
-        tomorrow_temp_low = data.get('wd2', '未知')
+        
+        hourly_data = data.get('hour1', [])
+        today_temp_high, today_temp_low = parse_hourly_temperature(hourly_data)
+        
+        if today_temp_high is None:
+            today_temp_high = data.get('wd1', '未知')
+        if today_temp_low is None:
+            today_temp_low = data.get('wd2', '未知')
         
         formatted_message = f"📍 {location_info}\n\n"
         formatted_message += f"🌡️ 当前温度: {current_temp}℃ (体感 {feel_temp}℃)\n"
@@ -127,8 +161,8 @@ def query_ip_weather(detail_level: str = "simple", ip: str = None, day: int = No
         formatted_message += f"🌧️ 降水量: {precipitation}mm\n"
         formatted_message += f"🌊 气压: {pressure}百帕\n"
         formatted_message += f"🕐 更新时间: {update_time}\n\n"
-        formatted_message += f"☀️ 今天: {today_weather}，最高 {today_temp_high}℃\n"
-        formatted_message += f"🌙 明天: {tomorrow_weather}，最低 {tomorrow_temp_low}℃"
+        formatted_message += f"☀️ 今天: {today_weather}，{today_temp_high}℃/{today_temp_low}℃\n"
+        formatted_message += f"🌙 明天: {tomorrow_weather}"
         
         result = {
             "success": True,
@@ -157,11 +191,11 @@ def query_ip_weather(detail_level: str = "simple", ip: str = None, day: int = No
                 "today_weather": today_weather,
                 "today_weather_img": data.get('weather1img', ''),
                 "today_temp_high": today_temp_high,
+                "today_temp_low": today_temp_low,
                 "today_wind_direction": data.get('winddirection1', ''),
                 "today_wind_scale": data.get('windleve1', ''),
                 "tomorrow_weather": tomorrow_weather,
                 "tomorrow_weather_img": data.get('weather2img', ''),
-                "tomorrow_temp_low": tomorrow_temp_low,
                 "tomorrow_wind_direction": data.get('winddirection2', ''),
                 "tomorrow_wind_scale": data.get('windleve2', '')
             }
@@ -299,9 +333,15 @@ def query_domestic_weather(province: str, city: str, detail_level: str = "simple
         update_time = now.get('uptime', data.get('uptime', '未知'))
         
         today_weather = data.get('weather1', '未知')
-        today_temp_high = data.get('wd1', '未知')
         tomorrow_weather = data.get('weather2', '未知')
-        tomorrow_temp_low = data.get('wd2', '未知')
+        
+        hourly_data = data.get('hour1', [])
+        today_temp_high, today_temp_low = parse_hourly_temperature(hourly_data)
+        
+        if today_temp_high is None:
+            today_temp_high = data.get('wd1', '未知')
+        if today_temp_low is None:
+            today_temp_low = data.get('wd2', '未知')
         
         formatted_message = f"📍 {location_info}\n\n"
         formatted_message += f"🌡️ 当前温度: {current_temp}℃ (体感 {feel_temp}℃)\n"
@@ -310,8 +350,8 @@ def query_domestic_weather(province: str, city: str, detail_level: str = "simple
         formatted_message += f"🌧️ 降水量: {precipitation}mm\n"
         formatted_message += f"🌊 气压: {pressure}百帕\n"
         formatted_message += f"🕐 更新时间: {update_time}\n\n"
-        formatted_message += f"☀️ 今天: {today_weather}，最高 {today_temp_high}℃\n"
-        formatted_message += f"🌙 明天: {tomorrow_weather}，最低 {tomorrow_temp_low}℃"
+        formatted_message += f"☀️ 今天: {today_weather}，{today_temp_high}℃/{today_temp_low}℃\n"
+        formatted_message += f"🌙 明天: {tomorrow_weather}"
         
         result = {
             "success": True,
@@ -340,11 +380,11 @@ def query_domestic_weather(province: str, city: str, detail_level: str = "simple
                 "today_weather": today_weather,
                 "today_weather_img": data.get('weather1img', ''),
                 "today_temp_high": today_temp_high,
+                "today_temp_low": today_temp_low,
                 "today_wind_direction": data.get('winddirection1', ''),
                 "today_wind_scale": data.get('windleve1', ''),
                 "tomorrow_weather": tomorrow_weather,
                 "tomorrow_weather_img": data.get('weather2img', ''),
-                "tomorrow_temp_low": tomorrow_temp_low,
                 "tomorrow_wind_direction": data.get('winddirection2', ''),
                 "tomorrow_wind_scale": data.get('windleve2', '')
             }

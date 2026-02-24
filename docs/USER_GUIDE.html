@@ -1,9 +1,10 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>智能桌面系统 - 用户使用说明</title>
+    <title>USER_GUIDE</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -117,257 +118,312 @@
     </style>
 </head>
 <body>
-    <h1>智能桌面系统 - 用户使用说明</h1>
-
-    <div class="toc">
-        <h2>目录</h2>
-        <ul>
-            <li><a href="#系统概述">系统概述</a></li>
-            <li><a href="#快速开始">快速开始</a></li>
-            <li><a href="#功能说明">功能说明</a></li>
-            <li><a href="#配置指南">配置指南</a></li>
-            <li><a href="#使用示例">使用示例</a></li>
-            <li><a href="#常见问题">常见问题</a></li>
-            <li><a href="#历史更新">历史更新</a></li>
-        </ul>
-    </div>
-
-<h2 id="系统概述">系统概述</h2>
-
-<p>智能桌面系统是一个基于MCP（Model Context Protocol）架构的智能助手，可以帮助用户完成各种桌面任务，包括文档转换、文件操作、邮件处理、网络请求等。</p>
-
-<h3>核心特性</h3>
-<ul></ul>
-    <li><strong>智能意图识别</strong>：自动理解用户需求</li>
-    <li><strong>任务规划</strong>：自动生成执行计划</li>
-    <li><strong>高效缓存</strong>：基于FAISS向量搜索的混合缓存系统</li>
-    <li><strong>安全可靠</strong>：沙箱隔离、权限控制</li>
-    <li><strong>易于扩展</strong>：模块化设计，支持自定义工具</li>
+    <h1 id="-">智能桌面系统 - 用户使用说明</h1>
+<h2 id="_1">目录</h2>
+<ul>
+<li><a href="#系统概述">系统概述</a></li>
+<li><a href="#快速开始">快速开始</a></li>
+<li><a href="#功能说明">功能说明</a></li>
+<li><a href="#配置指南">配置指南</a></li>
+<li><a href="#使用示例">使用示例</a></li>
+<li><a href="#常见问题">常见问题</a></li>
+<li><a href="#最新更新">最新更新</a></li>
 </ul>
-
-<h3>系统架构</h3>
-
-<pre><code>用户输入
+<h2 id="_2">系统概述</h2>
+<p>智能桌面系统是一个基于MCP（Model Context Protocol）架构的智能助手，可以帮助用户完成各种桌面任务，包括文档转换、文件操作、邮件处理、网络请求等。</p>
+<h3 id="_3">核心特性</h3>
+<ul>
+<li><strong>智能意图识别</strong>：自动理解用户需求</li>
+<li><strong>任务规划</strong>：基于行为树的智能任务规划系统</li>
+<li><strong>高效缓存</strong>：基于FAISS向量搜索的混合缓存系统</li>
+<li><strong>安全可靠</strong>：沙箱隔离、权限控制</li>
+<li><strong>易于扩展</strong>：模块化设计，支持自定义工具</li>
+<li><strong>行为树执行</strong>：支持复杂任务的灵活执行和条件分支</li>
+</ul>
+<h3 id="_4">系统架构</h3>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span>
+<span class="normal">18</span>
+<span class="normal">19</span>
+<span class="normal">20</span></pre></div></td><td class="code"><div><pre><span></span><code>用户输入
     ↓
 意图解析（Intent Parser）
-    ↓
-判断意图类型
-    ↓
-┌─────────────┬─────────────┐
-│  task（任务）│  chat（聊天）│
-└─────────────┴─────────────┘
-      ↓              ↓
-任务规划      直接LLM回答
-    ↓              ↓
-缓存检查
-    ↓
-执行计划（MCP Tools）
-    ↓
-返回结果
-</code></pre>
+    ↓ 判断意图类型
+├─ chat类型 → 直接返回聊天响应
+├─ cannot_execute类型 → 返回无法执行的原因
+└─ task类型 → 检查缓存
+    ├─ 缓存命中（哈希精确匹配或FAISS语义匹配）
+    │   └─ 使用缓存的tree_config执行行为树
+    └─ 缓存未命中
+        └─ LLM生成行为树配置（tree_config）
+            └─ 执行行为树（Behavior Tree）
+                ↓ 树节点执行
+                ├─ 序列节点（Sequence）
+                ├─ 选择节点（Selector）
+                ├─ 并行节点（Parallel）
+                ├─ 动作节点（Action）→ 调用MCP工具
+                └─ 条件节点（Condition）→ 基于结果分支
+                ↓
+            返回结果
+</code></pre></div></td></tr></table></div>
 
-<h3>意图类型</h3>
-
-<p>系统支持两种意图类型：</p>
-
-<h4>1. task（任务型）</h4>
-<p>需要调用工具执行具体操作，包括：</p>
-<ul>
-    <li>文件操作：创建、读取、写入、删除文件/文件夹</li>
-    <li>文档转换：PDF转Word、Word转PDF等</li>
-    <li>系统信息：获取系统信息、进程列表等</li>
-    <li>文本处理：转语音、摘要、格式化等</li>
-    <li>网络请求：HTTP请求、API调用等</li>
-    <li>邮件发送：发送邮件、读取邮件等</li>
-</ul>
-
-<h4>2. chat（聊天型）</h4>
-<p>纯对话内容，直接使用LLM回答，包括：</p>
-<ul>
-    <li>问候：如"你好"、"早上好"等</li>
-    <li>提问：如"什么是"、"如何"、"为什么"等</li>
-    <li>闲聊：如"今天天气怎么样"、"你好吗"等</li>
-    <li>咨询：各种问题咨询和建议</li>
-</ul>
-
-<h2 id="快速开始">快速开始</h2>
-
-<h3>安装依赖</h3>
-
-<pre><code>pip install -r requirements.txt
-</code></pre>
-
-<h3>启动系统</h3>
-
-<pre><code>python main.py
-</code></pre>
-
-<h3>基本使用</h3>
-
-<p>在聊天界面输入自然语言指令，例如：</p>
-
-<pre><code>把桌面上的生成式对抗网络.pdf转为word，放入桌面上的cx文件夹内
-</code></pre>
-
-<p>系统会自动：</p>
+<h3 id="_5">意图识别</h3>
+<p>系统支持三种意图类型：</p>
 <ol>
-    <li>解析意图</li>
-    <li>生成任务计划</li>
-    <li>执行任务</li>
-    <li>返回结果</li>
+<li><strong>task（任务型意图）</strong></li>
+<li>当前可用工具可以完成的操作</li>
+<li>用户明确要求执行某个操作（如"转换"、"发送"、"处理"、"生成"、"删除"、"打开"、"查询"等）</li>
+<li>
+<p>例如：文件操作、系统信息、文本处理、网络请求、邮件发送、天气查询、股票查询、新闻查询、快递查询等</p>
+</li>
+<li>
+<p><strong>chat（聊天型意图）</strong></p>
+</li>
+<li>当前可用工具无法完成的操作</li>
+<li>包括问候、提问、闲聊、咨询等纯对话内容</li>
+<li>不执行任何工具</li>
+<li>
+<p>例如："你好"、"早上好"、"什么是人工智能"、"今天天气怎么样"（如果没有天气工具）</p>
+</li>
+<li>
+<p><strong>cannot_execute（无法执行型意图）</strong></p>
+</li>
+<li>用户确实想调用工具执行任务，但现有工具或工具的组合步骤不能满足任务执行需要</li>
+<li>用户明确要求执行某个操作，但当前工具无法完成</li>
+<li>用户提到的任务需要多个步骤，但当前工具无法组合完成</li>
+<li>用户提到的功能超出了当前工具的能力范围</li>
 </ol>
+<h3 id="_6">任务执行流程</h3>
+<p>系统采用智能缓存策略和行为树执行引擎：</p>
+<ol>
+<li><strong>两层缓存匹配</strong></li>
+<li>第一层：哈希精确匹配（基于MD5哈希，响应速度约0.01秒）</li>
+<li>
+<p>第二层：FAISS语义匹配（基于向量相似度，响应速度约0.05秒）</p>
+</li>
+<li>
+<p><strong>缓存命中流程</strong></p>
+</li>
+<li>从缓存获取行为树配置（tree_config）</li>
+<li>直接使用缓存的tree_config执行行为树</li>
+<li>
+<p>返回执行结果</p>
+</li>
+<li>
+<p><strong>缓存未命中流程</strong></p>
+</li>
+<li>LLM生成行为树配置（tree_config）</li>
+<li>缓存tree_config</li>
+<li>执行行为树</li>
+<li>返回执行结果</li>
+</ol>
+<h2 id="_7">快速开始</h2>
+<h3 id="_8">安装依赖</h3>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
+</code></pre></div></td></tr></table></div>
 
-<h2 id="功能说明">功能说明</h2>
+<h3 id="_9">启动系统</h3>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>python<span class="w"> </span>main.py
+</code></pre></div></td></tr></table></div>
 
-<h3>1. 文档转换</h3>
+<h3 id="_10">基本使用</h3>
+<p>在聊天界面输入自然语言指令，例如：</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>把桌面上的生成式对抗网络.pdf转为word，放入桌面上的cx文件夹内
+</code></pre></div></td></tr></table></div>
 
+<p>系统会自动：
+1. 解析意图
+2. 检查缓存
+3. 生成行为树配置（如果缓存未命中）
+4. 执行行为树
+5. 返回结果</p>
+<h2 id="_11">功能说明</h2>
+<h3 id="1">1. 文档转换</h3>
 <p>支持PDF与Word文档的互转。</p>
+<h4 id="pdfword">PDF转Word</h4>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>把桌面上的xxx.pdf转为word
+</code></pre></div></td></tr></table></div>
 
-<p>#### PDF转Word</p>
+<h4 id="wordpdf">Word转PDF</h4>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>把桌面上的xxx.docx转为pdf
+</code></pre></div></td></tr></table></div>
 
-<pre><code>把桌面上的xxx.pdf转为word
-</code></pre>
+<h4 id="_12">指定输出路径</h4>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>把桌面上的xxx.pdf转为word，放入桌面上的cx文件夹内
+</code></pre></div></td></tr></table></div>
 
-<p>#### Word转PDF</p>
-
-<pre><code>把桌面上的xxx.docx转为pdf
-</code></pre>
-
-<p>#### 指定输出路径</p>
-
-<pre><code>把桌面上的xxx.pdf转为word，放入桌面上的cx文件夹内
-</code></pre>
-
-<h3>2. 文件操作</h3>
-
+<h3 id="2">2. 文件操作</h3>
 <p>支持创建、读取、写入、删除、移动、复制、列表、搜索等操作。</p>
+<h4 id="_13">创建文件</h4>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>在桌面上创建一个test.txt文件
+</code></pre></div></td></tr></table></div>
 
-<p>#### 创建文件</p>
+<h4 id="_14">读取文件</h4>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>读取桌面上的test.txt文件内容
+</code></pre></div></td></tr></table></div>
 
-<pre><code>在桌面上创建一个test.txt文件
-</code></pre>
+<h4 id="_15">写入文件</h4>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>向桌面上的test.txt文件写入&quot;hello world&quot;
+</code></pre></div></td></tr></table></div>
 
-<p>#### 读取文件</p>
+<h4 id="_16">删除文件</h4>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>删除桌面上的test.txt文件
+</code></pre></div></td></tr></table></div>
 
-<pre><code>读取桌面上的test.txt文件内容
-</code></pre>
+<h4 id="_17">移动文件</h4>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>把桌面上的test.txt移动到桌面上的cx文件夹内
+</code></pre></div></td></tr></table></div>
 
-<p>#### 写入文件</p>
+<h4 id="_18">复制文件</h4>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>复制桌面上的test.txt到桌面上的cx文件夹内
+</code></pre></div></td></tr></table></div>
 
-<pre><code>向桌面上的test.txt文件写入"hello world"
-</code></pre>
+<h4 id="_19">列出目录</h4>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>列出桌面上的文件
+</code></pre></div></td></tr></table></div>
 
-<p>#### 删除文件</p>
+<h4 id="_20">搜索文件</h4>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>在桌面上搜索test.txt文件
+</code></pre></div></td></tr></table></div>
 
-<pre><code>删除桌面上的test.txt文件
-</code></pre>
-
-<p>#### 移动文件</p>
-
-<pre><code>把桌面上的test.txt移动到桌面上的cx文件夹内
-</code></pre>
-
-<p>#### 复制文件</p>
-
-<pre><code>复制桌面上的test.txt到桌面上的cx文件夹内
-</code></pre>
-
-<p>#### 列出目录</p>
-
-<pre><code>列出桌面上的文件
-</code></pre>
-
-<p>#### 搜索文件</p>
-
-<pre><code>在桌面上搜索test.txt文件
-</code></pre>
-
-<h3>3. PDF处理</h3>
-
+<h3 id="3-pdf">3. PDF处理</h3>
 <p>支持PDF合并、插入页、打印、提取页、拆分等操作。</p>
+<h4 id="pdf">PDF合并</h4>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>合并桌面上的file1.pdf和file2.pdf
+</code></pre></div></td></tr></table></div>
 
-<p>#### PDF合并</p>
+<h4 id="pdf_1">PDF插入页</h4>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>在桌面上的file1.pdf的第2页插入桌面上的file2.pdf
+</code></pre></div></td></tr></table></div>
 
-<pre><code>合并桌面上的file1.pdf和file2.pdf
-</code></pre>
+<h4 id="pdf_2">PDF打印</h4>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>打印桌面上的file1.pdf
+</code></pre></div></td></tr></table></div>
 
-<p>#### PDF插入页</p>
+<h4 id="pdf_3">PDF提取页</h4>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>提取桌面上的file1.pdf的第1-3页
+</code></pre></div></td></tr></table></div>
 
-<pre><code>在桌面上的file1.pdf的第2页插入桌面上的file2.pdf
-</code></pre>
+<h4 id="pdf_4">PDF拆分</h4>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>拆分桌面上的file1.pdf的第1-3页
+</code></pre></div></td></tr></table></div>
 
-<p>#### PDF打印</p>
-
-<pre><code>打印桌面上的file1.pdf
-</code></pre>
-
-<p>#### PDF提取页</p>
-
-<pre><code>提取桌面上的file1.pdf的第1-3页
-</code></pre>
-
-<p>#### PDF拆分</p>
-
-<pre><code>拆分桌面上的file1.pdf的第1-3页
-</code></pre>
-
-<h3>4. 文本处理</h3>
-
+<h3 id="4">4. 文本处理</h3>
 <p>支持文字转语音、文本摘要、格式化、统计等操作。</p>
+<h4 id="_21">文字转语音</h4>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>把桌面上的test.txt转为语音
+</code></pre></div></td></tr></table></div>
 
-<p>#### 文字转语音</p>
+<h4 id="_22">文本摘要</h4>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>对桌面上的test.txt进行摘要
+</code></pre></div></td></tr></table></div>
 
-<pre><code>把桌面上的test.txt转为语音
-</code></pre>
+<h4 id="_23">文本格式化</h4>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>格式化桌面上的test.txt为大写
+</code></pre></div></td></tr></table></div>
 
-<p>#### 文本摘要</p>
+<h4 id="_24">统计字符数</h4>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>统计桌面上的test.txt的字符数
+</code></pre></div></td></tr></table></div>
 
-<pre><code>对桌面上的test.txt进行摘要
-</code></pre>
-
-<p>#### 文本格式化</p>
-
-<pre><code>格式化桌面上的test.txt为大写
-</code></pre>
-
-<p>#### 统计字符数</p>
-
-<pre><code>统计桌面上的test.txt的字符数
-</code></pre>
-
-<h3>5. 邮件处理</h3>
-
+<h3 id="5">5. 邮件处理</h3>
 <p>支持发送和接收邮件。</p>
+<h4 id="_25">发送邮件</h4>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">发送邮件到457911161</span><span class="nv">@qq</span><span class="p">.</span><span class="n">com</span><span class="err">，</span><span class="n">主题是</span><span class="ss">&quot;测试&quot;</span><span class="err">，</span><span class="n">内容是</span><span class="ss">&quot;hello&quot;</span>
+</code></pre></div></td></tr></table></div>
 
-<p>#### 发送邮件</p>
+<h4 id="_26">接收邮件</h4>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">接收457911161</span><span class="nv">@qq</span><span class="p">.</span><span class="n">com的邮件</span>
+</code></pre></div></td></tr></table></div>
 
-<pre><code>发送邮件到457911161@qq.com，主题是"测试"，内容是"hello"
-</code></pre>
-
-<p>#### 接收邮件</p>
-
-<pre><code>接收457911161@qq.com的邮件
-</code></pre>
-
-<h3>6. 网络请求</h3>
-
+<h3 id="6">6. 网络请求</h3>
 <p>支持GET、POST、PUT、DELETE等HTTP请求。</p>
+<h4 id="get">GET请求</h4>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>发送GET请求到https://api.example.com/data
+</code></pre></div></td></tr></table></div>
 
-<p>#### GET请求</p>
+<h4 id="post">POST请求</h4>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>发送POST请求到https://api.example.com/data，数据是{&quot;key&quot;: &quot;value&quot;}
+</code></pre></div></td></tr></table></div>
 
-<pre><code>发送GET请求到https://api.example.com/data
-</code></pre>
-
-<p>#### POST请求</p>
-
-<pre><code>发送POST请求到https://api.example.com/data，数据是{"key": "value"}
-</code></pre>
-
-<h2 id="配置指南">配置指南</h2>
-
-<h3>配置文件结构</h3>
-
-<pre><code>Intelligence_Desktop/
+<h2 id="_27">行为树系统</h2>
+<p>行为树是智能桌面系统的核心任务执行引擎，提供了灵活、强大的任务规划和执行能力。</p>
+<h3 id="_28">什么是行为树？</h3>
+<p>行为树是一种用于AI和任务规划的树形结构，通过组合不同类型的节点来表示复杂的执行逻辑。</p>
+<h3 id="_29">行为树节点类型</h3>
+<h4 id="1-sequence">1. 序列节点（Sequence）</h4>
+<ul>
+<li><strong>功能</strong>：按顺序执行所有子节点，全部成功才返回成功</li>
+<li><strong>使用场景</strong>：需要按步骤执行的任务</li>
+<li><strong>示例</strong>：先检查文件，再转换文件，最后发送邮件</li>
+</ul>
+<h4 id="2-selector">2. 选择节点（Selector）</h4>
+<ul>
+<li><strong>功能</strong>：依次执行子节点，直到有一个成功就返回成功</li>
+<li><strong>使用场景</strong>：尝试多种方法完成任务</li>
+<li><strong>示例</strong>：尝试PDF转Word，如果失败则尝试其他格式</li>
+</ul>
+<h4 id="3-parallel">3. 并行节点（Parallel）</h4>
+<ul>
+<li><strong>功能</strong>：同时执行所有子节点</li>
+<li><strong>使用场景</strong>：独立任务并行执行</li>
+<li><strong>示例</strong>：同时转换多个文件</li>
+</ul>
+<h4 id="4-action">4. 动作节点（Action）</h4>
+<ul>
+<li><strong>功能</strong>：调用MCP工具执行具体操作</li>
+<li><strong>使用场景</strong>：执行实际的工具操作</li>
+<li><strong>示例</strong>：调用文档转换工具</li>
+</ul>
+<h4 id="5-condition">5. 条件节点（Condition）</h4>
+<ul>
+<li><strong>功能</strong>：检查条件，根据结果决定执行路径</li>
+<li><strong>使用场景</strong>：基于运行时结果的动态分支</li>
+<li><strong>示例</strong>：检查文件是否存在，再决定后续操作</li>
+</ul>
+<h3 id="_30">行为树执行流程</h3>
+<ol>
+<li><strong>解析意图</strong>：理解用户需求，确定任务类型</li>
+<li><strong>生成配置</strong>：LLM生成行为树配置</li>
+<li><strong>构建树</strong>：根据配置构建行为树结构</li>
+<li><strong>执行树</strong>：从根节点开始执行，按节点类型的逻辑执行子节点</li>
+<li><strong>收集结果</strong>：收集所有节点的执行结果</li>
+<li><strong>返回结果</strong>：将执行结果返回给用户</li>
+</ol>
+<h3 id="_31">行为树的优势</h3>
+<ul>
+<li><strong>灵活性</strong>：支持复杂的条件逻辑和分支</li>
+<li><strong>可维护性</strong>：模块化设计，易于理解和维护</li>
+<li><strong>可扩展性</strong>：可以轻松添加新的节点类型和执行逻辑</li>
+<li><strong>可视化</strong>：支持多种可视化格式，便于调试和分析</li>
+<li><strong>缓存复用</strong>：支持行为树配置的缓存和复用，提高执行效率</li>
+</ul>
+<h2 id="_32">配置指南</h2>
+<h3 id="_33">配置文件结构</h3>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span>
+<span class="normal">8</span>
+<span class="normal">9</span></pre></div></td><td class="code"><div><pre><span></span><code>Intelligence_Desktop/
 ├── system_config/           # 系统配置（用户不应该修改）
 │   ├── cache_config.json    # 缓存关键参数配置
 │   └── README.md          # 系统配置说明
@@ -376,267 +432,336 @@
 │   ├── config.py          # 配置加载器
 │   ├── README.md          # 用户配置说明
 │   └── CACHE_CONFIG_GUIDE.md  # 缓存配置指南
-</code></pre>
+</code></pre></div></td></tr></table></div>
 
-<h3>MCP配置</h3>
+<h3 id="mcp">MCP配置</h3>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nt">mcp</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">server</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">host</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;localhost&quot;</span><span class="w">           </span><span class="c1"># MCP服务器地址</span>
+<span class="w">    </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8001</span><span class="w">                   </span><span class="c1"># MCP服务器端口</span>
+<span class="w">    </span><span class="nt">max_connections</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10</span><span class="w">          </span><span class="c1"># 最大连接数</span>
+<span class="w">  </span><span class="nt">client</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">retry_attempts</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3</span><span class="w">            </span><span class="c1"># 客户端重试次数</span>
+</code></pre></div></td></tr></table></div>
 
-<pre><code>mcp:
-  server:
-    host: "localhost"           # MCP服务器地址
-    port: 8001                   # MCP服务器端口
-    max_connections: 10          # 最大连接数
-  client:
-    retry_attempts: 3            # 客户端重试次数
-</code></pre>
+<h3 id="llm">LLM配置</h3>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nt">llm</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">model</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;qwen3:8b&quot;</span><span class="w">             </span><span class="c1"># LLM模型名称</span>
+<span class="w">  </span><span class="nt">base_url</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;http://localhost:11434&quot;</span><span class="w">  </span><span class="c1"># LLM服务地址</span>
+<span class="w">  </span><span class="nt">temperature</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.6</span><span class="w">              </span><span class="c1"># 温度参数（0-1，越高越随机）</span>
+<span class="w">  </span><span class="nt">max_tokens</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">4000</span><span class="w">              </span><span class="c1"># 最大生成token数</span>
+</code></pre></div></td></tr></table></div>
 
-<h3>LLM配置</h3>
+<h3 id="_34">安全配置</h3>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nt">security</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">enable_sandbox</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">          </span><span class="c1"># 是否启用沙箱</span>
+<span class="w">  </span><span class="nt">dangerous_commands</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;rm</span><span class="nv"> </span><span class="s">-rf&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;format&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;shutdown&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;reboot&quot;</span><span class="p p-Indicator">]</span><span class="w">  </span><span class="c1"># 危险命令列表</span>
+<span class="w">  </span><span class="nt">allow_network</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">           </span><span class="c1"># 是否允许网络操作</span>
+<span class="w">  </span><span class="nt">allow_file_system</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">       </span><span class="c1"># 是否允许文件系统操作</span>
+</code></pre></div></td></tr></table></div>
 
-<pre><code>llm:
-  model: "qwen3:8b"             # LLM模型名称
-  base_url: "http://localhost:11434"  # LLM服务地址
-  temperature: 0.6              # 温度参数（0-1，越高越随机）
-  max_tokens: 4000              # 最大生成token数
-</code></pre>
+<h3 id="ui">UI配置</h3>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nt">ui</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">title</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;智能桌面系统&quot;</span><span class="w">         </span><span class="c1"># 窗口标题</span>
+<span class="w">  </span><span class="nt">width</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">800</span><span class="w">                    </span><span class="c1"># 窗口宽度</span>
+<span class="w">  </span><span class="nt">height</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">600</span><span class="w">                   </span><span class="c1"># 窗口高度</span>
+<span class="w">  </span><span class="nt">theme</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;light&quot;</span><span class="w">                </span><span class="c1"># 主题（light/dark）</span>
+</code></pre></div></td></tr></table></div>
 
-<h3>安全配置</h3>
+<h3 id="_35">缓存配置</h3>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span>
+<span class="normal">18</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nt">cache</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">                  </span><span class="c1"># 是否启用缓存（总开关）</span>
+<span class="w">  </span><span class="nt">enable_hash_match</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">         </span><span class="c1"># 哈希精确匹配开关</span>
+<span class="w">  </span><span class="nt">enable_faiss_match</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span><span class="w">       </span><span class="c1"># FAISS语义匹配开关</span>
+<span class="w">  </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;faiss&quot;</span><span class="w">                 </span><span class="c1"># 缓存类型</span>
+<span class="w">  </span><span class="nt">cache_dir</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;cache&quot;</span><span class="w">            </span><span class="c1"># 缓存目录</span>
 
-<pre><code>security:
-  enable_sandbox: true          # 是否启用沙箱
-  dangerous_commands: ["rm -rf", "format", "shutdown", "reboot"]  # 危险命令列表
-  allow_network: true           # 是否允许网络操作
-  allow_file_system: true       # 是否允许文件系统操作
-</code></pre>
+<span class="w">  </span><span class="nt">ttl</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">604800</span><span class="w">                   </span><span class="c1"># 缓存过期时间（秒），默认一周</span>
+<span class="w">  </span><span class="nt">max_total_size_mb</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1024</span><span class="w">       </span><span class="c1"># 总大小限制（1GB）</span>
+<span class="w">  </span><span class="nt">max_db_size_mb</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">768</span><span class="w">           </span><span class="c1"># SQLite数据库最大768MB</span>
+<span class="w">  </span><span class="nt">max_faiss_size_mb</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">392</span><span class="w">       </span><span class="c1"># FAISS索引最大392MB</span>
+<span class="w">  </span><span class="nt">max_records</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">100000</span><span class="w">           </span><span class="c1"># 最多100000条记录</span>
 
-<h3>UI配置</h3>
+<span class="w">  </span><span class="nt">cleanup_interval</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3600</span><span class="w">        </span><span class="c1"># 清理间隔（秒），默认1小时</span>
+<span class="w">  </span><span class="nt">cleanup_on_startup</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">     </span><span class="c1"># 启动时清理过期缓存</span>
 
-<pre><code>ui:
-  title: "智能桌面系统"         # 窗口标题
-  width: 800                    # 窗口宽度
-  height: 600                   # 窗口高度
-  theme: "light"                # 主题（light/dark）
-</code></pre>
+<span class="w">  </span><span class="nt">similarity_threshold</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.85</span><span class="w">    </span><span class="c1"># 相似度阈值（0-1）</span>
+<span class="w">  </span><span class="nt">embedding_model</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;nomic-embed-text&quot;</span><span class="w">  </span><span class="c1"># Embedding模型</span>
+</code></pre></div></td></tr></table></div>
 
-<h3>缓存配置</h3>
-
-<pre><code>cache:
-  enabled: true                  # 是否启用缓存
-  type: "faiss"                 # 缓存类型
-  cache_dir: "cache"            # 缓存目录
-
-  ttl: 604800                   # 缓存过期时间（秒），默认一周
-  max_total_size_mb: 1024       # 总大小限制（1GB）
-  max_db_size_mb: 768           # SQLite数据库最大768MB
-  max_faiss_size_mb: 392       # FAISS索引最大392MB
-  max_records: 100000           # 最多100000条记录
-
-  cleanup_interval: 3600        # 清理间隔（秒），默认1小时
-  cleanup_on_startup: true     # 启动时清理过期缓存
-
-  similarity_threshold: 0.85    # 相似度阈值（0-1）
-  embedding_model: "nomic-embed-text"  # Embedding模型
-</code></pre>
-
-<p>#### 缓存配置说明</p>
-
-<strong>TTL（过期时间）</strong>：</p>
-<li><code>604800</code>秒（7天）：默认设置，适合大多数场景</li>
-<li><code>3600</code>秒（1小时）：适合频繁更新的内容</li>
-<li><code>86400</code>秒（24小时）：适合稳定的内容</li>
-
-<strong>大小限制</strong>：</p>
-<li><code>max_total_size_mb</code>：总大小限制，超过后会清理旧缓存</li>
-<li><code>max_db_size_mb</code>：SQLite数据库大小限制，建议设置为总大小的75%</li>
-<li><code>max_faiss_size_mb</code>：FAISS索引大小限制，建议设置为总大小的25%</li>
-
-<strong>相似度阈值</strong>：</p>
-<li><code>0.85</code>：平衡匹配（推荐）</li>
-<li><code>0.90</code>：高精度匹配，缓存命中率较低</li>
-<li><code>0.80</code>：宽松匹配，缓存命中率较高</li>
-
-<p>详细配置指南请参考：<a href="../user_config/CACHE_CONFIG_GUIDE.html" target="_blank">缓存配置指南</a></p>
-
-<h2 id="使用示例">使用示例</h2>
-
-<h3>示例1：文档转换</h3>
-
-<pre><code>用户：把桌面上的生成式对抗网络.pdf转为word，放入桌面上的cx文件夹内
+<h4 id="_36">缓存配置说明</h4>
+<p><strong>总开关（enabled）</strong>：
+- <code>true</code>：启用缓存系统（推荐）
+- <code>false</code>：完全禁用缓存，每次请求都会重新生成计划</p>
+<p><strong>哈希精确匹配（enable_hash_match）</strong>：
+- <code>true</code>：启用哈希精确匹配（推荐）
+- <code>false</code>：禁用哈希精确匹配</p>
+<p><strong>FAISS语义匹配（enable_faiss_match）</strong>：
+- <code>true</code>：启用FAISS语义匹配
+- <code>false</code>：禁用FAISS语义匹配（默认）</p>
+<h4 id="_37">缓存禁用场景说明</h4>
+<h5 id="1-faissenable_faiss_match-false">1. 何时禁用FAISS语义匹配（enable_faiss_match: false）</h5>
+<p><strong>推荐禁用FAISS语义匹配的场景</strong>：</p>
+<ul>
+<li><strong>资源受限环境</strong>：系统内存或CPU资源有限，FAISS向量搜索消耗较多资源</li>
+<li><strong>精确性要求高</strong>：需要确保每次请求都精确匹配，不接受语义相似的结果</li>
+<li><strong>调试和测试</strong>：开发调试阶段需要精确控制每次请求的行为</li>
+<li><strong>Embedding模型不可用</strong>：Ollama embedding模型未安装或加载失败</li>
+<li><strong>缓存数据量小</strong>：缓存记录数量很少，语义匹配意义不大</li>
+</ul>
+<p><strong>影响</strong>：
+- 禁用后只能通过哈希精确匹配命中缓存
+- 相似但表述不同的请求无法命中缓存
+- 缓存命中率降低，但精确性提高
+- 减少内存和CPU消耗</p>
+<h5 id="2-enable_hash_match-false">2. 何时禁用哈希精确匹配（enable_hash_match: false）</h5>
+<p><strong>推荐禁用哈希精确匹配的场景</strong>：</p>
+<ul>
+<li><strong>仅依赖语义匹配</strong>：希望完全依赖FAISS语义匹配，不使用精确匹配</li>
+<li><strong>特殊测试场景</strong>：需要测试纯语义匹配的效果</li>
+<li><strong>避免重复请求</strong>：防止完全相同的请求命中缓存</li>
+</ul>
+<p><strong>影响</strong>：
+- 禁用后只能通过FAISS语义匹配命中缓存
+- 完全相同的请求也无法命中缓存
+- 缓存命中率大幅降低
+- 通常不建议单独禁用</p>
+<h5 id="3-enabled-false">3. 何时全局禁用缓存（enabled: false）</h5>
+<p><strong>推荐全局禁用缓存的场景</strong>：</p>
+<ul>
+<li><strong>调试和开发</strong>：需要每次都重新生成计划以验证LLM输出</li>
+<li><strong>测试新功能</strong>：测试新的意图识别或任务规划逻辑</li>
+<li><strong>缓存问题排查</strong>：怀疑缓存导致错误结果时临时禁用</li>
+<li><strong>频繁变化的任务</strong>：任务参数或内容经常变化，缓存效果差</li>
+<li><strong>存储空间不足</strong>：磁盘空间紧张，无法存储缓存数据</li>
+<li><strong>性能测试</strong>：需要测试无缓存情况下的系统性能</li>
+</ul>
+<p><strong>影响</strong>：
+- 每次请求都会调用LLM生成计划
+- 响应时间显著增加
+- LLM API调用次数大幅增加
+- 不占用磁盘空间</p>
+<h4 id="_38">缓存匹配策略</h4>
+<p>系统采用两层匹配策略：</p>
+<ol>
+<li><strong>第一层：哈希精确匹配</strong></li>
+<li>基于请求内容的MD5哈希</li>
+<li>完全相同的请求会立即命中</li>
+<li>
+<p>响应速度最快（约0.01秒）</p>
+</li>
+<li>
+<p><strong>第二层：FAISS语义匹配</strong></p>
+</li>
+<li>基于向量相似度的语义匹配</li>
+<li>相似但表述不同的请求可以命中</li>
+<li>响应速度较快（约0.05秒）</li>
+<li>受<code>similarity_threshold</code>控制，阈值越高命中可能性越低</li>
+</ol>
+<p><strong>TTL（过期时间）</strong>：
+- <code>604800</code>秒（7天）：默认设置，适合大多数场景
+- <code>3600</code>秒（1小时）：适合频繁更新的内容
+- <code>86400</code>秒（24小时）：适合稳定的内容</p>
+<p><strong>大小限制</strong>：
+- <code>max_total_size_mb</code>：总大小限制，超过后会清理旧缓存
+- <code>max_db_size_mb</code>：SQLite数据库大小限制，建议设置为总大小的75%
+- <code>max_faiss_size_mb</code>：FAISS索引大小限制，建议设置为总大小的25%</p>
+<p><strong>相似度阈值</strong>：
+- <code>0.85</code>：平衡匹配（推荐）
+- <code>0.90</code>：高精度匹配，缓存命中率较低
+- <code>0.80</code>：宽松匹配，缓存命中率较高</p>
+<p>详细配置指南请参考：<a href="./user_config/CACHE_CONFIG_GUIDE.md">缓存配置指南</a></p>
+<h2 id="_39">使用示例</h2>
+<h3 id="1_1">示例1：文档转换</h3>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code>用户：把桌面上的生成式对抗网络.pdf转为word，放入桌面上的cx文件夹内
 
 系统：
 1. 解析意图：pdf_to_word
 2. 生成计划：使用文档转换工具
 3. 执行计划：转换PDF到Word
 4. 返回结果：转换成功
-</code></pre>
+</code></pre></div></td></tr></table></div>
 
-<h3>示例2：邮件发送</h3>
+<h3 id="2_1">示例2：邮件发送</h3>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">用户</span><span class="err">：</span><span class="n">发送邮件到457911161</span><span class="nv">@qq</span><span class="p">.</span><span class="n">com</span><span class="err">，</span><span class="n">主题是</span><span class="ss">&quot;测试&quot;</span><span class="err">，</span><span class="n">内容是</span><span class="ss">&quot;hello&quot;</span>
 
-<pre><code>用户：发送邮件到457911161@qq.com，主题是"测试"，内容是"hello"
+<span class="n">系统</span><span class="err">：</span>
+<span class="mf">1.</span><span class="w"> </span><span class="n">解析意图</span><span class="err">：</span><span class="n">send_email</span>
+<span class="mf">2.</span><span class="w"> </span><span class="n">生成计划</span><span class="err">：</span><span class="n">使用邮件发送工具</span>
+<span class="mf">3.</span><span class="w"> </span><span class="n">执行计划</span><span class="err">：</span><span class="n">发送邮件</span>
+<span class="mf">4.</span><span class="w"> </span><span class="n">返回结果</span><span class="err">：</span><span class="n">邮件发送成功</span>
+</code></pre></div></td></tr></table></div>
 
-系统：
-1. 解析意图：send_email
-2. 生成计划：使用邮件发送工具
-3. 执行计划：发送邮件
-4. 返回结果：邮件发送成功
-</code></pre>
-
-<h3>示例3：文件操作</h3>
-
-<pre><code>用户：在桌面上创建一个test.txt文件，写入"hello world"
+<h3 id="3">示例3：文件操作</h3>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code>用户：在桌面上创建一个test.txt文件，写入&quot;hello world&quot;
 
 系统：
 1. 解析意图：create_file
 2. 生成计划：使用文件操作工具
 3. 执行计划：创建文件并写入内容
 4. 返回结果：文件创建成功
-</code></pre>
+</code></pre></div></td></tr></table></div>
 
-<h2 id="常见问题">常见问题</h2>
-
-<h3>Q1: 意图解析失败怎么办？</h3>
-
-<strong>A</strong>: 检查以下几点：</p>
-<p>1. 确保LLM服务正常运行</p>
-<p>2. 检查LLM配置是否正确</p>
-<p>3. 查看日志了解具体错误信息</p>
-
-<h3>Q2: 缓存未命中怎么办？</h3>
-
-<strong>A</strong>: 检查以下几点：</p>
-<p>1. 确保缓存已启用</p>
-<p>2. 检查相似度阈值是否过高</p>
-<p>3. 查看日志了解缓存状态</p>
-
-<h3>Q3: 如何提高缓存命中率？</h3>
-
-<strong>A</strong>: 可以尝试以下方法：</p>
-<p>1. 降低相似度阈值（如从0.85降到0.80）</p>
-<p>2. 增加缓存过期时间</p>
-<p>3. 使用更相似的表述</p>
-
-<h3>Q4: 如何清理缓存？</h3>
-
-<strong>A</strong>: 有以下几种方法：</p>
-<p>1. 自动清理：系统会定期清理过期缓存</p>
-<p>2. 手动清理：删除cache目录</p>
-<p>3. 调整配置：减少TTL时间</p>
-
-<h3>Q5: 系统支持哪些文件格式？</h3>
-
-<strong>A</strong>: 支持以下文件格式：</p>
-<li>文档：PDF、Word（.docx）</li>
-<li>文本：TXT</li>
-<li>音频：MP3、WAV（文字转语音）</li>
-<li>图片：PNG、JPG（OCR识别）</li>
-
-<h2 id="历史更新">历史更新</h2>
-
-<h3>2026-02-19</h3>
-
-<p>#### 新增功能</p>
-
-<p>1. <strong>意图解析优化</strong></p>
-<p>   - 重新设计意图类型：task（任务型）和chat（聊天型）</p>
-<p>   - 移除execute_code意图，不再生成Python代码</p>
-<p>   - 所有任务通过专用工具组合完成，提高系统稳定性</p>
-
-<p>2. <strong>聊天功能增强</strong></p>
-<p>   - 新增chat意图类型，支持纯对话内容</p>
-<p>   - 问候、提问、闲聊等直接使用LLM回答</p>
-<p>   - 避免误匹配缓存中的任务计划</p>
-
-<p>3. <strong>任务执行优化</strong></p>
-<p>   - task意图专注于工具调用和任务执行</p>
-<p>   - 更清晰的意图判断标准</p>
-<p>   - 提高系统响应速度和准确性</p>
-
-<p>#### 修复问题</p>
-
-<p>1. <strong>缓存误匹配</strong></p>
-<p>   - 修复简单输入（如"1"）错误匹配缓存的问题</p>
-<p>   - 聊天型意图不查询缓存，避免误执行任务</p>
-<p>   - 提高缓存匹配的准确性</p>
-
-<p>2. <strong>代码生成移除</strong></p>
-<p>   - 移除所有execute_code相关逻辑</p>
-<p>   - 移除Python代码生成和执行功能</p>
-<p>   - 简化系统架构，提高可靠性</p>
-
-<p>#### 文档更新</p>
-
-<p>1. <strong>用户文档</strong></p>
-<p>   - 更新系统架构图，反映意图类型判断</p>
-<p>   - 新增意图类型说明（task和chat）</p>
-<p>   - 更新功能说明和使用示例</p>
-
-<p>2. <strong>开发者文档</strong></p>
-<p>   - 更新意图解析器说明</p>
-<p>   - 移除execute_code相关文档</p>
-<p>   - 更新API接口说明</p>
-
-<h3>2026-02-18</h3>
-
-<p>#### 新增功能</p>
-
-<p>1. <strong>缓存关键参数配置</strong></p>
-<p>   - 新增<code>system_config/cache_config.json</code>配置文件</p>
-<p>   - 支持配置缓存关键参数（如operation）</p>
-<p>   - 确保不同操作类型不会被错误匹配</p>
-
-<p>2. <strong>配置文件分离</strong></p>
-<p>   - 新增<code>system_config</code>文件夹：系统配置（用户不应该修改）</p>
-<p>   - 新增<code>user_config</code>文件夹：用户配置</p>
-<p>   - 更清晰的配置管理结构</p>
-
-<p>3. <strong>缓存配置优化</strong></p>
-<p>   - 优化SQLite和FAISS的大小比例（1.96:1）</p>
-<p>   - 调整<code>max_db_size_mb</code>为768MB</p>
-<p>   - 联调<code>max_faiss_size_mb</code>为392MB</p>
-<p>   - 支持100000条记录的缓存</p>
-
-<p>4. <strong>网络请求工具优化</strong></p>
-<p>   - 将<code>method</code>参数改为<code>operation</code>参数</p>
-<p>   - 统一工具参数命名规范</p>
-<p>   - 更好的缓存匹配</p>
-
-<p>#### 修复问题</p>
-
-<p>1. <strong>意图解析失败</strong></p>
-<p>   - 修复PDF转Word的意图解析问题</p>
-<p>   - 修复输出路径提取问题</p>
-<p>   - 改进LLM提示词</p>
-
-<p>2. <strong>缓存未命中</strong></p>
-<p>   - 修复缓存匹配逻辑</p>
-<p>   - 添加关键参数验证</p>
-<p>   - 确保缓存正确命中</p>
-
-<p>3. <strong>模板匹配过于宽松</strong></p>
-<p>   - 添加关键参数验证</p>
-<p>   - 确保不同操作类型不会被错误匹配</p>
-<p>   - 提高缓存匹配精度</p>
-
-<p>#### 文档更新</p>
-
-<p>1. <strong>新增文档</strong></p>
-<p>   - <code>system_config/README.md</code>：系统配置说明</p>
-<p>   - <code>user_config/README.md</code>：用户配置说明</p>
-<p>   - <code>user_config/CACHE_CONFIG_GUIDE.md</code>：缓存配置指南</p>
-<p>   - <code>docs/USER_GUIDE.md</code>：用户使用说明（本文档）</p>
-<p>   - <code>docs/DEVELOPER_GUIDE.md</code>：开发者文档</p>
-
-<p>2. <strong>配置说明</strong></p>
-<p>   - 详细的配置项说明</p>
-<p>   - 配置修改建议</p>
-<p>   - 故障排除指南</p>
-
-<h2>相关文档</h2>
-
+<h2 id="_40">常见问题</h2>
+<h3 id="q1">Q1: 意图解析失败怎么办？</h3>
+<p><strong>A</strong>: 检查以下几点：
+1. 确保LLM服务正常运行
+2. 检查LLM配置是否正确
+3. 查看日志了解具体错误信息</p>
+<h3 id="q2">Q2: 缓存未命中怎么办？</h3>
+<p><strong>A</strong>: 检查以下几点：
+1. 确保缓存已启用
+2. 检查相似度阈值是否过高
+3. 查看日志了解缓存状态</p>
+<h3 id="q3">Q3: 如何提高缓存命中率？</h3>
+<p><strong>A</strong>: 可以尝试以下方法：
+1. 降低相似度阈值（如从0.85降到0.80）
+2. 增加缓存过期时间
+3. 使用更相似的表述</p>
+<h3 id="q4">Q4: 如何清理缓存？</h3>
+<p><strong>A</strong>: 有以下几种方法：
+1. 自动清理：系统会定期清理过期缓存
+2. 手动清理：删除cache目录
+3. 调整配置：减少TTL时间</p>
+<h3 id="q5">Q5: 系统支持哪些文件格式？</h3>
+<p><strong>A</strong>: 支持以下文件格式：
+- 文档：PDF、Word（.docx）
+- 文本：TXT
+- 音频：MP3、WAV（文字转语音）
+- 图片：PNG、JPG（OCR识别）</p>
+<h2 id="_41">最新更新</h2>
+<h3 id="2026-02-18">2026-02-18</h3>
+<h4 id="_42">新增功能</h4>
+<ol>
+<li><strong>缓存关键参数配置</strong></li>
+<li>新增<code>system_config/cache_config.json</code>配置文件</li>
+<li>支持配置缓存关键参数（如operation）</li>
+<li>
+<p>确保不同操作类型不会被错误匹配</p>
+</li>
+<li>
+<p><strong>配置文件分离</strong></p>
+</li>
+<li>新增<code>system_config</code>文件夹：系统配置（用户不应该修改）</li>
+<li>新增<code>user_config</code>文件夹：用户配置</li>
+<li>
+<p>更清晰的配置管理结构</p>
+</li>
+<li>
+<p><strong>缓存配置优化</strong></p>
+</li>
+<li>优化SQLite和FAISS的大小比例（1.96:1）</li>
+<li>调整<code>max_db_size_mb</code>为768MB</li>
+<li>联调<code>max_faiss_size_mb</code>为392MB</li>
+<li>
+<p>支持100000条记录的缓存</p>
+</li>
+<li>
+<p><strong>网络请求工具优化</strong></p>
+</li>
+<li>将<code>method</code>参数改为<code>operation</code>参数</li>
+<li>统一工具参数命名规范</li>
+<li>更好的缓存匹配</li>
+</ol>
+<h4 id="_43">修复问题</h4>
+<ol>
+<li><strong>意图解析失败</strong></li>
+<li>修复PDF转Word的意图解析问题</li>
+<li>修复输出路径提取问题</li>
+<li>
+<p>改进LLM提示词</p>
+</li>
+<li>
+<p><strong>缓存未命中</strong></p>
+</li>
+<li>修复缓存匹配逻辑</li>
+<li>添加关键参数验证</li>
+<li>
+<p>确保缓存正确命中</p>
+</li>
+<li>
+<p><strong>模板匹配过于宽松</strong></p>
+</li>
+<li>添加关键参数验证</li>
+<li>确保不同操作类型不会被错误匹配</li>
+<li>提高缓存匹配精度</li>
+</ol>
+<h4 id="_44">文档更新</h4>
+<ol>
+<li><strong>新增文档</strong></li>
+<li><code>system_config/README.md</code>：系统配置说明</li>
+<li><code>user_config/README.md</code>：用户配置说明</li>
+<li><code>user_config/CACHE_CONFIG_GUIDE.md</code>：缓存配置指南</li>
+<li><code>docs/USER_GUIDE.md</code>：用户使用说明（本文档）</li>
+<li>
+<p><code>docs/DEVELOPER_GUIDE.md</code>：开发者文档</p>
+</li>
+<li>
+<p><strong>配置说明</strong></p>
+</li>
+<li>详细的配置项说明</li>
+<li>配置修改建议</li>
+<li>故障排除指南</li>
+</ol>
+<h2 id="_45">相关文档</h2>
 <ul>
-    <li><a href="./DEVELOPER_GUIDE.html" target="_blank">开发者文档</a></li>
-    <li><a href="../system_config/README.html" target="_blank">系统配置说明</a></li>
-    <li><a href="../user_config/README.html" target="_blank">用户配置说明</a></li>
-    <li><a href="../user_config/CACHE_CONFIG_GUIDE.html" target="_blank">缓存配置指南</a></li>
+<li><a href="./DEVELOPER_GUIDE.md">开发者文档</a></li>
+<li><a href="../system_config/README.md">系统配置说明</a></li>
+<li><a href="../user_config/README.md">用户配置说明</a></li>
+<li><a href="../user_config/CACHE_CONFIG_GUIDE.md">缓存配置指南</a></li>
 </ul>
-
 </body>
 </html>

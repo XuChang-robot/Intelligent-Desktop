@@ -50,7 +50,7 @@ email:
 cache:
   enabled: true  #总开关
   # 匹配策略开关
-  enable_hash_match: true  # 哈希精确匹配开关
+  enable_hash_match: false  # 哈希精确匹配开关
   enable_faiss_match: false  # FAISS语义匹配开关
   type: "faiss"  # FAISS向量搜索 + SQLite元数据存储
   cache_dir: "cache"
@@ -74,7 +74,7 @@ cache:
   embedding_model: "nomic-embed-text"
   
   # 相似度阈值
-  similarity_threshold: 0.90
+  similarity_threshold: 0.95
 
 # 接口盒子API配置，官网https://www.apihz.cn/
 interfacebox:

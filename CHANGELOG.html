@@ -1,0 +1,325 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CHANGELOG</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+            margin-top: 30px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 30px;
+            border-bottom: 2px solid #ecf0f1;
+            padding-bottom: 5px;
+        }
+        h3 {
+            color: #7f8c8d;
+            margin-top: 25px;
+        }
+        h4 {
+            color: #95a5a6;
+            margin-top: 20px;
+        }
+        a {
+            color: #3498db;
+            text-decoration: none;
+        }
+        a:hover {
+            color: #2980b9;
+            text-decoration: underline;
+        }
+        code {
+            background-color: #f8f9fa;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        pre {
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+        pre code {
+            background-color: transparent;
+            padding: 0;
+            color: #ecf0f1;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background-color: white;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        ul, ol {
+            background-color: white;
+            padding: 15px 30px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .toc {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .toc ul {
+            background-color: transparent;
+            padding: 0;
+            margin: 0;
+        }
+        .toc li {
+            margin-bottom: 8px;
+        }
+        .section {
+            background-color: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .update {
+            background-color: #ecf0f1;
+            padding: 15px;
+            border-left: 4px solid #3498db;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1 id="_1">更新日志</h1>
+<h2 id="2026-02-21">[2026-02-21] 意图识别、规划、缓存性能更新</h2>
+<h3 id="_2">文档改进</h3>
+<ol>
+<li><strong>用户使用文档更新（docs/USER_GUIDE.md）</strong></li>
+<li>添加缓存配置详细说明</li>
+<li>新增缓存禁用场景说明</li>
+<li>添加缓存匹配策略说明</li>
+<li>详细说明三个缓存开关的作用和影响</li>
+<li>更新系统架构图，展示意图类型判断流程</li>
+<li>新增意图识别说明（task/chat/cannot_execute三种类型）</li>
+<li>
+<p>新增任务规划说明（两层缓存匹配、缓存命中/未命中流程）</p>
+</li>
+<li>
+<p><strong>缓存配置指南更新（user_config/CACHE_CONFIG_GUIDE.md）</strong></p>
+</li>
+<li>重构文档结构，添加概述部分</li>
+<li>新增缓存配置项详细说明</li>
+<li>添加缓存禁用场景详细说明</li>
+<li>
+<p>提供配置示例和使用建议</p>
+</li>
+<li>
+<p><strong>用户配置说明更新（user_config/README.md）</strong></p>
+</li>
+<li>更新缓存配置项说明</li>
+<li>添加缓存禁用场景简要说明</li>
+<li>
+<p>添加缓存配置指南的引用链接</p>
+</li>
+<li>
+<p><strong>缓存系统文档更新（docs/cache_system.md）</strong></p>
+</li>
+<li>添加缓存配置项详细说明</li>
+<li>添加缓存禁用场景详细说明</li>
+<li>更新故障排除部分</li>
+<li>
+<p>添加缓存匹配策略说明</p>
+</li>
+<li>
+<p><strong>开发者文档更新（docs/DEVELOPER_GUIDE.md）</strong></p>
+</li>
+<li>更新意图解析器说明（支持三种意图类型）</li>
+<li>更新任务规划器说明（支持缓存模板和完整计划生成）</li>
+<li>新增意图识别流程说明</li>
+<li>新增任务规划流程说明</li>
+<li>新增模板生成完整计划流程说明</li>
+<li>更新系统启动流程和请求处理流程</li>
+</ol>
+<h3 id="_3">缓存配置说明</h3>
+<p><strong>新增内容</strong>：
+- <strong>总开关（enabled）</strong>：控制缓存系统的启用/禁用
+- <strong>哈希精确匹配（enable_hash_match）</strong>：控制基于MD5哈希的精确匹配
+- <strong>FAISS语义匹配（enable_faiss_match）</strong>：控制基于向量相似度的语义匹配</p>
+<p><strong>禁用场景说明</strong>：
+1. <strong>禁用FAISS语义匹配</strong>：资源受限、精确性要求高、调试测试、Embedding模型不可用
+2. <strong>禁用哈希精确匹配</strong>：仅依赖语义匹配、特殊测试场景、避免重复请求
+3. <strong>全局禁用缓存</strong>：调试开发、测试新功能、缓存问题排查、存储空间不足</p>
+<p><strong>缓存匹配策略</strong>：
+- 第一层：哈希精确匹配（响应速度约0.01秒）
+- 第二层：FAISS语义匹配（响应速度约0.05秒）</p>
+<h3 id="_4">意图识别和任务规划更新</h3>
+<p><strong>意图识别变化</strong>：
+- 支持三种意图类型：task、chat、cannot_execute
+- task类型时LLM同时生成任务计划
+- 自动修复桌面路径（"桌面"/"Desktop"）
+- 提供工具信息给LLM辅助判断</p>
+<p><strong>任务规划变化</strong>：
+- 采用两层缓存匹配（哈希精确匹配 + FAISS语义匹配）
+- 缓存命中时使用模板生成完整计划
+- 缓存未命中时通过LLM生成计划
+- 支持entities为字典或列表格式
+- 支持批量操作（num_inputs数组）
+- 自动缓存成功执行的计划</p>
+<p><strong>缓存策略优化</strong>：
+- 第一层：哈希精确匹配（基于MD5哈希，响应速度约0.01秒）
+- 第二层：FAISS语义匹配（基于向量相似度，响应速度约0.05秒）
+- 缓存命中：从缓存获取模板，根据entities生成完整计划
+- 缓存未命中：通过LLM生成计划，缓存模板</p>
+<h3 id="_5">文件变更统计</h3>
+<ul>
+<li>修改文件：5个</li>
+<li>新增内容：约500行</li>
+</ul>
+<h3 id="_6">主要修改文件</h3>
+<ul>
+<li><code>docs/USER_GUIDE.md</code> - 用户使用说明</li>
+<li><code>user_config/CACHE_CONFIG_GUIDE.md</code> - 缓存配置指南</li>
+<li><code>user_config/README.md</code> - 用户配置说明</li>
+<li><code>docs/cache_system.md</code> - 缓存系统文档</li>
+<li><code>docs/DEVELOPER_GUIDE.md</code> - 开发者文档</li>
+</ul>
+<h2 id="2026-02-20">[2026-02-20] 功能增强与修复</h2>
+<h3 id="_7">新增功能</h3>
+<ol>
+<li><strong>文档转换工具增强</strong></li>
+<li>添加批量文件转换支持，支持通配符匹配（如 <code>*.docx</code>）</li>
+<li>支持输出路径为文件夹时自动生成输出文件名</li>
+<li>
+<p>修复通配符匹配时的"输入文件不存在"错误</p>
+</li>
+<li>
+<p><strong>天气查询工具优化</strong></p>
+</li>
+<li>修改预警信息显示，仅显示标题和生效时间</li>
+<li>统一术语：将"有效时间"改为"生效时间"</li>
+<li>修复未来7天预报日期显示问题（空括号问题）</li>
+<li>
+<p>修复日出日落时间日期显示问题</p>
+</li>
+<li>
+<p><strong>LLM思考过程显示</strong></p>
+</li>
+<li>修改LLM generate方法返回结构，包含response和thinking</li>
+<li>UI界面添加可折叠的思考过程显示</li>
+<li>思考过程使用小字体和灰色背景，默认折叠</li>
+<li>仅用于显示，不影响其他功能</li>
+</ol>
+<h3 id="_8">修复问题</h3>
+<ol>
+<li><strong>JSON解析修复</strong></li>
+<li>集成fast-json-repair库修复 malformed JSON</li>
+<li>增强JSON清理和验证逻辑</li>
+<li>
+<p>添加详细的日志记录用于调试</p>
+</li>
+<li>
+<p><strong>混合缓存系统优化</strong></p>
+</li>
+<li>修复实体模板提取，正确处理列表实体</li>
+<li>修复操作类型不匹配问题（缓存中的operation与实际执行不一致）</li>
+<li>
+<p>增强相似度阈值比较的日志记录</p>
+</li>
+<li>
+<p><strong>UI界面修复</strong></p>
+</li>
+<li>修复聊天窗口步骤间缺少换行的问题</li>
+<li>修复重复消息显示问题</li>
+<li>
+<p>添加思考过程显示支持</p>
+</li>
+<li>
+<p><strong>缓存相似度问题</strong></p>
+</li>
+<li>添加精确的日志记录来诊断浮点数精度问题</li>
+<li>改进相似度比较逻辑</li>
+</ol>
+<h3 id="_9">技术改进</h3>
+<ol>
+<li><strong>代码结构优化</strong></li>
+<li>重构LLM客户端，统一返回格式</li>
+<li>改进错误处理和日志记录</li>
+<li>
+<p>增强类型提示和文档</p>
+</li>
+<li>
+<p><strong>工具注册优化</strong></p>
+</li>
+<li>改进MCP服务器工具注册机制</li>
+<li>
+<p>添加天气查询工具支持</p>
+</li>
+<li>
+<p><strong>配置更新</strong></p>
+</li>
+<li>更新用户配置文件</li>
+<li>添加新的模型和工具配置</li>
+</ol>
+<h3 id="_10">文件变更统计</h3>
+<ul>
+<li>修改文件：18个</li>
+<li>新增代码：1758行</li>
+<li>删除代码：595行</li>
+<li>新增目录：mcp_server/tools/query/（天气查询工具）</li>
+</ul>
+<h3 id="_11">主要修改文件</h3>
+<ul>
+<li><code>mcp_client/llm.py</code> - LLM客户端核心逻辑</li>
+<li><code>mcp_client/client.py</code> - MCP客户端主逻辑</li>
+<li><code>mcp_client/task_planner.py</code> - 任务规划器</li>
+<li><code>mcp_client/hybrid_cache.py</code> - 混合缓存系统</li>
+<li><code>mcp_client/intent_parser.py</code> - 意图解析器</li>
+<li><code>ui/pyqt_main_window.py</code> - 主窗口UI</li>
+<li><code>ui/pyqt_app.py</code> - 应用程序主逻辑</li>
+<li><code>mcp_server/tools/document_converter.py</code> - 文档转换工具</li>
+<li><code>mcp_server/tools/query/weather_query.py</code> - 天气查询工具（新增）</li>
+</ul>
+<h3 id="_12">待解决问题</h3>
+<ol>
+<li><strong>LLM思考过程显示</strong></li>
+<li>当前Ollama API返回结构中未找到thinking字段</li>
+<li>需要进一步研究Ollama API文档</li>
+<li>
+<p>可能需要使用不同的参数或配置</p>
+</li>
+<li>
+<p><strong>JSON解析返回None</strong></p>
+</li>
+<li>即使JSON修复成功，意图解析仍返回None</li>
+<li>需要进一步调试和修复</li>
+</ol>
+</body>
+</html>

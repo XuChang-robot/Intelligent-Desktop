@@ -47,7 +47,7 @@ def register_document_converter_tools(mcp, security_checker=None, output_callbac
         支持 PDF 与 Word 文档的互转，支持批量转换（使用通配符如 *.docx）。
         
         Args:
-            operation: 操作类型，可选值：
+            operation: 操作类型，包括：
                 - "pdf_to_word": PDF 转 Word
                 - "word_to_pdf": Word 转 PDF
             input_path: 输入文件路径（支持通配符，如 "桌面/*.docx"）
@@ -64,11 +64,15 @@ def register_document_converter_tools(mcp, security_checker=None, output_callbac
                 "converted_files": 转换成功的文件列表（批量转换时）,
                 "failed_files": 转换失败的文件列表（批量转换时）
             }
-        
+
+        注意：
+            - input_path必须是单个文件路径或通配符模式，不能是多个路径的组合。
+            - output_path可以是文件路径或文件夹路径。
+            - 如果output_path是文件夹，将在该文件夹下生成与输入文件对应的转换文件。
+
         Examples:
             - PDF 转 Word: document_converter("pdf_to_word", "input.pdf", "output.docx")
             - Word 转 PDF: document_converter("word_to_pdf", "input.docx", "output.pdf")
-            - 批量转换: document_converter("word_to_pdf", "桌面/*.docx", "桌面/cx")
         """
         try:
             # 处理路径

@@ -1,0 +1,500 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>README_EN</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+            margin-top: 30px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 30px;
+            border-bottom: 2px solid #ecf0f1;
+            padding-bottom: 5px;
+        }
+        h3 {
+            color: #7f8c8d;
+            margin-top: 25px;
+        }
+        h4 {
+            color: #95a5a6;
+            margin-top: 20px;
+        }
+        a {
+            color: #3498db;
+            text-decoration: none;
+        }
+        a:hover {
+            color: #2980b9;
+            text-decoration: underline;
+        }
+        code {
+            background-color: #f8f9fa;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        pre {
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+        pre code {
+            background-color: transparent;
+            padding: 0;
+            color: #ecf0f1;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background-color: white;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        ul, ol {
+            background-color: white;
+            padding: 15px 30px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .toc {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .toc ul {
+            background-color: transparent;
+            padding: 0;
+            margin: 0;
+        }
+        .toc li {
+            margin-bottom: 8px;
+        }
+        .section {
+            background-color: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .update {
+            background-color: #ecf0f1;
+            padding: 15px;
+            border-left: 4px solid #3498db;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1 id="intelligent-desktop-system">Intelligent Desktop System</h1>
+<p>An intelligent desktop assistant based on MCP (Model Context Protocol), supporting automated processing of various desktop tasks such as document conversion, file operations, email processing, and network requests.</p>
+<h2 id="features">✨ Features</h2>
+<ul>
+<li>🧠 <strong>Intelligent Intent Recognition</strong>: Automatically understands user needs, supporting three intent types (task/chat/cannot_execute)</li>
+<li>📋 <strong>Task Planning</strong>: Behavior tree-based task planning system, supporting automatic decomposition and execution of complex tasks</li>
+<li>🚀 <strong>Efficient Caching</strong>: FAISS vector search-based hybrid caching system, supporting hash exact matching and semantic matching</li>
+<li>🔒 <strong>Secure and Reliable</strong>: Sandbox isolation, permission control</li>
+<li>🧩 <strong>Easy to Extend</strong>: Modular design, supporting custom tools</li>
+<li>☁️ <strong>Weather Query</strong>: Real-time weather information and warning notifications</li>
+<li>📄 <strong>Batch Document Processing</strong>: Supports batch file conversion and wildcard matching</li>
+<li>💭 <strong>LLM Thinking Process</strong>: Collapsible thinking process display</li>
+</ul>
+<h2 id="quick-start">🚀 Quick Start</h2>
+<h3 id="environment-requirements">Environment Requirements</h3>
+<ul>
+<li>Python 3.13+</li>
+<li>Ollama service</li>
+<li>Required Python libraries (see requirements.txt)</li>
+</ul>
+<h3 id="installation-steps">Installation Steps</h3>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c1"># 1. Clone the repository</span>
+git<span class="w"> </span>clone<span class="w"> </span>https://github.com/XuChang-robot/Intelligent-Desktop.git
+<span class="nb">cd</span><span class="w"> </span>Intelligent-Desktop
+
+<span class="c1"># 2. Install dependencies</span>
+pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
+
+<span class="c1"># 3. Start Ollama service</span>
+ollama<span class="w"> </span>serve
+
+<span class="c1"># 4. Download models</span>
+ollama<span class="w"> </span>pull<span class="w"> </span>qwen3:8b
+ollama<span class="w"> </span>pull<span class="w"> </span>nomic-embed-text
+
+<span class="c1"># 5. Start the system</span>
+python<span class="w"> </span>main.py
+</code></pre></div></td></tr></table></div>
+
+<h2 id="documentation">📚 Documentation</h2>
+<p>Complete documentation can be found in <a href="docs/README.md">docs/README.md</a></p>
+<h3 id="user-documentation">User Documentation</h3>
+<ul>
+<li>📖 <a href="docs/USER_GUIDE.md">User Guide</a> - System usage guide, feature descriptions, configuration guide</li>
+<li>📝 <a href="user_config/README.md">User Configuration Guide</a> - User configuration file instructions</li>
+<li>💾 <a href="user_config/CACHE_CONFIG_GUIDE.md">Cache Configuration Guide</a> - Cache system configuration guide</li>
+</ul>
+<h3 id="developer-documentation">Developer Documentation</h3>
+<ul>
+<li>🛠️ <a href="docs/DEVELOPER_GUIDE.md">Developer Guide</a> - System architecture, API reference, extension development</li>
+<li>⚙️ <a href="system_config/README.md">System Configuration Guide</a> - System configuration file instructions</li>
+<li>🚀 <a href="docs/cache_system.md">Hybrid Cache System Guide</a> - Cache system working principle</li>
+</ul>
+<h2 id="main-features">🎯 Main Features</h2>
+<h3 id="document-conversion">Document Conversion</h3>
+<ul>
+<li>PDF to Word</li>
+<li>Word to PDF</li>
+<li>Support for specifying output path</li>
+<li><strong>Support for batch conversion</strong>: Use wildcards to match multiple files</li>
+</ul>
+<h3 id="file-operations">File Operations</h3>
+<ul>
+<li>Create, read, write, delete files</li>
+<li>Move, copy files</li>
+<li>List directories, search files</li>
+</ul>
+<h3 id="pdf-processing">PDF Processing</h3>
+<ul>
+<li>PDF merging</li>
+<li>PDF page insertion</li>
+<li>PDF printing</li>
+<li>PDF page extraction</li>
+<li>PDF splitting</li>
+</ul>
+<h3 id="text-processing">Text Processing</h3>
+<ul>
+<li>Text-to-speech</li>
+<li>Text summarization</li>
+<li>Text formatting</li>
+<li>Character count</li>
+</ul>
+<h3 id="email-processing">Email Processing</h3>
+<ul>
+<li>Send emails</li>
+<li>Receive emails</li>
+</ul>
+<h3 id="network-requests">Network Requests</h3>
+<ul>
+<li>GET, POST, PUT, DELETE requests</li>
+<li>Support for custom request headers and parameters</li>
+</ul>
+<h3 id="weather-query">Weather Query</h3>
+<ul>
+<li><strong>Real-time weather</strong>: Query current weather for specified cities</li>
+<li><strong>Warning information</strong>: Display weather warning titles and effective times</li>
+<li><strong>Date display</strong>: Optimized date display in weather query results, supporting specific dates and relative dates</li>
+</ul>
+<h3 id="behavior-tree-task-planning">Behavior Tree Task Planning</h3>
+<p>Behavior tree is an advanced architecture for task planning and execution, representing task execution logic through a tree structure.</p>
+<h4 id="advantages-of-behavior-tree">Advantages of Behavior Tree</h4>
+<ul>
+<li><strong>Modular Design</strong>: Each node is an independent module that can be developed and tested separately</li>
+<li><strong>Flexible Execution Flow</strong>: Supports complex control flows such as conditional branches, loops, and parallel execution</li>
+<li><strong>Easy to Extend</strong>: Can easily add new node types and features</li>
+<li><strong>Visualization and Debugging</strong>: Can intuitively view task execution flow, facilitating debugging and optimization</li>
+<li><strong>Error Handling</strong>: Automatic rollback or retry when tasks fail to execute</li>
+<li><strong>State Management</strong>: Real-time tracking of task execution status and progress</li>
+</ul>
+<h4 id="example-of-behavior-tree-execution">Example of Behavior Tree Execution</h4>
+<p>Suppose the user requests: "Help me organize PDF files on the desktop, convert them to Word format, and then send them to a specified email"</p>
+<p>The behavior tree will decompose this task into the following steps:</p>
+<ol>
+<li><strong>Root Node</strong>: Start executing the task</li>
+<li><strong>Sequence Node</strong>: Execute the following sub-tasks in order</li>
+<li><strong>Search Node</strong>: Search for all PDF files in the desktop directory</li>
+<li><strong>Loop Node</strong>: Perform the following operations on each found PDF file<ul>
+<li><strong>Conversion Node</strong>: Convert PDF file to Word format</li>
+</ul>
+</li>
+<li><strong>Collection Node</strong>: Collect all converted Word files</li>
+<li><strong>Send Node</strong>: Send the collected Word files to the specified email address</li>
+</ol>
+<p>Each node has its own execution logic and error handling mechanism. If a node fails to execute, the behavior tree will handle it according to preset strategies (such as retry, skip, or terminate the task).</p>
+<h4 id="current-caching-logic">Current Caching Logic</h4>
+<p>The system adopts a two-layer caching matching strategy to improve task planning efficiency:</p>
+<ol>
+<li><strong>First Layer: Hash Exact Matching</strong></li>
+<li>Exact matching based on MD5 hash of request content</li>
+<li>Completely identical requests will immediately hit the cache</li>
+<li>Fastest response speed (approximately 0.01 seconds)</li>
+<li>
+<p>Applicable to: Users repeatedly executing the same task</p>
+</li>
+<li>
+<p><strong>Second Layer: FAISS Semantic Matching</strong></p>
+</li>
+<li>Semantic matching based on vector similarity</li>
+<li>Requests with similar but different expressions can hit the cache</li>
+<li>Faster response speed (approximately 0.05 seconds)</li>
+<li>Controlled by <code>similarity_threshold</code> parameter (default 0.85)</li>
+<li>Applicable to: Users executing similar tasks with different expressions</li>
+</ol>
+<h4 id="benefits-of-caching">Benefits of Caching</h4>
+<ul>
+<li><strong>Improve Response Speed</strong>: Avoid repeated LLM calls to generate plans, significantly reducing response time</li>
+<li><strong>Reduce Resource Consumption</strong>: Reduce the number of LLM API calls, saving computing resources and costs</li>
+<li><strong>Ensure Consistency</strong>: Use the same execution plan for identical or similar tasks, improving system stability</li>
+<li><strong>Support Offline Mode</strong>: When cache hits, tasks can be executed without connecting to the LLM service</li>
+</ul>
+<h2 id="project-structure">📁 Project Structure</h2>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span>
+<span class="normal">18</span>
+<span class="normal">19</span>
+<span class="normal">20</span>
+<span class="normal">21</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">Intelligence_Desktop</span><span class="o">/</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">mcp_client</span><span class="o">/</span><span class="w">              </span><span class="c1"># MCP client</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">intent_parser</span><span class="o">.</span><span class="n">py</span><span class="w">      </span><span class="c1"># Intent parser</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">task_planner</span><span class="o">.</span><span class="n">py</span><span class="w">      </span><span class="c1"># Task planner</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">hybrid_cache</span><span class="o">.</span><span class="n">py</span><span class="w">      </span><span class="c1"># Hybrid cache</span>
+<span class="err">│</span><span class="w">   </span><span class="err">└──</span><span class="w"> </span><span class="n">llm</span><span class="o">.</span><span class="n">py</span><span class="w">            </span><span class="c1"># LLM client</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">mcp_server</span><span class="o">/</span><span class="w">            </span><span class="c1"># MCP server</span>
+<span class="err">│</span><span class="w">   </span><span class="err">└──</span><span class="w"> </span><span class="n">tools</span><span class="o">/</span><span class="w">            </span><span class="c1"># Tool collection</span>
+<span class="err">│</span><span class="w">       </span><span class="err">├──</span><span class="w"> </span><span class="n">document_converter</span><span class="o">.</span><span class="n">py</span>
+<span class="err">│</span><span class="w">       </span><span class="err">├──</span><span class="w"> </span><span class="n">file_operations</span><span class="o">.</span><span class="n">py</span>
+<span class="err">│</span><span class="w">       </span><span class="err">├──</span><span class="w"> </span><span class="n">pdf_processor</span><span class="o">.</span><span class="n">py</span>
+<span class="err">│</span><span class="w">       </span><span class="err">├──</span><span class="w"> </span><span class="n">text_processing</span><span class="o">.</span><span class="n">py</span>
+<span class="err">│</span><span class="w">       </span><span class="err">├──</span><span class="w"> </span><span class="n">email_processor</span><span class="o">.</span><span class="n">py</span>
+<span class="err">│</span><span class="w">       </span><span class="err">├──</span><span class="w"> </span><span class="n">network_request</span><span class="o">.</span><span class="n">py</span>
+<span class="err">│</span><span class="w">       </span><span class="err">└──</span><span class="w"> </span><span class="n">query</span><span class="o">/</span><span class="w">          </span><span class="c1"># Query tools</span>
+<span class="err">│</span><span class="w">           </span><span class="err">└──</span><span class="w"> </span><span class="n">weather_query</span><span class="o">.</span><span class="n">py</span><span class="w">  </span><span class="c1"># Weather query tool</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">system_config</span><span class="o">/</span><span class="w">         </span><span class="c1"># System configuration (should not be modified by users)</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">user_config</span><span class="o">/</span><span class="w">           </span><span class="c1"># User configuration</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">cache</span><span class="o">/</span><span class="w">                </span><span class="c1"># Cache directory</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">docs</span><span class="o">/</span><span class="w">                 </span><span class="c1"># Documentation</span>
+<span class="err">└──</span><span class="w"> </span><span class="n">main</span><span class="o">.</span><span class="n">py</span><span class="w">              </span><span class="c1"># Main program</span>
+</code></pre></div></td></tr></table></div>
+
+<h2 id="configuration">⚙️ Configuration</h2>
+<h3 id="user-configuration">User Configuration</h3>
+<p>User configuration files are located at <code>user_config/config.yaml</code>, including of following configuration items:</p>
+<ul>
+<li><strong>MCP Configuration</strong>: Server address, port, number of connections</li>
+<li><strong>LLM Configuration</strong>: Model name, API address, temperature parameters</li>
+<li><strong>Security Configuration</strong>: Sandbox, dangerous commands, permission control</li>
+<li><strong>UI Configuration</strong>: Window title, size, theme</li>
+<li><strong>Logging Configuration</strong>: Log level, format</li>
+<li><strong>Email Configuration</strong>: SMTP/IMAP server</li>
+<li><strong>Cache Configuration</strong>: Enable status, size limit, similarity threshold</li>
+</ul>
+<p>For detailed configuration instructions, please refer to: <a href="user_config/README.md">User Configuration Guide</a></p>
+<h3 id="system-configuration">System Configuration</h3>
+<p>System configuration files are located at <code>system_config/cache_config.json</code>, containing cache key parameter configurations.</p>
+<p><strong>Note</strong>: System configuration is maintained by the system and should not be modified by users.</p>
+<p>For detailed configuration instructions, please refer to: <a href="system_config/README.md">System Configuration Guide</a></p>
+<h2 id="development">🔧 Development</h2>
+<h3 id="adding-new-tools">Adding New Tools</h3>
+<ol>
+<li>Create a new tool file under <code>mcp_server/tools/</code></li>
+<li>Implement the tool interface</li>
+<li>Register the tool in <code>mcp_server/server.py</code></li>
+<li>Update configuration files</li>
+<li>Update LLM prompts</li>
+</ol>
+<p>For detailed development guide, please refer to: <a href="docs/DEVELOPER_GUIDE.md">Developer Guide</a></p>
+<h3 id="testing">Testing</h3>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span>
+<span class="normal">8</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c1"># Run all tests</span>
+pytest<span class="w"> </span>tests/
+
+<span class="c1"># Test cache system</span>
+python<span class="w"> </span>test_cache_hit_complete.py
+
+<span class="c1"># Test different operations</span>
+python<span class="w"> </span>test_different_operations.py
+</code></pre></div></td></tr></table></div>
+
+<h2 id="performance">📊 Performance</h2>
+<p>The hybrid cache system provides significant performance improvements:</p>
+<table>
+<thead>
+<tr>
+<th>Scenario</th>
+<th>Without Cache</th>
+<th>With Cache</th>
+<th>Performance Improvement</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Exact Match</td>
+<td>7.7s</td>
+<td>0.01s</td>
+<td><strong>770x</strong></td>
+</tr>
+<tr>
+<td>Semantic Similar</td>
+<td>7.7s</td>
+<td>0.05s</td>
+<td><strong>154x</strong></td>
+</tr>
+</tbody>
+</table>
+<p>For detailed performance analysis, please refer to: <a href="docs/cache_system.md">Hybrid Cache System Guide</a></p>
+<h2 id="contribution">🤝 Contribution</h2>
+<p>Contributions, issues, and feature requests are welcome!</p>
+<ol>
+<li>Fork the repository</li>
+<li>Create a feature branch (<code>git checkout -b feature/AmazingFeature</code>)</li>
+<li>Commit your changes (<code>git commit -m 'Add some AmazingFeature'</code>)</li>
+<li>Push to the branch (<code>git push origin feature/AmazingFeature</code>)</li>
+<li>Open a Pull Request</li>
+</ol>
+<h2 id="license">📄 License</h2>
+<p>This project is licensed under the MIT License - see the <a href="LICENSE">LICENSE</a> file for details</p>
+<h2 id="contact">📞 Contact</h2>
+<ul>
+<li>Project Home: <a href="https://github.com/XuChang-robot/Intelligent-Desktop">https://github.com/XuChang-robot/Intelligent-Desktop</a></li>
+<li>Issue Feedback: <a href="https://github.com/XuChang-robot/Intelligent-Desktop/issues">https://github.com/XuChang-robot/Intelligent-Desktop/issues</a></li>
+</ul>
+<h2 id="changelog">📝 Changelog</h2>
+<h3 id="2026-02-24">2026-02-24</h3>
+<h4 id="bug-fixes">Bug Fixes</h4>
+<ul>
+<li>🐛 Fixed TypeError in weather query logic</li>
+<li>🐛 Fixed date display issue in weather query results</li>
+<li>🐛 Fixed wind direction and force information display for foreign weather queries</li>
+<li>🐛 Fixed parameter order issue in task planning function calls</li>
+</ul>
+<h4 id="system-optimization">System Optimization</h4>
+<ul>
+<li>⚡ Optimized weather query logic to support different API response formats for domestic and foreign cities</li>
+<li>⚡ Optimized cache system to improve cache hit rate</li>
+</ul>
+<h4 id="documentation-updates">Documentation Updates</h4>
+<ul>
+<li>📚 Updated user guide to add conceptual explanation of behavior tree task planning</li>
+<li>📚 Updated developer documentation to add architecture description of behavior tree system</li>
+<li>📚 Updated configuration guide to add detailed explanation of cache system</li>
+</ul>
+<h3 id="2026-02-21">2026-02-21</h3>
+<h4 id="new-features">New Features</h4>
+<ul>
+<li>✨ Intent recognition optimization: Support for three intent types (task/chat/cannot_execute)</li>
+<li>✨ Task planning optimization: Adopt two-layer cache matching (hash exact matching + FAISS semantic matching)</li>
+<li>✨ Cache configuration enhancement: Support independent control of hash matching and FAISS matching</li>
+<li>✨ Cache template mechanism: Use templates to generate complete plans when cache hits</li>
+<li>✨ Weather query tool: Real-time weather information and warning notifications</li>
+<li>✨ Batch document processing: Support wildcard matching and batch file conversion</li>
+<li>✨ LLM thinking process display: Collapsible thinking process</li>
+</ul>
+<h4 id="bug-fixes_1">Bug Fixes</h4>
+<ul>
+<li>🐛 Fixed date display issue in weather query results</li>
+<li>🐛 Fixed entity template extraction and operation type mismatch issues in hybrid cache system</li>
+<li>🐛 Fixed missing line breaks between steps in chat window</li>
+<li>🐛 Integrated fast-json-repair library to fix malformed JSON issues</li>
+</ul>
+<h4 id="system-optimization_1">System Optimization</h4>
+<ul>
+<li>⚡ Refactored intent parsing system to support three intent type judgments</li>
+<li>⚡ Optimized task planning logic to support cache templates and complete plan generation</li>
+<li>⚡ Optimized cache matching strategy to improve cache hit rate</li>
+<li>⚡ Streamlined LLM prompts to improve response speed</li>
+<li>⚡ Support entities as dictionary or list format</li>
+<li>⚡ Support batch operations (num_inputs array)</li>
+</ul>
+<h4 id="documentation-updates_1">Documentation Updates</h4>
+<ul>
+<li>📚 Updated user guide to add detailed instructions for intent recognition and task planning</li>
+<li>📚 Updated developer documentation to add system architecture and API reference</li>
+<li>📚 Added cache configuration guide with detailed cache disable scenarios</li>
+<li>📚 Updated user configuration instructions to add cache configuration items</li>
+<li>📚 Updated cache system documentation to add troubleshooting guide</li>
+</ul>
+<h3 id="2026-02-18">2026-02-18</h3>
+<h4 id="new-features_1">New Features</h4>
+<ul>
+<li>✨ Cache key parameter configuration</li>
+<li>✨ Configuration file separation (system_config/user_config)</li>
+<li>✨ Cache configuration optimization (SQLite/FAISS ratio optimization)</li>
+<li>✨ Network request tool optimization (operation parameter)</li>
+<li>✨ Complete documentation system (user documentation, developer documentation, configuration guide)</li>
+</ul>
+<h4 id="bug-fixes_2">Bug Fixes</h4>
+<ul>
+<li>🐛 Fixed intent parsing failure issues</li>
+<li>🐛 Fixed cache miss issues</li>
+<li>🐛 Fixed template matching being too loose</li>
+</ul>
+<h4 id="documentation-updates_2">Documentation Updates</h4>
+<ul>
+<li>📚 Added user guide</li>
+<li>📚 Added developer documentation</li>
+<li>📚 Added system configuration instructions</li>
+<li>📚 Added user configuration instructions</li>
+<li>📚 Added cache configuration guide</li>
+<li>📚 Added documentation center</li>
+</ul>
+<hr />
+<p><strong>Happy using!</strong> 🎉</p>
+</body>
+</html>

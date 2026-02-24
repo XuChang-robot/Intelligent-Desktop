@@ -1,9 +1,10 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>用户配置说明</title>
+    <title>README</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -117,156 +118,204 @@
     </style>
 </head>
 <body>
-<h1>用户配置说明</h1>
-
+    <h1 id="_1">用户配置说明</h1>
 <p>本文件夹包含用户可自定义的配置文件，用户可以根据自己的需求修改这些配置。</p>
-
-<h2>配置文件说明</h2>
-
-<h3>config.yaml</h3>
-
+<h2 id="_2">配置文件说明</h2>
+<h3 id="configyaml">config.yaml</h3>
 <p>系统主配置文件，包含MCP服务器、LLM、安全、UI、日志、邮件、缓存等配置。</p>
-
-<h4>配置项说明</h4>
-
-<h5>MCP 配置</h5>
-<pre><code>mcp:
-  server:
-    host: "localhost"           # MCP服务器地址
-    port: 8001                   # MCP服务器端口
-    max_connections: 10          # 最大连接数
-  client:
-    retry_attempts: 3            # 客户端重试次数
-</code></pre>
+<h4 id="_3">配置项说明</h4>
+<h5 id="mcp">MCP 配置</h5>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nt">mcp</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">server</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">host</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;localhost&quot;</span><span class="w">           </span><span class="c1"># MCP服务器地址</span>
+<span class="w">    </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8001</span><span class="w">                   </span><span class="c1"># MCP服务器端口</span>
+<span class="w">    </span><span class="nt">max_connections</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10</span><span class="w">          </span><span class="c1"># 最大连接数</span>
+<span class="w">  </span><span class="nt">client</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">retry_attempts</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3</span><span class="w">            </span><span class="c1"># 客户端重试次数</span>
+</code></pre></div></td></tr></table></div>
 
 <p><strong>影响</strong>：控制MCP客户端和服务器之间的连接行为</p>
+<h5 id="llm">LLM 配置</h5>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span>
+<span class="normal">8</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nt">llm</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">model</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;qwen3:8b&quot;</span><span class="w">             </span><span class="c1"># LLM默认模型名称</span>
+<span class="w">  </span><span class="nt">base_url</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;http://localhost:11434&quot;</span><span class="w">  </span><span class="c1"># LLM服务地址</span>
+<span class="w">  </span><span class="nt">temperature</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.6</span><span class="w">              </span><span class="c1"># 温度参数（0-1，越高越随机）</span>
+<span class="w">  </span><span class="nt">max_tokens</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">4000</span><span class="w">              </span><span class="c1"># 最大生成token数</span>
+<span class="w">  </span><span class="nt">repeat_penalty</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1.1</span><span class="w">           </span><span class="c1"># 重复惩罚</span>
+<span class="w">  </span><span class="nt">top_p</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.9</span><span class="w">                    </span><span class="c1"># 核采样参数</span>
+<span class="w">  </span><span class="nt">top_k</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">40</span><span class="w">                     </span><span class="c1"># Top-K采样参数</span>
+</code></pre></div></td></tr></table></div>
 
-<h5>LLM 配置</h5>
-<pre><code>llm:
-  model: "qwen3:8b"             # LLM默认模型名称
-  base_url: "http://localhost:11434"  # LLM服务地址
-  temperature: 0.6              # 温度参数（0-1，越高越随机）
-  max_tokens: 4000              # 最大生成token数
-  repeat_penalty: 1.1           # 重复惩罚
-  top_p: 0.9                    # 核采样参数
-  top_k: 40                     # Top-K采样参数
-</code></pre>
+<p><strong>影响</strong>：控制LLM的生成质量和性能
+- <code>temperature</code>: 越高生成越有创意，越低生成越确定
+- <code>max_tokens</code>: 限制生成内容的长度
+- <code>repeat_penalty</code>: 防止重复生成相同内容</p>
+<h5 id="_4">安全配置</h5>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nt">security</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">enable_sandbox</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">          </span><span class="c1"># 是否启用沙箱</span>
+<span class="w">  </span><span class="nt">dangerous_commands</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">...</span><span class="p p-Indicator">]</span><span class="w">     </span><span class="c1"># 危险命令列表</span>
+<span class="w">  </span><span class="nt">allow_network</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">           </span><span class="c1"># 是否允许网络操作</span>
+<span class="w">  </span><span class="nt">allow_file_system</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">       </span><span class="c1"># 是否允许文件系统操作</span>
+</code></pre></div></td></tr></table></div>
 
-<p><strong>影响</strong>：控制LLM的生成质量和性能</p>
-<ul>
-    <li><code>temperature</code>: 越高生成越有创意，越低生成越确定</li>
-    <li><code>max_tokens</code>: 限制生成内容的长度</li>
-    <li><code>repeat_penalty</code>: 防止重复生成相同内容</li>
-</ul>
-
-<h5>安全配置</h5>
-<pre><code>security:
-  enable_sandbox: true          # 是否启用沙箱
-  dangerous_commands: [...]     # 危险命令列表
-  allow_network: true           # 是否允许网络操作
-  allow_file_system: true       # 是否允许文件系统操作
-</code></pre>
-
-<p><strong>影响</strong>：控制系统的安全级别</p>
-<ul>
-    <li><code>enable_sandbox</code>: 启用沙箱可以隔离危险操作</li>
-    <li><code>dangerous_commands</code>: 禁止执行的危险命令</li>
-    <li><code>allow_network</code>: 控制是否允许网络请求</li>
-    <li><code>allow_file_system</code>: 控制是否允许文件系统操作</li>
-</ul>
-
-<h5>UI 配置</h5>
-<pre><code>ui:
-  title: "智能桌面系统"         # 窗口标题
-  width: 800                    # 窗口宽度
-  height: 600                   # 窗口高度
-  theme: "light"                # 主题（light/dark）
-</code></pre>
+<p><strong>影响</strong>：控制系统的安全级别
+- <code>enable_sandbox</code>: 启用沙箱可以隔离危险操作
+- <code>dangerous_commands</code>: 禁止执行的危险命令
+- <code>allow_network</code>: 控制是否允许网络请求
+- <code>allow_file_system</code>: 控制是否允许文件系统操作</p>
+<h5 id="ui">UI 配置</h5>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nt">ui</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">title</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;智能桌面系统&quot;</span><span class="w">         </span><span class="c1"># 窗口标题</span>
+<span class="w">  </span><span class="nt">width</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">800</span><span class="w">                    </span><span class="c1"># 窗口宽度</span>
+<span class="w">  </span><span class="nt">height</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">600</span><span class="w">                   </span><span class="c1"># 窗口高度</span>
+<span class="w">  </span><span class="nt">theme</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;light&quot;</span><span class="w">                </span><span class="c1"># 主题（light/dark）</span>
+</code></pre></div></td></tr></table></div>
 
 <p><strong>影响</strong>：控制用户界面的外观和行为</p>
+<h5 id="_5">日志配置</h5>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nt">logging</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">level</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;INFO&quot;</span><span class="w">                 </span><span class="c1"># 日志级别（DEBUG/INFO/WARNING/ERROR）</span>
+<span class="w">  </span><span class="nt">format</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;%(asctime)s</span><span class="nv"> </span><span class="s">-</span><span class="nv"> </span><span class="s">%(name)s</span><span class="nv"> </span><span class="s">-</span><span class="nv"> </span><span class="s">%(levelname)s</span><span class="nv"> </span><span class="s">-</span><span class="nv"> </span><span class="s">%(message)s&quot;</span>
+</code></pre></div></td></tr></table></div>
 
-<h5>日志配置</h5>
-<pre><code>logging:
-  level: "INFO"                 # 日志级别（DEBUG/INFO/WARNING/ERROR）
-  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-</code></pre>
-
-<p><strong>影响</strong>：控制日志的详细程度和格式</p>
-<ul>
-    <li><code>DEBUG</code>: 最详细的日志，用于调试</li>
-    <li><code>INFO</code>: 一般信息日志</li>
-    <li><code>WARNING</code>: 警告信息</li>
-    <li><code>ERROR</code>: 错误信息</li>
-</ul>
-
-<h5>邮件服务配置</h5>
-<pre><code>email:
-  smtp:
-    server: "smtp.163.com"      # SMTP服务器地址
-    port: 465                   # SMTP服务器端口
-  imap:
-    port: 993                   # IMAP服务器端口
-</code></pre>
+<p><strong>影响</strong>：控制日志的详细程度和格式
+- <code>DEBUG</code>: 最详细的日志，用于调试
+- <code>INFO</code>: 一般信息日志
+- <code>WARNING</code>: 警告信息
+- <code>ERROR</code>: 错误信息</p>
+<h5 id="_6">邮件服务配置</h5>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nt">email</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">smtp</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">server</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;smtp.163.com&quot;</span><span class="w">      </span><span class="c1"># SMTP服务器地址</span>
+<span class="w">    </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">465</span><span class="w">                   </span><span class="c1"># SMTP服务器端口</span>
+<span class="w">  </span><span class="nt">imap</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">993</span><span class="w">                   </span><span class="c1"># IMAP服务器端口</span>
+</code></pre></div></td></tr></table></div>
 
 <p><strong>影响</strong>：控制邮件发送和接收的服务器设置</p>
+<h5 id="_7">缓存配置</h5>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span>
+<span class="normal">18</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nt">cache</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">                  </span><span class="c1"># 是否启用缓存（总开关）</span>
+<span class="w">  </span><span class="nt">enable_hash_match</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">         </span><span class="c1"># 哈希精确匹配开关</span>
+<span class="w">  </span><span class="nt">enable_faiss_match</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span><span class="w">       </span><span class="c1"># FAISS语义匹配开关</span>
+<span class="w">  </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;faiss&quot;</span><span class="w">                 </span><span class="c1"># 缓存类型</span>
+<span class="w">  </span><span class="nt">cache_dir</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;cache&quot;</span><span class="w">            </span><span class="c1"># 缓存目录</span>
 
-<h5>缓存配置</h5>
-<pre><code>cache:
-  enabled: true                  # 是否启用缓存
-  type: "faiss"                 # 缓存类型
-  cache_dir: "cache"            # 缓存目录
-  ttl: 604800                   # 缓存过期时间（秒），默认一周
-  max_total_size_mb: 1024       # 总大小限制（1GB）
-  max_db_size_mb: 512           # SQLite数据库最大512MB
-  max_faiss_size_mb: 512        # FAISS索引最大512MB
-  max_records: 10000            # 最多10000条记录
-  cleanup_interval: 3600        # 清理间隔（秒），默认1小时
-  cleanup_on_startup: true     # 启动时清理过期缓存
-  similarity_threshold: 0.85    # 相似度阈值（0-1）
-  embedding_model: "nomic-embed-text"  # Embedding模型
-</code></pre>
+<span class="w">  </span><span class="nt">ttl</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">604800</span><span class="w">                   </span><span class="c1"># 缓存过期时间（秒），默认一周</span>
+<span class="w">  </span><span class="nt">max_total_size_mb</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1024</span><span class="w">       </span><span class="c1"># 总大小限制（1GB）</span>
+<span class="w">  </span><span class="nt">max_db_size_mb</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">768</span><span class="w">           </span><span class="c1"># SQLite数据库最大768MB</span>
+<span class="w">  </span><span class="nt">max_faiss_size_mb</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">392</span><span class="w">       </span><span class="c1"># FAISS索引最大392MB</span>
+<span class="w">  </span><span class="nt">max_records</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">100000</span><span class="w">           </span><span class="c1"># 最多100000条记录</span>
 
-<p><strong>影响</strong>：控制缓存系统的行为和性能</p>
-<ul>
-    <li><code>enabled</code>: 是否启用缓存，禁用后每次都会重新生成计划</li>
-    <li><code>ttl</code>: 缓存过期时间，过期后缓存会被清理</li>
-    <li><code>max_total_size_mb</code>: 缓存总大小限制，超过后会清理旧缓存</li>
-    <li><code>similarity_threshold</code>: 相似度阈值，越高匹配越严格</li>
-    <li><code>embedding_model</code>: 用于向量搜索的模型</li>
-</ul>
+<span class="w">  </span><span class="nt">cleanup_interval</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3600</span><span class="w">        </span><span class="c1"># 清理间隔（秒），默认1小时</span>
+<span class="w">  </span><span class="nt">cleanup_on_startup</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">     </span><span class="c1"># 启动时清理过期缓存</span>
 
-<h2>config.py</h2>
+<span class="w">  </span><span class="nt">similarity_threshold</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.85</span><span class="w">    </span><span class="c1"># 相似度阈值（0-1）</span>
+<span class="w">  </span><span class="nt">embedding_model</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;nomic-embed-text&quot;</span><span class="w">  </span><span class="c1"># Embedding模型</span>
+</code></pre></div></td></tr></table></div>
 
+<p><strong>影响</strong>：控制缓存系统的行为和性能
+- <code>enabled</code>: 是否启用缓存，禁用后每次都会重新生成计划
+- <code>enable_hash_match</code>: 是否启用哈希精确匹配
+- <code>enable_faiss_match</code>: 是否启用FAISS语义匹配
+- <code>ttl</code>: 缓存过期时间，过期后缓存会被清理
+- <code>max_total_size_mb</code>: 缓存总大小限制，超过后会清理旧缓存
+- <code>similarity_threshold</code>: 相似度阈值，越高匹配越严格
+- <code>embedding_model</code>: 用于向量搜索的模型</p>
+<p><strong>缓存禁用场景</strong>：
+- <strong>禁用FAISS语义匹配</strong>（<code>enable_faiss_match: false</code>）：资源受限、精确性要求高、调试测试、Embedding模型不可用
+- <strong>禁用哈希精确匹配</strong>（<code>enable_hash_match: false</code>）：仅依赖语义匹配、特殊测试场景
+- <strong>全局禁用缓存</strong>（<code>enabled: false</code>）：调试开发、测试新功能、缓存问题排查、存储空间不足</p>
+<p>详细配置指南请参考：<a href="./CACHE_CONFIG_GUIDE.md">缓存配置指南</a></p>
+<h3 id="configpy">config.py</h3>
 <p>配置加载器模块，提供配置读取接口。</p>
+<h4 id="_8">使用方法</h4>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span>
+<span class="normal">8</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">user_config.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_config</span><span class="p">,</span> <span class="n">load_config</span>
 
-<h4>使用方法</h4>
-<pre><code>from user_config.config import get_config, load_config
+<span class="c1"># 获取配置值</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">get_config</span><span class="p">(</span><span class="s2">&quot;llm.model&quot;</span><span class="p">,</span> <span class="s2">&quot;default_model&quot;</span><span class="p">)</span>
+<span class="n">temperature</span> <span class="o">=</span> <span class="n">get_config</span><span class="p">(</span><span class="s2">&quot;llm.temperature&quot;</span><span class="p">,</span> <span class="mf">0.7</span><span class="p">)</span>
 
-# 获取配置值
-model = get_config("llm.model", "default_model")
-temperature = get_config("llm.temperature", 0.7)
+<span class="c1"># 加载完整配置</span>
+<span class="n">config</span> <span class="o">=</span> <span class="n">load_config</span><span class="p">()</span>
+</code></pre></div></td></tr></table></div>
 
-# 加载完整配置
-config = load_config()</code></pre>
-
-<h4>配置修改建议</h4>
-
-<h5>性能优化</h5>
-<p>1. <strong>提高缓存命中率</strong>：降低<code>similarity_threshold</code>（如0.8）</p>
-<p>2. <strong>减少缓存大小</strong>：降低<code>max_total_size_mb</code>和<code>max_records</code></p>
-<p>3. <strong>提高LLM速度</strong>：降低<code>max_tokens</code>和<code>temperature</code></p>
-
-<h5>安全增强</h5>
-<p>1. <strong>启用沙箱</strong>：设置<code>enable_sandbox: true</code></p>
-<p>2. <strong>禁止网络操作</strong>：设置<code>allow_network: false</code></p>
-<p>3. <strong>禁止文件系统操作</strong>：设置<code>allow_file_system: false</code></p>
-<h>调试模式</h>
-<p>1. <strong>启用详细日志</strong>：设置<code>logging.level: "DEBUG"</code></p>
-<p>2. <strong>禁用缓存</strong>：设置<code>cache.enabled: false</code></p>
-<h>注意事项</h>
-<p>1. 修改配置后需要重启系统才能生效</p>
-<p>2. 建议在修改前备份原配置文件</p>
-<p>3. 某些配置修改可能导致系统行为异常，请谨慎修改</p>
-<p>4. 如果不确定某个配置的作用，建议不要修改</p>
+<h2 id="_9">配置修改建议</h2>
+<h3 id="_10">性能优化</h3>
+<ol>
+<li><strong>提高缓存命中率</strong>：降低<code>similarity_threshold</code>（如0.8）</li>
+<li><strong>减少缓存大小</strong>：降低<code>max_total_size_mb</code>和<code>max_records</code></li>
+<li><strong>提高LLM速度</strong>：降低<code>max_tokens</code>和<code>temperature</code></li>
+</ol>
+<h3 id="_11">安全增强</h3>
+<ol>
+<li><strong>启用沙箱</strong>：设置<code>enable_sandbox: true</code></li>
+<li><strong>禁止网络操作</strong>：设置<code>allow_network: false</code></li>
+<li><strong>禁止文件系统操作</strong>：设置<code>allow_file_system: false</code></li>
+</ol>
+<h3 id="_12">调试模式</h3>
+<ol>
+<li><strong>启用详细日志</strong>：设置<code>logging.level: "DEBUG"</code></li>
+<li><strong>禁用缓存</strong>：设置<code>cache.enabled: false</code></li>
+</ol>
+<h2 id="_13">注意事项</h2>
+<ol>
+<li>修改配置后需要重启系统才能生效</li>
+<li>建议在修改前备份原配置文件</li>
+<li>某些配置修改可能导致系统行为异常，请谨慎修改</li>
+<li>如果不确定某个配置的作用，建议不要修改</li>
+</ol>
 </body>
 </html>

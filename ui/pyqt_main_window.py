@@ -4,10 +4,13 @@ from PyQt6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
                                QLabel, QTextEdit, QLineEdit, QPushButton, 
                                QComboBox, QFrame, QSplitter, QScrollArea,
                                QSizePolicy, QMessageBox, QProgressBar, QStatusBar)
-from PyQt6.QtCore import Qt, QThread, pyqtSignal, QTimer, QUrl, QSize
-from PyQt6.QtGui import QFont, QColor, QPalette, QTextCursor, QTextDocument, QIcon
+from PyQt6.QtCore import Qt, QThread, pyqtSignal, QTimer, QUrl, QSize, QBuffer, QIODevice
+from PyQt6.QtGui import QFont, QColor, QPalette, QTextCursor, QTextDocument, QIcon, QPixmap, QImage, QTextImageFormat, QPen
+from PyQt6.QtNetwork import QNetworkAccessManager, QNetworkRequest, QNetworkReply
 from typing import Dict, Any, Optional, Callable
 import logging
+import re
+import base64
 
 class ChatTextEdit(QTextEdit):
     """自定义文本编辑框，处理链接点击"""
@@ -187,6 +190,12 @@ class MainWindow(QMainWindow):
         self.stream_message_sender = None  # 流式消息的发送者
         self.stream_message_thinking = None  # 流式消息的思考过程
         self.stream_message_thinking_cursor = None  # 流式消息思考过程的游标位置
+        
+        # 图片下载管理
+        self.network_manager = QNetworkAccessManager()
+        self.network_manager.finished.connect(self.on_image_downloaded)
+        self.pending_images = {}  # 待下载的图片 {url: (message_id, image_id)}
+        self.image_timeout = 3000  # 图片下载超时时间（毫秒）
         
         self.init_ui()
         
@@ -538,6 +547,13 @@ class MainWindow(QMainWindow):
         if not message:
             return
         
+        # 生成消息ID
+        import time
+        message_id = f"msg_{int(time.time() * 1000)}"
+        
+        # 处理消息中的图片URL
+        processed_message = self.process_images_in_message(message, message_id)
+        
         # 清空现有内容，重新构建HTML
         current_html = self.chat_area.toHtml()
         
@@ -548,7 +564,7 @@ class MainWindow(QMainWindow):
         # 处理消息内容中的换行符，确保在HTML中正确显示
         # 首先将消息内容中的HTML特殊字符转义，然后将换行符转换为<br>标签
         import html
-        processed_message = html.escape(message)
+        processed_message = html.escape(processed_message)
         # 将换行符转换为HTML换行标签
         processed_message = processed_message.replace('\n', '<br>')
         
@@ -618,9 +634,12 @@ class MainWindow(QMainWindow):
         self.stream_message_sender = sender
         self.stream_message_thinking = thinking or ""
         
+        # 处理消息中的图片URL
+        processed_message = self.process_images_in_message(initial_message, self.stream_message_id)
+        
         # 创建初始消息HTML
         import html
-        processed_message = html.escape(initial_message)
+        processed_message = html.escape(processed_message)
         processed_message = processed_message.replace('\n', '<br>')
         
         # 创建消息容器
@@ -689,6 +708,9 @@ class MainWindow(QMainWindow):
         # 更新聊天内容
         if message:
             print(f"[DEBUG] 更新聊天内容: '{message}'")
+            # 处理消息中的图片URL
+            processed_message = self.process_images_in_message(message, self.stream_message_id)
+            
             # 使用保存的游标位置来插入新内容
             if self.stream_message_cursor is not None:
                 # 使用保存的游标
@@ -697,7 +719,7 @@ class MainWindow(QMainWindow):
                 
                 # 插入新内容（使用 insertHtml 保持格式一致）
                 import html
-                processed_message = html.escape(message)
+                processed_message = html.escape(processed_message)
                 processed_message = processed_message.replace('\n', '<br>')
                 cursor.insertHtml(processed_message)
                 
@@ -717,7 +739,7 @@ class MainWindow(QMainWindow):
                 
                 # 插入新内容
                 import html
-                processed_message = html.escape(message)
+                processed_message = html.escape(processed_message)
                 processed_message = processed_message.replace('\n', '<br>')
                 cursor.insertHtml(processed_message)
                 
@@ -1029,3 +1051,229 @@ class MainWindow(QMainWindow):
             self.progress_bar.setValue(value)
         else:
             self.progress_bar.setVisible(False)
+    
+    def download_image(self, url: str, message_id: str = None, image_id: str = None):
+        """下载图片
+        
+        Args:
+            url: 图片URL
+            message_id: 消息ID（用于标识图片属于哪条消息）
+            image_id: 图片ID（用于标识图片）
+        """
+        if not url or not url.startswith(('http://', 'https://')):
+            return
+        
+        # 生成唯一ID
+        if message_id is None:
+            message_id = self.stream_message_id or "default"
+        if image_id is None:
+            import time
+            image_id = f"img_{int(time.time() * 1000)}"
+        
+        # 记录待下载的图片
+        self.pending_images[url] = (message_id, image_id)
+        
+        try:
+            # 创建网络请求
+            request = QNetworkRequest(QUrl(url))
+            request.setTransferTimeout(self.image_timeout)
+            
+            # 发起下载请求
+            reply = self.network_manager.get(request)
+            reply.setProperty("url", url)
+            reply.setProperty("message_id", message_id)
+            reply.setProperty("image_id", image_id)
+            
+            # 设置超时定时器（保存引用避免被垃圾回收）
+            timeout_timer = QTimer()
+            timeout_timer.setSingleShot(True)
+            timeout_timer.setProperty("reply", reply)
+            timeout_timer.setProperty("url", url)
+            timeout_timer.setProperty("message_id", message_id)
+            timeout_timer.setProperty("image_id", image_id)
+            timeout_timer.timeout.connect(lambda: self.on_image_timeout(timeout_timer.property("reply"), timeout_timer.property("url"), timeout_timer.property("message_id"), timeout_timer.property("image_id")))
+            timeout_timer.start(self.image_timeout)
+            reply.setProperty("timeout_timer", timeout_timer)
+        except Exception as e:
+            self.logger.error(f"下载图片失败: {url}, 错误: {e}")
+            # 从待下载列表中移除
+            if url in self.pending_images:
+                del self.pending_images[url]
+            # 显示破损图标
+            self.update_image_in_chat(message_id, image_id, None, failed=True)
+    
+    def on_image_downloaded(self, reply: QNetworkReply):
+        """图片下载完成回调
+        
+        Args:
+            reply: 网络回复对象
+        """
+        try:
+            url = reply.property("url")
+            message_id = reply.property("message_id")
+            image_id = reply.property("image_id")
+            timeout_timer = reply.property("timeout_timer")
+            
+            # 停止超时定时器
+            if timeout_timer:
+                timeout_timer.stop()
+            
+            # 从待下载列表中移除
+            if url in self.pending_images:
+                del self.pending_images[url]
+            
+            # 检查下载结果
+            if reply.error() == QNetworkReply.NetworkError.NoError:
+                # 下载成功
+                image_data = reply.readAll()
+                pixmap = QPixmap()
+                if pixmap.loadFromData(image_data):
+                    # 转换为base64编码
+                    buffer = QBuffer()
+                    buffer.open(QIODevice.OpenModeFlag.ReadWrite)
+                    pixmap.save(buffer, "PNG")
+                    image_base64 = buffer.data().toBase64().data().decode('utf-8')
+                    buffer.close()
+                    
+                    # 更新聊天区域中的图片
+                    self.update_image_in_chat(message_id, image_id, f"data:image/png;base64,{image_base64}")
+                else:
+                    # 图片加载失败，显示破损图标
+                    self.logger.error(f"图片数据加载失败: {url}")
+                    self.update_image_in_chat(message_id, image_id, None, failed=True)
+            else:
+                # 下载失败，显示破损图标
+                self.logger.error(f"图片下载失败: {url}, 错误: {reply.errorString()}")
+                self.update_image_in_chat(message_id, image_id, None, failed=True)
+        except Exception as e:
+            self.logger.error(f"处理下载的图片时出错: {e}", exc_info=True)
+        finally:
+            reply.deleteLater()
+    
+    def on_image_timeout(self, reply: QNetworkReply, url: str, message_id: str, image_id: str):
+        """图片下载超时处理
+        
+        Args:
+            reply: 网络回复对象
+            url: 图片URL
+            message_id: 消息ID
+            image_id: 图片ID
+        """
+        # 取消下载
+        reply.abort()
+        
+        # 从待下载列表中移除
+        if url in self.pending_images:
+            del self.pending_images[url]
+        
+        # 显示破损图标
+        self.update_image_in_chat(message_id, image_id, None, failed=True)
+    
+    def update_image_in_chat(self, message_id: str, image_id: str, image_data: str = None, failed: bool = False):
+        """更新聊天区域中的图片
+        
+        Args:
+            message_id: 消息ID
+            image_id: 图片ID
+            image_data: 图片数据（base64编码的data URL）
+            failed: 是否下载失败
+        """
+        if not message_id or not image_id:
+            return
+        
+        # 创建破损图标
+        if failed:
+            # 加载本地破损图标
+            import os
+            broken_icon_path = os.path.join(os.path.dirname(__file__), 'resources', 'pictures', 'picture_load_fail.png')
+            if os.path.exists(broken_icon_path):
+                broken_pixmap = QPixmap(broken_icon_path)
+                if not broken_pixmap.isNull():
+                    # 转换为base64编码
+                    buffer = QBuffer()
+                    buffer.open(QIODevice.OpenModeFlag.ReadWrite)
+                    broken_pixmap.save(buffer, "PNG")
+                    broken_base64 = buffer.data().toBase64().data().decode('utf-8')
+                    buffer.close()
+                    image_data = f"data:image/png;base64,{broken_base64}"
+        
+        # 获取当前HTML
+        current_html = self.chat_area.toHtml()
+        
+        # 替换占位符
+        placeholder = f'{{IMG:{message_id}:{image_id}}}'
+        if placeholder in current_html:
+            # 插入图片标签（按原始比例显示，最大尺寸20px x 20px）
+            img_tag = f'<img src="{image_data}" style="max-width: 20px; max-height: 20px; vertical-align: middle; margin: 0 5px;" />'
+            current_html = current_html.replace(placeholder, img_tag)
+            
+            # 更新聊天区域
+            self.chat_area.setHtml(current_html)
+            
+            # 确保滚动到底部
+            self.chat_area.moveCursor(QTextCursor.MoveOperation.End)
+        else:
+            # 占位符不存在，可能是消息已经被更新了
+            self.logger.warning(f"占位符不存在: {placeholder}")
+    
+    def process_images_in_message(self, message: str, message_id: str = None):
+        """处理消息中的图片URL
+        
+        Args:
+            message: 消息内容
+            message_id: 消息ID
+            
+        Returns:
+            str: 处理后的消息内容（图片URL替换为占位符）
+        """
+        if message_id is None:
+            message_id = self.stream_message_id or "default"
+        
+        # 使用正则表达式匹配图片URL
+        # 匹配 http:// 或 https:// 开头的URL，只匹配URL合法字符
+        url_pattern = r'https?://[a-zA-Z0-9\-._~:/?#[\]@!$&\'()*+,;=%]+'
+        
+        # 查找所有URL
+        urls = re.findall(url_pattern, message)
+        
+        self.logger.info(f"找到 {len(urls)} 个URL: {urls}")
+        
+        # 替换图片URL为占位符
+        processed_message = message
+        for i, url in enumerate(urls):
+            # 清理URL：去掉URL后面的非URL字符（如中文标点、温度等）
+            # URL应该以字母、数字、常见URL字符结尾
+            # 找到第一个非URL字符的位置并截断
+            cleaned_url = url
+            for j, char in enumerate(url):
+                # 检查字符是否是URL合法字符
+                if not (char.isalnum() or char in '-._~:/?#[\\]@!$&\'()*+,;=%'):
+                    cleaned_url = url[:j]
+                    break
+            
+            # 检查是否是图片URL（通过扩展名或常见图片路径）
+            is_image = False
+            image_extensions = ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp']
+            for ext in image_extensions:
+                if ext in cleaned_url.lower():
+                    is_image = True
+                    break
+            
+            # 如果URL中没有扩展名，但包含weather、img等关键词，也认为是图片
+            if not is_image:
+                image_keywords = ['weather', 'img', 'icon', 'picture', 'photo']
+                for keyword in image_keywords:
+                    if keyword in cleaned_url.lower():
+                        is_image = True
+                        break
+            
+            if is_image:
+                image_id = f"img_{message_id}_{i}"
+                placeholder = f'{{IMG:{message_id}:{image_id}}}'
+                processed_message = processed_message.replace(url, placeholder)
+                self.logger.info(f"替换图片URL: {url} -> {placeholder} (清理后: {cleaned_url})")
+                
+                # 下载图片
+                self.download_image(cleaned_url, message_id, image_id)
+        
+        return processed_message

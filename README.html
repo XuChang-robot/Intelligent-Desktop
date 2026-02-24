@@ -1,0 +1,500 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>README</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+            margin-top: 30px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 30px;
+            border-bottom: 2px solid #ecf0f1;
+            padding-bottom: 5px;
+        }
+        h3 {
+            color: #7f8c8d;
+            margin-top: 25px;
+        }
+        h4 {
+            color: #95a5a6;
+            margin-top: 20px;
+        }
+        a {
+            color: #3498db;
+            text-decoration: none;
+        }
+        a:hover {
+            color: #2980b9;
+            text-decoration: underline;
+        }
+        code {
+            background-color: #f8f9fa;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        pre {
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+        pre code {
+            background-color: transparent;
+            padding: 0;
+            color: #ecf0f1;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background-color: white;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        ul, ol {
+            background-color: white;
+            padding: 15px 30px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .toc {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .toc ul {
+            background-color: transparent;
+            padding: 0;
+            margin: 0;
+        }
+        .toc li {
+            margin-bottom: 8px;
+        }
+        .section {
+            background-color: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .update {
+            background-color: #ecf0f1;
+            padding: 15px;
+            border-left: 4px solid #3498db;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1 id="_1">智能桌面系统</h1>
+<p>基于MCP（Model Context Protocol）协议的智能桌面助手，支持文档转换、文件操作、邮件处理、网络请求等多种桌面任务的自动化处理。</p>
+<h2 id="_2">✨ 特性</h2>
+<ul>
+<li>🧠 <strong>智能意图识别</strong>：自动理解用户需求，支持三种意图类型（task/chat/cannot_execute）</li>
+<li>📋 <strong>任务规划</strong>：基于行为树的任务规划系统，支持复杂任务的自动分解和执行</li>
+<li>🚀 <strong>高效缓存</strong>：基于FAISS向量搜索的混合缓存系统，支持哈希精确匹配和语义匹配</li>
+<li>🔒 <strong>安全可靠</strong>：沙箱隔离、权限控制</li>
+<li>🧩 <strong>易于扩展</strong>：模块化设计，支持自定义工具</li>
+<li>☁️ <strong>天气查询</strong>：实时天气信息查询和预警通知</li>
+<li>📄 <strong>批量文档处理</strong>：支持批量文件转换和通配符匹配</li>
+<li>💭 <strong>LLM思考过程</strong>：可折叠的思考过程显示</li>
+</ul>
+<h2 id="_3">🚀 快速开始</h2>
+<h3 id="_4">环境要求</h3>
+<ul>
+<li>Python 3.13+</li>
+<li>Ollama服务</li>
+<li>必要的Python库（见requirements.txt）</li>
+</ul>
+<h3 id="_5">安装步骤</h3>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c1"># 1. 克隆仓库</span>
+git<span class="w"> </span>clone<span class="w"> </span>https://github.com/XuChang-robot/Intelligent-Desktop.git
+<span class="nb">cd</span><span class="w"> </span>Intelligent-Desktop
+
+<span class="c1"># 2. 安装依赖</span>
+pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
+
+<span class="c1"># 3. 启动Ollama服务</span>
+ollama<span class="w"> </span>serve
+
+<span class="c1"># 4. 下载模型</span>
+ollama<span class="w"> </span>pull<span class="w"> </span>qwen3:8b
+ollama<span class="w"> </span>pull<span class="w"> </span>nomic-embed-text
+
+<span class="c1"># 5. 启动系统</span>
+python<span class="w"> </span>main.py
+</code></pre></div></td></tr></table></div>
+
+<h2 id="_6">📚 文档</h2>
+<p>完整的文档请查看 <a href="docs/README.md">docs/README.md</a></p>
+<h3 id="_7">用户文档</h3>
+<ul>
+<li>📖 <a href="docs/USER_GUIDE.md">用户使用说明</a> - 系统使用指南、功能说明、配置指南</li>
+<li>📝 <a href="user_config/README.md">用户配置说明</a> - 用户配置文件说明</li>
+<li>💾 <a href="user_config/CACHE_CONFIG_GUIDE.md">缓存配置指南</a> - 缓存系统配置指南</li>
+</ul>
+<h3 id="_8">开发者文档</h3>
+<ul>
+<li>🛠️ <a href="docs/DEVELOPER_GUIDE.md">开发者文档</a> - 系统架构、API参考、扩展开发</li>
+<li>⚙️ <a href="system_config/README.md">系统配置说明</a> - 系统配置文件说明</li>
+<li>🚀 <a href="docs/cache_system.md">混合缓存系统说明</a> - 缓存系统工作原理</li>
+</ul>
+<h2 id="_9">🎯 主要功能</h2>
+<h3 id="_10">文档转换</h3>
+<ul>
+<li>PDF转Word</li>
+<li>Word转PDF</li>
+<li>支持指定输出路径</li>
+<li><strong>支持批量转换</strong>：使用通配符匹配多个文件</li>
+</ul>
+<h3 id="_11">文件操作</h3>
+<ul>
+<li>创建、读取、写入、删除文件</li>
+<li>移动、复制文件</li>
+<li>列出目录、搜索文件</li>
+</ul>
+<h3 id="pdf">PDF处理</h3>
+<ul>
+<li>PDF合并</li>
+<li>PDF插入页</li>
+<li>PDF打印</li>
+<li>PDF提取页</li>
+<li>PDF拆分</li>
+</ul>
+<h3 id="_12">文本处理</h3>
+<ul>
+<li>文字转语音</li>
+<li>文本摘要</li>
+<li>文本格式化</li>
+<li>统计字符数</li>
+</ul>
+<h3 id="_13">邮件处理</h3>
+<ul>
+<li>发送邮件</li>
+<li>接收邮件</li>
+</ul>
+<h3 id="_14">网络请求</h3>
+<ul>
+<li>GET、POST、PUT、DELETE请求</li>
+<li>支持自定义请求头和参数</li>
+</ul>
+<h3 id="_15">天气查询</h3>
+<ul>
+<li><strong>实时天气</strong>：查询指定城市的当前天气</li>
+<li><strong>预警信息</strong>：显示天气预警标题和生效时间</li>
+<li><strong>日期显示</strong>：优化天气查询结果中的日期显示，支持具体日期和相对日期</li>
+</ul>
+<h3 id="_16">行为树任务规划</h3>
+<p>行为树是一种用于任务规划和执行的高级架构，通过树状结构来表示任务的执行逻辑。</p>
+<h4 id="_17">行为树的优势</h4>
+<ul>
+<li><strong>模块化设计</strong>：每个节点都是独立的模块，可以单独开发和测试</li>
+<li><strong>灵活的执行流程</strong>：支持条件分支、循环、并行执行等复杂控制流</li>
+<li><strong>易于扩展</strong>：可以轻松添加新的节点类型和功能</li>
+<li><strong>可视化和调试</strong>：可以直观地查看任务执行流程，便于调试和优化</li>
+<li><strong>错误处理</strong>：任务执行失败时可以自动回退或重试</li>
+<li><strong>状态管理</strong>：实时跟踪任务执行状态和进度</li>
+</ul>
+<h4 id="_18">行为树运行方式举例</h4>
+<p>假设用户请求："帮我整理桌面上的PDF文件，将它们转换成Word格式，然后发送到指定邮箱"</p>
+<p>行为树会将这个任务分解为以下步骤：</p>
+<ol>
+<li><strong>根节点</strong>：开始执行任务</li>
+<li><strong>序列节点</strong>：按顺序执行以下子任务</li>
+<li><strong>搜索节点</strong>：在桌面目录搜索所有PDF文件</li>
+<li><strong>循环节点</strong>：对每个找到的PDF文件执行以下操作<ul>
+<li><strong>转换节点</strong>：将PDF文件转换为Word格式</li>
+</ul>
+</li>
+<li><strong>收集节点</strong>：收集所有转换后的Word文件</li>
+<li><strong>发送节点</strong>：将收集的Word文件发送到指定邮箱</li>
+</ol>
+<p>每个节点都有自己的执行逻辑和错误处理机制，如果某个节点执行失败，行为树会根据预设的策略进行处理（如重试、跳过或终止任务）。</p>
+<h4 id="_19">当前缓存逻辑</h4>
+<p>系统采用两层缓存匹配策略来提高任务规划的效率：</p>
+<ol>
+<li><strong>第一层：哈希精确匹配</strong></li>
+<li>基于请求内容的MD5哈希进行精确匹配</li>
+<li>完全相同的请求会立即命中缓存</li>
+<li>响应速度最快（约0.01秒）</li>
+<li>
+<p>适用于：用户重复执行相同的任务</p>
+</li>
+<li>
+<p><strong>第二层：FAISS语义匹配</strong></p>
+</li>
+<li>基于向量相似度进行语义匹配</li>
+<li>相似但表述不同的请求可以命中缓存</li>
+<li>响应速度较快（约0.05秒）</li>
+<li>受<code>similarity_threshold</code>参数控制（默认0.85）</li>
+<li>适用于：用户用不同的表述方式执行相似的任务</li>
+</ol>
+<h4 id="_20">缓存的好处</h4>
+<ul>
+<li><strong>提高响应速度</strong>：避免重复调用LLM生成计划，显著减少响应时间</li>
+<li><strong>降低资源消耗</strong>：减少LLM API调用次数，节省计算资源和费用</li>
+<li><strong>保证一致性</strong>：相同或相似的任务使用相同的执行计划，提高系统稳定性</li>
+<li><strong>支持离线模式</strong>：缓存命中时可以在不连接LLM服务的情况下执行任务</li>
+</ul>
+<h2 id="_21">📁 项目结构</h2>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span>
+<span class="normal">18</span>
+<span class="normal">19</span>
+<span class="normal">20</span>
+<span class="normal">21</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">Intelligence_Desktop</span><span class="o">/</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">mcp_client</span><span class="o">/</span><span class="w">              </span><span class="c1"># MCP客户端</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">intent_parser</span><span class="o">.</span><span class="n">py</span><span class="w">      </span><span class="c1"># 意图解析</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">task_planner</span><span class="o">.</span><span class="n">py</span><span class="w">      </span><span class="c1"># 任务规划</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">hybrid_cache</span><span class="o">.</span><span class="n">py</span><span class="w">      </span><span class="c1"># 混合缓存</span>
+<span class="err">│</span><span class="w">   </span><span class="err">└──</span><span class="w"> </span><span class="n">llm</span><span class="o">.</span><span class="n">py</span><span class="w">            </span><span class="c1"># LLM客户端</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">mcp_server</span><span class="o">/</span><span class="w">            </span><span class="c1"># MCP服务器</span>
+<span class="err">│</span><span class="w">   </span><span class="err">└──</span><span class="w"> </span><span class="n">tools</span><span class="o">/</span><span class="w">            </span><span class="c1"># 工具集合</span>
+<span class="err">│</span><span class="w">       </span><span class="err">├──</span><span class="w"> </span><span class="n">document_converter</span><span class="o">.</span><span class="n">py</span>
+<span class="err">│</span><span class="w">       </span><span class="err">├──</span><span class="w"> </span><span class="n">file_operations</span><span class="o">.</span><span class="n">py</span>
+<span class="err">│</span><span class="w">       </span><span class="err">├──</span><span class="w"> </span><span class="n">pdf_processor</span><span class="o">.</span><span class="n">py</span>
+<span class="err">│</span><span class="w">       </span><span class="err">├──</span><span class="w"> </span><span class="n">text_processing</span><span class="o">.</span><span class="n">py</span>
+<span class="err">│</span><span class="w">       </span><span class="err">├──</span><span class="w"> </span><span class="n">email_processor</span><span class="o">.</span><span class="n">py</span>
+<span class="err">│</span><span class="w">       </span><span class="err">├──</span><span class="w"> </span><span class="n">network_request</span><span class="o">.</span><span class="n">py</span>
+<span class="err">│</span><span class="w">       </span><span class="err">└──</span><span class="w"> </span><span class="n">query</span><span class="o">/</span><span class="w">          </span><span class="c1"># 查询工具</span>
+<span class="err">│</span><span class="w">           </span><span class="err">└──</span><span class="w"> </span><span class="n">weather_query</span><span class="o">.</span><span class="n">py</span><span class="w">  </span><span class="c1"># 天气查询工具</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">system_config</span><span class="o">/</span><span class="w">         </span><span class="c1"># 系统配置（用户不应该修改）</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">user_config</span><span class="o">/</span><span class="w">           </span><span class="c1"># 用户配置</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">cache</span><span class="o">/</span><span class="w">                </span><span class="c1"># 缓存目录</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">docs</span><span class="o">/</span><span class="w">                 </span><span class="c1"># 文档</span>
+<span class="err">└──</span><span class="w"> </span><span class="n">main</span><span class="o">.</span><span class="n">py</span><span class="w">              </span><span class="c1"># 主程序</span>
+</code></pre></div></td></tr></table></div>
+
+<h2 id="_22">⚙️ 配置</h2>
+<h3 id="_23">用户配置</h3>
+<p>用户配置文件位于 <code>user_config/config.yaml</code>，包含以下配置项：</p>
+<ul>
+<li><strong>MCP配置</strong>：服务器地址、端口、连接数</li>
+<li><strong>LLM配置</strong>：模型名称、API地址、温度参数</li>
+<li><strong>安全配置</strong>：沙箱、危险命令、权限控制</li>
+<li><strong>UI配置</strong>：窗口标题、大小、主题</li>
+<li><strong>日志配置</strong>：日志级别、格式</li>
+<li><strong>邮件配置</strong>：SMTP/IMAP服务器</li>
+<li><strong>缓存配置</strong>：启用状态、大小限制、相似度阈值</li>
+</ul>
+<p>详细配置说明请参考：<a href="user_config/README.md">用户配置说明</a></p>
+<h3 id="_24">系统配置</h3>
+<p>系统配置文件位于 <code>system_config/cache_config.json</code>，包含缓存关键参数配置。</p>
+<p><strong>注意</strong>：系统配置由系统维护，用户不应该修改。</p>
+<p>详细配置说明请参考：<a href="system_config/README.md">系统配置说明</a></p>
+<h2 id="_25">🔧 开发</h2>
+<h3 id="_26">添加新工具</h3>
+<ol>
+<li>在 <code>mcp_server/tools/</code> 下创建新工具文件</li>
+<li>实现工具接口</li>
+<li>在 <code>mcp_server/server.py</code> 中注册工具</li>
+<li>更新配置文件</li>
+<li>更新LLM提示词</li>
+</ol>
+<p>详细开发指南请参考：<a href="docs/DEVELOPER_GUIDE.md">开发者文档</a></p>
+<h3 id="_27">测试</h3>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span>
+<span class="normal">8</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c1"># 运行所有测试</span>
+pytest<span class="w"> </span>tests/
+
+<span class="c1"># 测试缓存系统</span>
+python<span class="w"> </span>test_cache_hit_complete.py
+
+<span class="c1"># 测试不同操作</span>
+python<span class="w"> </span>test_different_operations.py
+</code></pre></div></td></tr></table></div>
+
+<h2 id="_28">📊 性能</h2>
+<p>混合缓存系统提供了显著的性能提升：</p>
+<table>
+<thead>
+<tr>
+<th>场景</th>
+<th>不使用缓存</th>
+<th>使用缓存</th>
+<th>性能提升</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>精确匹配</td>
+<td>7.7秒</td>
+<td>0.01秒</td>
+<td><strong>770倍</strong></td>
+</tr>
+<tr>
+<td>语义相似</td>
+<td>7.7秒</td>
+<td>0.05秒</td>
+<td><strong>154倍</strong></td>
+</tr>
+</tbody>
+</table>
+<p>详细性能分析请参考：<a href="docs/cache_system.md">混合缓存系统说明</a></p>
+<h2 id="_29">🤝 贡献</h2>
+<p>欢迎贡献代码、报告问题或提出建议！</p>
+<ol>
+<li>Fork 本仓库</li>
+<li>创建特性分支 (<code>git checkout -b feature/AmazingFeature</code>)</li>
+<li>提交更改 (<code>git commit -m 'Add some AmazingFeature'</code>)</li>
+<li>推送到分支 (<code>git push origin feature/AmazingFeature</code>)</li>
+<li>开启 Pull Request</li>
+</ol>
+<h2 id="_30">📄 许可证</h2>
+<p>本项目采用 MIT 许可证 - 详见 <a href="LICENSE">LICENSE</a> 文件</p>
+<h2 id="_31">📞 联系方式</h2>
+<ul>
+<li>项目主页：<a href="https://github.com/XuChang-robot/Intelligent-Desktop">https://github.com/XuChang-robot/Intelligent-Desktop</a></li>
+<li>问题反馈：<a href="https://github.com/XuChang-robot/Intelligent-Desktop/issues">https://github.com/XuChang-robot/Intelligent-Desktop/issues</a></li>
+</ul>
+<h2 id="_32">📝 更新日志</h2>
+<h3 id="2026-02-24">2026-02-24</h3>
+<h4 id="_33">修复问题</h4>
+<ul>
+<li>🐛 修复天气查询逻辑中的TypeError错误</li>
+<li>🐛 修复天气查询结果中的日期显示问题</li>
+<li>🐛 修复国外天气查询的风向风力信息显示问题</li>
+<li>🐛 修复任务规划函数调用时的参数顺序问题</li>
+</ul>
+<h4 id="_34">系统优化</h4>
+<ul>
+<li>⚡ 优化天气查询逻辑，支持国内外城市的不同API响应格式</li>
+<li>⚡ 优化缓存系统，提高缓存命中率</li>
+</ul>
+<h4 id="_35">文档更新</h4>
+<ul>
+<li>📚 更新用户使用说明，添加行为树任务规划的概念说明</li>
+<li>📚 更新开发者文档，添加行为树系统的架构说明</li>
+<li>📚 更新配置指南，添加缓存系统的详细说明</li>
+</ul>
+<h3 id="2026-02-21">2026-02-21</h3>
+<h4 id="_36">新增功能</h4>
+<ul>
+<li>✨ 意图识别优化：支持三种意图类型（task/chat/cannot_execute）</li>
+<li>✨ 任务规划优化：采用两层缓存匹配（哈希精确匹配 + FAISS语义匹配）</li>
+<li>✨ 缓存配置增强：支持独立控制哈希匹配和FAISS匹配</li>
+<li>✨ 缓存模板机制：缓存命中时使用模板生成完整计划</li>
+<li>✨ 天气查询工具：实时天气信息和预警通知</li>
+<li>✨ 批量文档处理：支持通配符匹配和批量文件转换</li>
+<li>✨ LLM思考过程显示：可折叠的思考过程</li>
+</ul>
+<h4 id="_37">修复问题</h4>
+<ul>
+<li>🐛 修复天气查询结果中的日期显示问题</li>
+<li>🐛 修复混合缓存系统中的实体模板提取和操作类型不匹配问题</li>
+<li>🐛 修复聊天窗口步骤间缺少换行的问题</li>
+<li>🐛 集成fast-json-repair库修复malformed JSON问题</li>
+</ul>
+<h4 id="_38">系统优化</h4>
+<ul>
+<li>⚡ 重构意图解析系统，支持三种意图类型判断</li>
+<li>⚡ 优化任务规划逻辑，支持缓存模板和完整计划生成</li>
+<li>⚡ 优化缓存匹配策略，提高缓存命中率</li>
+<li>⚡ 精简LLM提示词，提高响应速度</li>
+<li>⚡ 支持entities为字典或列表格式</li>
+<li>⚡ 支持批量操作（num_inputs数组）</li>
+</ul>
+<h4 id="_39">文档更新</h4>
+<ul>
+<li>📚 更新用户使用说明，添加意图识别和任务规划详细说明</li>
+<li>📚 更新开发者文档，添加系统架构和API参考</li>
+<li>📚 新增缓存配置指南，详细说明缓存禁用场景</li>
+<li>📚 更新用户配置说明，添加缓存配置项说明</li>
+<li>📚 更新缓存系统文档，添加故障排除指南</li>
+</ul>
+<h3 id="2026-02-18">2026-02-18</h3>
+<h4 id="_40">新增功能</h4>
+<ul>
+<li>✨ 缓存关键参数配置</li>
+<li>✨ 配置文件分离（system_config/user_config）</li>
+<li>✨ 缓存配置优化（SQLite/FAISS比例优化）</li>
+<li>✨ 网络请求工具优化（operation参数）</li>
+<li>✨ 完整文档系统（用户文档、开发者文档、配置指南）</li>
+</ul>
+<h4 id="_41">修复问题</h4>
+<ul>
+<li>🐛 修复意图解析失败问题</li>
+<li>🐛 修复缓存未命中问题</li>
+<li>🐛 修复模板匹配过于宽松问题</li>
+</ul>
+<h4 id="_42">文档更新</h4>
+<ul>
+<li>📚 新增用户使用说明</li>
+<li>📚 新增开发者文档</li>
+<li>📚 新增系统配置说明</li>
+<li>📚 新增用户配置说明</li>
+<li>📚 新增缓存配置指南</li>
+<li>📚 新增文档中心</li>
+</ul>
+<hr />
+<p><strong>祝使用愉快！</strong> 🎉</p>
+</body>
+</html>

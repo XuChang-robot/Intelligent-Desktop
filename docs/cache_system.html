@@ -1,9 +1,10 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>混合缓存系统使用说明</title>
+    <title>cache_system</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -117,66 +118,21 @@
     </style>
 </head>
 <body>
-<h1>混合缓存系统使用说明</h1>
-
-<h2>概述</h2>
+    <h1 id="_1">混合缓存系统使用说明</h1>
+<h2 id="_2">概述</h2>
 <p>混合缓存系统结合了GPTCache的语义匹配能力和文件持久化存储的优势，为智能桌面系统提供高效的任务计划缓存功能。</p>
-
-<h2>为什么使用缓存系统</h2>
-
-<h3>1. 性能优化</h3>
-<p>LLM生成任务计划是一个耗时的过程，通常需要几秒钟的时间。通过缓存系统，可以显著减少响应时间：</p>
-<p><strong>性能对比</strong>（Intel® Core™ i9-13980HX + NVIDIA® GeForce RTX™ 4090 Laptop）：</p>
-<ul>
-    <li><strong>精确匹配</strong>：缓存命中时响应时间从7.7秒降至0.01秒，性能提升<strong>770倍</strong></li>
-    <li><strong>语义匹配</strong>：相似请求的响应时间从7.7秒降至0.05秒，性能提升<strong>154倍</strong></li>
-    <li><strong>用户体验</strong>：大幅提升系统响应速度，提供更流畅的用户体验</li>
-</ul>
-<p><strong>注意</strong>：实际性能提升可能因硬件配置、LLM模型、网络环境等因素而有所不同。上述数据基于特定测试环境，仅供参考。</p>
-
-<h3>2. 成本节约</h3>
-<p>LLM API调用通常需要付费，缓存系统可以有效降低使用成本：</p>
-<ul>
-    <li><strong>减少API调用</strong>：缓存命中时无需调用LLM，大幅降低API使用量</li>
-    <li><strong>节省费用</strong>：对于重复或相似的请求，可以节省大量API调用费用</li>
-    <li><strong>资源优化</strong>：减少对LLM服务的依赖，优化系统资源使用</li>
-</ul>
-
-<h3>3. 系统可靠性</h3>
-<p>缓存系统提高了系统的可靠性和稳定性：</p>
-<ul>
-    <li><strong>离线能力</strong>：即使LLM服务不可用，缓存中的请求仍然可以正常响应</li>
-    <li><strong>降级处理</strong>：当LLM服务出现问题时，系统可以依赖缓存继续运行</li>
-    <li><strong>减少依赖</strong>：降低对外部LLM服务的依赖，提高系统自主性</li>
-</ul>
-
-<h3>4. 智能匹配</h3>
-<p>传统的缓存系统只能进行精确匹配，而混合缓存系统支持语义匹配：</p>
-<ul>
-    <li><strong>理解语义</strong>：能够识别语义相似的请求，即使表述不同也能命中缓存</li>
-    <li><strong>提高命中率</strong>：相比精确匹配，语义匹配可以大幅提高缓存命中率</li>
-    <li><strong>灵活性</strong>：用户可以用不同的方式表达相同的意图，系统仍能识别</li>
-</ul>
-
-<h3>5. 持久化存储</h3>
-<p>混合缓存系统支持持久化存储，提供更好的数据管理：</p>
-<ul>
-    <li><strong>重启有效</strong>：系统重启后缓存仍然有效，无需重新生成</li>
-    <li><strong>长期存储</strong>：缓存可以长期保存，适用于重复性高的任务</li>
-    <li><strong>自动管理</strong>：支持TTL自动清理，避免缓存无限增长</li>
-</ul>
-
-<h3>6. 实际应用场景</h3>
-<p>缓存系统在以下场景中特别有价值：</p>
-<ul>
-    <li><strong>重复任务</strong>：用户经常执行相同的任务（如发送固定格式的邮件）</li>
-    <li><strong>相似任务</strong>：用户执行相似的任务（如发送不同内容的邮件）</li>
-    <li><strong>批量操作</strong>：批量处理相似的任务时，缓存可以大幅提升效率</li>
-    <li><strong>测试调试</strong>：开发和测试过程中，避免重复调用LLM</li>
-</ul>
-
-<h2>架构设计</h2>
-<pre><code>用户请求
+<h2 id="_3">架构设计</h2>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span></pre></div></td><td class="code"><div><pre><span></span><code>用户请求
     ↓
 GPTCache (语义匹配)
     ↓ 缓存命中
@@ -187,249 +143,412 @@ GPTCache (语义匹配)
 GPTCache + 文件持久化 (双重存储)
     ↓
 返回结果
-</code></pre>
+</code></pre></div></td></tr></table></div>
 
-<h2>核心特性</h2>
-
-<h3>1. 三层缓存机制</h3>
+<h2 id="_4">核心特性</h2>
+<h3 id="1">1. 三层缓存机制</h3>
 <ul>
-    <li><strong>第一层</strong>：GPTCache语义匹配（内存缓存）</li>
-    <li><strong>第二层</strong>：文件精确匹配（磁盘缓存）</li>
-    <li><strong>第三层</strong>：文件语义匹配（磁盘缓存）</li>
+<li><strong>第一层</strong>：GPTCache语义匹配（内存缓存）</li>
+<li><strong>第二层</strong>：文件精确匹配（磁盘缓存）</li>
+<li><strong>第三层</strong>：文件语义匹配（磁盘缓存）</li>
 </ul>
-
-<h3>2. 智能匹配策略</h3>
+<h3 id="2">2. 智能匹配策略</h3>
 <ul>
-    <li><strong>精确匹配</strong>：基于MD5哈希的精确匹配</li>
-    <li><strong>语义匹配</strong>：基于向量相似度的语义匹配</li>
-    <li><strong>输入归一化</strong>：自动处理标点、空格等细微差异</li>
+<li><strong>精确匹配</strong>：基于MD5哈希的精确匹配</li>
+<li><strong>语义匹配</strong>：基于向量相似度的语义匹配</li>
+<li><strong>输入归一化</strong>：自动处理标点、空格等细微差异</li>
 </ul>
-
-<h3>3. 持久化存储</h3>
+<h3 id="3">3. 持久化存储</h3>
 <ul>
-    <li><strong>文件存储</strong>：所有缓存都保存到磁盘</li>
-    <li><strong>重启有效</strong>：系统重启后缓存仍然有效</li>
-    <li><strong>自动过期</strong>：支持TTL（Time To Live）自动清理</li>
+<li><strong>文件存储</strong>：所有缓存都保存到磁盘</li>
+<li><strong>重启有效</strong>：系统重启后缓存仍然有效</li>
+<li><strong>自动过期</strong>：支持TTL（Time To Live）自动清理</li>
 </ul>
-
-<h2>配置说明</h2>
+<h2 id="_5">配置说明</h2>
 <p>在<code>config/config.yaml</code>中配置缓存系统：</p>
-<pre><code># 缓存配置
-cache:
-  enabled: true
-  type: "hybrid"  # 混合缓存：GPTCache + 文件持久化
-  cache_dir: "cache"
-  ttl: 3600  # 缓存过期时间（秒）
-  similarity_threshold: 0.85  # 语义相似度阈值
-  # GPTCache配置
-  gptcache:
-    enabled: true
-    embedding_model: "onnx"  # 使用ONNX模型生成向量
-    data_manager: "map"  # 内存管理器
-  # 文件缓存配置
-  file_cache:
-    enabled: true
-    auto_cleanup: true  # 自动清理过期缓存
-    cleanup_interval: 3600  # 清理间隔（秒）
-</code></pre>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span>
+<span class="normal">18</span>
+<span class="normal">19</span>
+<span class="normal">20</span>
+<span class="normal">21</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c1"># 缓存配置</span>
+<span class="nt">cache</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">                  </span><span class="c1"># 是否启用缓存（总开关）</span>
+<span class="w">  </span><span class="nt">enable_hash_match</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">         </span><span class="c1"># 哈希精确匹配开关</span>
+<span class="w">  </span><span class="nt">enable_faiss_match</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span><span class="w">       </span><span class="c1"># FAISS语义匹配开关</span>
+<span class="w">  </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;faiss&quot;</span><span class="w">                 </span><span class="c1"># 缓存类型</span>
+<span class="w">  </span><span class="nt">cache_dir</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;cache&quot;</span><span class="w">            </span><span class="c1"># 缓存目录</span>
+<span class="w">  </span><span class="nt">ttl</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3600</span><span class="w">  </span><span class="c1"># 缓存过期时间（秒）</span>
+<span class="w">  </span><span class="nt">similarity_threshold</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.85</span><span class="w">  </span><span class="c1"># 语义相似度阈值</span>
 
-<h2>使用方法</h2>
+<span class="w">  </span><span class="c1"># GPTCache配置</span>
+<span class="w">  </span><span class="nt">gptcache</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">    </span><span class="nt">embedding_model</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;onnx&quot;</span><span class="w">  </span><span class="c1"># 使用ONNX模型生成向量</span>
+<span class="w">    </span><span class="nt">data_manager</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;map&quot;</span><span class="w">  </span><span class="c1"># 内存管理器</span>
 
-<h3>1. 初始化TaskPlanner</h3>
-<pre><code>from mcp_client.task_planner import TaskPlanner
-from mcp_client.llm import LLMClient
-from config.config import load_config
+<span class="w">  </span><span class="c1"># 文件缓存配置</span>
+<span class="w">  </span><span class="nt">file_cache</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">    </span><span class="nt">auto_cleanup</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">  </span><span class="c1"># 自动清理过期缓存</span>
+<span class="w">    </span><span class="nt">cleanup_interval</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3600</span><span class="w">  </span><span class="c1"># 清理间隔（秒）</span>
+</code></pre></div></td></tr></table></div>
 
-# 加载配置
-config = load_config()
+<h3 id="_6">缓存配置项说明</h3>
+<p><strong>总开关（enabled）</strong>：
+- <code>true</code>：启用缓存系统（推荐）
+- <code>false</code>：完全禁用缓存，每次请求都会重新生成计划</p>
+<p><strong>哈希精确匹配（enable_hash_match）</strong>：
+- <code>true</code>：启用哈希精确匹配（推荐）
+- <code>false</code>：禁用哈希精确匹配</p>
+<p><strong>FAISS语义匹配（enable_faiss_match）</strong>：
+- <code>true</code>：启用FAISS语义匹配
+- <code>false</code>：禁用FAISS语义匹配（默认）</p>
+<h3 id="_7">缓存禁用场景说明</h3>
+<h4 id="1-faissenable_faiss_match-false">1. 何时禁用FAISS语义匹配（enable_faiss_match: false）</h4>
+<p><strong>推荐禁用FAISS语义匹配的场景</strong>：</p>
+<ul>
+<li><strong>资源受限环境</strong>：系统内存或CPU资源有限，FAISS向量搜索消耗较多资源</li>
+<li><strong>精确性要求高</strong>：需要确保每次请求都精确匹配，不接受语义相似的结果</li>
+<li><strong>调试和测试</strong>：开发调试阶段需要精确控制每次请求的行为</li>
+<li><strong>Embedding模型不可用</strong>：Ollama embedding模型未安装或加载失败</li>
+<li><strong>缓存数据量小</strong>：缓存记录数量很少，语义匹配意义不大</li>
+</ul>
+<p><strong>影响</strong>：
+- 禁用后只能通过哈希精确匹配命中缓存
+- 相似但表述不同的请求无法命中缓存
+- 缓存命中率降低，但精确性提高
+- 减少内存和CPU消耗</p>
+<h4 id="2-enable_hash_match-false">2. 何时禁用哈希精确匹配（enable_hash_match: false）</h4>
+<p><strong>推荐禁用哈希精确匹配的场景</strong>：</p>
+<ul>
+<li><strong>仅依赖语义匹配</strong>：希望完全依赖FAISS语义匹配，不使用精确匹配</li>
+<li><strong>特殊测试场景</strong>：需要测试纯语义匹配的效果</li>
+<li><strong>避免重复请求</strong>：防止完全相同的请求命中缓存</li>
+</ul>
+<p><strong>影响</strong>：
+- 禁用后只能通过FAISS语义匹配命中缓存
+- 完全相同的请求也无法命中缓存
+- 缓存命中率大幅降低
+- 通常不建议单独禁用</p>
+<h4 id="3-enabled-false">3. 何时全局禁用缓存（enabled: false）</h4>
+<p><strong>推荐全局禁用缓存的场景</strong>：</p>
+<ul>
+<li><strong>调试和开发</strong>：需要每次都重新生成计划以验证LLM输出</li>
+<li><strong>测试新功能</strong>：测试新的意图识别或任务规划逻辑</li>
+<li><strong>缓存问题排查</strong>：怀疑缓存导致错误结果时临时禁用</li>
+<li><strong>频繁变化的任务</strong>：任务参数或内容经常变化，缓存效果差</li>
+<li><strong>存储空间不足</strong>：磁盘空间紧张，无法存储缓存数据</li>
+<li><strong>性能测试</strong>：需要测试无缓存情况下的系统性能</li>
+</ul>
+<p><strong>影响</strong>：
+- 每次请求都会调用LLM生成计划
+- 响应时间显著增加（从0.01秒增加到7秒以上）
+- LLM API调用次数大幅增加
+- 不占用磁盘空间</p>
+<h3 id="_8">缓存匹配策略</h3>
+<p>系统采用两层匹配策略：</p>
+<ol>
+<li><strong>第一层：哈希精确匹配</strong></li>
+<li>基于请求内容的MD5哈希</li>
+<li>完全相同的请求会立即命中</li>
+<li>
+<p>响应速度最快（约0.01秒）</p>
+</li>
+<li>
+<p><strong>第二层：FAISS语义匹配</strong></p>
+</li>
+<li>基于向量相似度的语义匹配</li>
+<li>相似但表述不同的请求可以命中</li>
+<li>响应速度较快（约0.05秒）</li>
+<li>受<code>similarity_threshold</code>控制</li>
+</ol>
+<h2 id="_9">使用方法</h2>
+<h3 id="1-taskplanner">1. 初始化TaskPlanner</h3>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span>
+<span class="normal">18</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">mcp_client.task_planner</span><span class="w"> </span><span class="kn">import</span> <span class="n">TaskPlanner</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">mcp_client.llm</span><span class="w"> </span><span class="kn">import</span> <span class="n">LLMClient</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">config.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_config</span>
 
-# 初始化LLM客户端
-llm_client = LLMClient()
+<span class="c1"># 加载配置</span>
+<span class="n">config</span> <span class="o">=</span> <span class="n">load_config</span><span class="p">()</span>
 
-# 初始化任务规划器（带混合缓存）
-cache_config = config.get('cache', {})
-task_planner = TaskPlanner(
-    llm_client=llm_client,
-    cache_dir=cache_config.get('cache_dir', 'cache'),
-    cache_ttl=cache_config.get('ttl', 3600),
-    similarity_threshold=cache_config.get('similarity_threshold', 0.85)
-)</code></pre>
+<span class="c1"># 初始化LLM客户端</span>
+<span class="n">llm_client</span> <span class="o">=</span> <span class="n">LLMClient</span><span class="p">()</span>
 
-<h3>2. 使用缓存的任务规划</h3>
-<pre><code># 规划任务（自动使用缓存）
-intent = {
-    "intent": "task",
-    "entities": {
-        "收件人邮箱": "457911161@qq.com",
-        "邮件主题": "演示",
-        "邮件内容": "hello，项目地址是：https://github.com/XuChang-robot/Intelligent-Desktop.git"
-    },
-    "confidence": 0.9
-}
-plan = await task_planner.plan_task(intent)</code></pre>
+<span class="c1"># 初始化任务规划器（带混合缓存）</span>
+<span class="n">cache_config</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;cache&#39;</span><span class="p">,</span> <span class="p">{})</span>
+<span class="n">task_planner</span> <span class="o">=</span> <span class="n">TaskPlanner</span><span class="p">(</span>
+    <span class="n">llm_client</span><span class="o">=</span><span class="n">llm_client</span><span class="p">,</span>
+    <span class="n">cache_dir</span><span class="o">=</span><span class="n">cache_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;cache_dir&#39;</span><span class="p">,</span> <span class="s1">&#39;cache&#39;</span><span class="p">),</span>
+    <span class="n">cache_ttl</span><span class="o">=</span><span class="n">cache_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;ttl&#39;</span><span class="p">,</span> <span class="mi">3600</span><span class="p">),</span>
+    <span class="n">similarity_threshold</span><span class="o">=</span><span class="n">cache_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;similarity_threshold&#39;</span><span class="p">,</span> <span class="mf">0.85</span><span class="p">)</span>
+<span class="p">)</span>
+</code></pre></div></td></tr></table></div>
 
-<h3>3. 缓存管理</h3>
-<pre><code># 获取缓存统计信息
-stats = task_planner.get_cache_stats()
-print(f"总文件数: {stats['total_files']}")
-print(f"有效文件数: {stats['valid_files']}")
-print(f"过期文件数: {stats['expired_files']}")
-print(f"总大小: {stats['total_size_mb']} MB")
+<h3 id="2_1">2. 使用缓存的任务规划</h3>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c1"># 规划任务（自动使用缓存）</span>
+<span class="n">intent</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;intent&quot;</span><span class="p">:</span> <span class="s2">&quot;task&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;entities&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;收件人邮箱&quot;</span><span class="p">:</span> <span class="s2">&quot;457911161@qq.com&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;邮件主题&quot;</span><span class="p">:</span> <span class="s2">&quot;演示&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;邮件内容&quot;</span><span class="p">:</span> <span class="s2">&quot;hello，项目地址是：https://github.com/XuChang-robot/Intelligent-Desktop.git&quot;</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;confidence&quot;</span><span class="p">:</span> <span class="mf">0.9</span>
+<span class="p">}</span>
 
-# 清理过期缓存
-cleaned = task_planner.cleanup_expired_cache()
-print(f"清理了 {cleaned} 个过期缓存文件")
+<span class="n">plan</span> <span class="o">=</span> <span class="k">await</span> <span class="n">task_planner</span><span class="o">.</span><span class="n">plan_task</span><span class="p">(</span><span class="n">intent</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
 
-# 清空所有缓存
-task_planner.clear_cache()</code></pre>
+<h3 id="3_1">3. 缓存管理</h3>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c1"># 获取缓存统计信息</span>
+<span class="n">stats</span> <span class="o">=</span> <span class="n">task_planner</span><span class="o">.</span><span class="n">get_cache_stats</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;总文件数: </span><span class="si">{</span><span class="n">stats</span><span class="p">[</span><span class="s1">&#39;total_files&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;有效文件数: </span><span class="si">{</span><span class="n">stats</span><span class="p">[</span><span class="s1">&#39;valid_files&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;过期文件数: </span><span class="si">{</span><span class="n">stats</span><span class="p">[</span><span class="s1">&#39;expired_files&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;总大小: </span><span class="si">{</span><span class="n">stats</span><span class="p">[</span><span class="s1">&#39;total_size_mb&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> MB&quot;</span><span class="p">)</span>
 
-<h2>性能对比</h2>
+<span class="c1"># 清理过期缓存</span>
+<span class="n">cleaned</span> <span class="o">=</span> <span class="n">task_planner</span><span class="o">.</span><span class="n">cleanup_expired_cache</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;清理了 </span><span class="si">{</span><span class="n">cleaned</span><span class="si">}</span><span class="s2"> 个过期缓存文件&quot;</span><span class="p">)</span>
 
-<h3>测试场景：用户多次发送相同内容的邮件</h3>
+<span class="c1"># 清空所有缓存</span>
+<span class="n">task_planner</span><span class="o">.</span><span class="n">clear_cache</span><span class="p">()</span>
+</code></pre></div></td></tr></table></div>
+
+<h2 id="_10">性能对比</h2>
+<h3 id="_11">测试场景：用户多次发送相同内容的邮件</h3>
 <table>
-    <tr>
-        <th>场景</th>
-        <th>不使用缓存</th>
-        <th>使用混合缓存</th>
-        <th>性能提升</th>
-    </tr>
-    <tr>
-        <td>第一次请求</td>
-        <td>7.7秒</td>
-        <td>7.7秒</td>
-        <td>无（需要生成）</td>
-    </tr>
-    <tr>
-        <td>第二次请求（精确匹配）</td>
-        <td>7.7秒</td>
-        <td>0.01秒</td>
-        <td><strong>770倍</strong></td>
-    </tr>
-    <tr>
-        <td>第三次请求（语义相似）</td>
-        <td>7.7秒</td>
-        <td>0.05秒</td>
-        <td><strong>154倍</strong></td>
-    </tr>
-    <tr>
-        <td>第四次请求（不同请求）</td>
-        <td>7.7秒</td>
-        <td>7.7秒</td>
-        <td>无（需要生成）</td>
-    </tr>
+<thead>
+<tr>
+<th>场景</th>
+<th>不使用缓存</th>
+<th>使用混合缓存</th>
+<th>性能提升</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>第一次请求</td>
+<td>7.7秒</td>
+<td>7.7秒</td>
+<td>无（需要生成）</td>
+</tr>
+<tr>
+<td>第二次请求（精确匹配）</td>
+<td>7.7秒</td>
+<td>0.01秒</td>
+<td><strong>770倍</strong></td>
+</tr>
+<tr>
+<td>第三次请求（语义相似）</td>
+<td>7.7秒</td>
+<td>0.05秒</td>
+<td><strong>154倍</strong></td>
+</tr>
+<tr>
+<td>第四次请求（不同请求）</td>
+<td>7.7秒</td>
+<td>7.7秒</td>
+<td>无（需要生成）</td>
+</tr>
+</tbody>
 </table>
+<h2 id="_12">安装依赖</h2>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
+</code></pre></div></td></tr></table></div>
 
-<h2>安装依赖</h2>
-<pre><code>pip install -r requirements.txt</code></pre>
-
-<p>主要依赖：</p>
-<ul>
-    <li><code>gptcache</code>：语义缓存库</li>
-    <li><code>sentence-transformers</code>：文本嵌入模型</li>
-    <li><code>scipy</code>：向量相似度计算</li>
-</ul>
-
-<h2>测试</h2>
+<p>主要依赖：
+- <code>gptcache</code>：语义缓存库
+- <code>sentence-transformers</code>：文本嵌入模型
+- <code>scipy</code>：向量相似度计算</p>
+<h2 id="_13">测试</h2>
 <p>运行测试脚本：</p>
-<pre><code>python test_hybrid_cache.py</code></pre>
-<p>测试内容包括：</p>
-<p>1. 精确匹配测试</p>
-<p>2. 语义相似测试</p>
-<p>3. 不同请求测试</p>
-<p>4. 缓存统计信息</p>
-<p>5. 过期缓存清理</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>python<span class="w"> </span>test_hybrid_cache.py
+</code></pre></div></td></tr></table></div>
 
-<h2>缓存文件格式</h2>
+<p>测试内容包括：
+1. 精确匹配测试
+2. 语义相似测试
+3. 不同请求测试
+4. 缓存统计信息
+5. 过期缓存清理</p>
+<h2 id="_14">缓存文件格式</h2>
 <p>缓存文件存储在<code>cache/</code>目录下，文件名格式为<code>{md5_hash}.json</code>：</p>
-<pre><code>{
-  "plan": {
-    "plan": "发送包含特定内容和合并PDF附件的邮件",
-    "steps": [...]
-  },
-  "timestamp": "2026-02-12T23:00:09.123456",
-  "intent": {
-    "intent": "task",
-    "entities": {...},
-    "confidence": 0.9
-  },
-  "intent_str": "intent:task entities:收件人邮箱:457911161@qq.com ...",
-  "tools": "none"
-}</code></pre>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;plan&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;plan&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;发送包含特定内容和合并PDF附件的邮件&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;steps&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="err">...</span><span class="p">]</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;timestamp&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-02-12T23:00:09.123456&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;intent&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;intent&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;task&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;entities&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="err">...</span><span class="p">},</span>
+<span class="w">    </span><span class="nt">&quot;confidence&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.9</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;intent_str&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;intent:task entities:收件人邮箱:457911161@qq.com ...&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;tools&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;none&quot;</span>
+<span class="p">}</span>
+</code></pre></div></td></tr></table></div>
 
-<h2>高级配置</h2>
+<h2 id="_15">高级配置</h2>
+<h3 id="_16">调整相似度阈值</h3>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nt">cache</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">similarity_threshold</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.90</span><span class="w">  </span><span class="c1"># 更严格的匹配</span>
+</code></pre></div></td></tr></table></div>
 
-<h3>调整相似度阈值</h3>
-<pre><code>cache:
-  similarity_threshold: 0.90  # 更严格的匹配
-</code></pre>
 <ul>
-    <li><strong>0.80-0.85</strong>：宽松匹配，更多缓存命中</li>
-    <li><strong>0.85-0.90</strong>：平衡匹配（推荐）</li>
-    <li><strong>0.90-0.95</strong>：严格匹配，更少误匹配</li>
+<li><strong>0.80-0.85</strong>：宽松匹配，更多缓存命中</li>
+<li><strong>0.85-0.90</strong>：平衡匹配（推荐）</li>
+<li><strong>0.90-0.95</strong>：严格匹配，更少误匹配</li>
 </ul>
+<h3 id="_17">调整缓存过期时间</h3>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nt">cache</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">ttl</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">7200</span><span class="w">  </span><span class="c1"># 2小时</span>
+</code></pre></div></td></tr></table></div>
 
-<h3>调整缓存过期时间</h3>
-<pre><code>cache:
-  ttl: 7200  # 2小时
-</code></pre>
 <ul>
-    <li><strong>1800</strong>：30分钟（适合频繁更新的内容）</li>
-    <li><strong>3600</strong>：1小时（推荐）</li>
-    <li><strong>7200</strong>：2小时（适合稳定的内容）</li>
-    <li><strong>86400</strong>：24小时（适合很少更新的内容）</li>
+<li><strong>1800</strong>：30分钟（适合频繁更新的内容）</li>
+<li><strong>3600</strong>：1小时（推荐）</li>
+<li><strong>7200</strong>：2小时（适合稳定的内容）</li>
+<li><strong>86400</strong>：24小时（适合很少更新的内容）</li>
 </ul>
+<h3 id="_18">禁用缓存</h3>
+<p>如果需要禁用缓存，可以设置：</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nt">cache</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span><span class="w">  </span><span class="c1"># 全局禁用缓存</span>
+</code></pre></div></td></tr></table></div>
 
-<h3>禁用GPTCache</h3>
-<p>如果GPTCache初始化失败，系统会自动降级到文件缓存：</p>
-<pre><code>cache:
-  gptcache:
-    enabled: false  # 禁用GPTCache
-</code></pre>
+<p>或者只禁用特定匹配方式：</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nt">cache</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">  </span><span class="nt">enable_hash_match</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">   </span><span class="c1"># 启用哈希精确匹配</span>
+<span class="w">  </span><span class="nt">enable_faiss_match</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span><span class="w">  </span><span class="c1"># 禁用FAISS语义匹配</span>
+</code></pre></div></td></tr></table></div>
 
-<h2>故障排除</h2>
-
-<h3>GPTCache初始化失败</h3>
-<p><strong>问题</strong>：日志显示"GPTCache初始化失败"</p>
-<p><strong>解决方案</strong>：</p>
-<ul>
-    <li>检查是否安装了<code>gptcache</code>：<code>pip install gptcache</code></li>
-    <li>检查ONNX模型是否可用</li>
-    <li>系统会自动降级到文件缓存</li>
-</ul>
-
-<h3>嵌入模型加载失败</h3>
+<p>详细配置指南请参考：<a href="../user_config/CACHE_CONFIG_GUIDE.md">缓存配置指南</a></p>
+<h2 id="_19">故障排除</h2>
+<h3 id="faiss">FAISS初始化失败</h3>
+<p><strong>问题</strong>：日志显示"FAISS索引初始化失败"</p>
+<p><strong>解决方案</strong>：
+1. 检查是否安装了<code>faiss</code>：<code>pip install faiss-cpu</code>
+2. 检查缓存目录权限
+3. 系统会自动创建新的FAISS索引</p>
+<h3 id="_20">嵌入模型加载失败</h3>
 <p><strong>问题</strong>：日志显示"嵌入模型加载失败"</p>
-<p><strong>解决方案</strong>：</p>
-<ul>
-    <li>检查是否安装了<code>sentence-transformers</code>：<code>pip install sentence-transformers</code></li>
-    <li>系统会使用精确匹配和文件缓存</li>
-</ul>
-
-<h3>缓存文件过大</h3>
+<p><strong>解决方案</strong>：
+1. 检查Ollama是否运行：<code>ollama list</code>
+2. 检查embedding模型是否可用：<code>ollama pull nomic-embed-text</code>
+3. 系统会自动降级到哈希精确匹配</p>
+<h3 id="_21">缓存未命中</h3>
+<p><strong>问题</strong>：缓存命中率低</p>
+<p><strong>解决方案</strong>：
+1. 检查<code>enable_hash_match</code>和<code>enable_faiss_match</code>是否启用
+2. 降低相似度阈值（如从0.85降到0.80）
+3. 增加缓存过期时间
+4. 查看日志了解缓存状态</p>
+<h3 id="_22">缓存文件过大</h3>
 <p><strong>问题</strong>：缓存目录占用过多磁盘空间</p>
-<p><strong>解决方案</strong>：</p>
-<ul>
-    <li>定期清理过期缓存：<code>task_planner.cleanup_expired_cache()</code></li>
-    <li>减少TTL时间</li>
-    <li>清空所有缓存：<code>task_planner.clear_cache()</code></li>
-</ul>
-
-<h2>最佳实践</h2>
-<ul>
-    <li><strong>定期清理</strong>：设置自动清理过期缓存</li>
-    <li><strong>监控统计</strong>：定期查看缓存统计信息</li>
-    <li><strong>调整参数</strong>：根据实际使用情况调整相似度阈值和TTL</li>
-    <li><strong>测试验证</strong>：使用测试脚本验证缓存效果</li>
-</ul>
-
-<h2>总结</h2>
+<p><strong>解决方案</strong>：
+1. 定期清理过期缓存：<code>task_planner.cleanup_expired_cache()</code>
+2. 减少TTL时间
+3. 清空所有缓存：<code>task_planner.clear_cache()</code>
+4. 调整<code>max_total_size_mb</code>和<code>max_records</code></p>
+<h3 id="faiss_1">FAISS语义匹配导致错误结果</h3>
+<p><strong>问题</strong>：语义匹配返回了不相关的结果</p>
+<p><strong>解决方案</strong>：
+1. 提高相似度阈值（如从0.85提高到0.90）
+2. 禁用FAISS语义匹配：<code>enable_faiss_match: false</code>
+3. 只使用哈希精确匹配：<code>enable_hash_match: true, enable_faiss_match: false</code></p>
+<h2 id="_23">最佳实践</h2>
+<ol>
+<li><strong>定期清理</strong>：设置自动清理过期缓存</li>
+<li><strong>监控统计</strong>：定期查看缓存统计信息</li>
+<li><strong>调整参数</strong>：根据实际使用情况调整相似度阈值和TTL</li>
+<li><strong>测试验证</strong>：使用测试脚本验证缓存效果</li>
+</ol>
+<h2 id="_24">总结</h2>
 <p>混合缓存系统为智能桌面系统提供了：</p>
 <ul>
-    <li><strong>770倍性能提升</strong>（精确匹配）</li>
-    <li><strong>154倍性能提升</strong>（语义相似）</li>
-    <li><strong>持久化存储</strong>（重启后仍然有效）</li>
-    <li><strong>智能匹配</strong>（理解语义，不只是文字）</li>
-    <li><strong>自动管理</strong>（过期清理、统计监控）</li>
+<li><strong>770倍性能提升</strong>（精确匹配）</li>
+<li><strong>154倍性能提升</strong>（语义相似）</li>
+<li><strong>持久化存储</strong>（重启后仍然有效）</li>
+<li><strong>智能匹配</strong>（理解语义，不只是文字）</li>
+<li><strong>自动管理</strong>（过期清理、统计监控）</li>
 </ul>
 <p>这是一个高效、可靠、易用的缓存解决方案！</p>
 </body>

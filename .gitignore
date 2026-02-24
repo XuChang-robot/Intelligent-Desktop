@@ -49,6 +49,7 @@ tests/
 # Documentation (markdown files, we use HTML)
 *.md
 !README.md
+!README_EN.md
 
 # Data files
 data_map.txt

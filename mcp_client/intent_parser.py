@@ -75,6 +75,15 @@ class IntentParser:
             intent = await self.llm_client.parse_intent(user_input, tools)
             self.logger.info(f"解析意图成功: {intent}")
             return intent
+        except ConnectionError as e:
+            # LLM连接错误
+            error_msg = str(e)
+            self.logger.error(f"LLM连接失败: {error_msg}")
+            return {
+                "intent": "error",
+                "error": error_msg,
+                "confidence": 0.0
+            }
         except Exception as e:
             self.logger.error(f"解析意图失败: {e}")
             return {
@@ -119,6 +128,16 @@ class IntentParser:
                     "error": "意图解析失败：无法理解您的输入，请重新表述"
                 }
             
+            # 检查是否是连接错误
+            if intent_result.get("intent") == "error":
+                error_msg = intent_result.get("error", "无法与LLM服务通信")
+                self.logger.error(f"LLM连接错误: {error_msg}")
+                return {
+                    "type": "error",
+                    "user_input": user_input,
+                    "error": error_msg
+                }
+            
             # 转换为client.py期望的格式
             if intent_result.get("intent") == "chat":
                 # 聊天型意图，直接返回
@@ -136,18 +155,24 @@ class IntentParser:
                     "reason": intent_result.get("reason", "当前工具无法完成此任务")
                 }
             elif intent_result.get("intent") == "task":
-                # 任务型意图，返回task类型，包含entities和plan（如果有）
+                # 任务型意图，直接使用tree_config
+                tree_config = intent_result.get("tree_config")
+                
+                if not tree_config:
+                    self.logger.error("意图解析失败：LLM未返回tree_config")
+                    return {
+                        "type": "error",
+                        "user_input": user_input,
+                        "error": "意图解析失败：LLM未返回行为树配置"
+                    }
+                
                 result = {
                     "type": "task",
                     "user_input": user_input,
                     "entities": intent_result.get("entities", {}),
-                    "confidence": intent_result.get("confidence", 0.5)
+                    "confidence": intent_result.get("confidence", 0.5),
+                    "tree_config": tree_config
                 }
-                # 如果LLM返回了plan，添加到结果中
-                if "plan" in intent_result:
-                    result["plan"] = intent_result["plan"]
-                if "steps" in intent_result:
-                    result["steps"] = intent_result["steps"]
                 return result
             else:
                 # 未知意图，返回错误信息
@@ -167,3 +192,20 @@ class IntentParser:
                 "user_input": user_input,
                 "error": f"意图解析失败：{str(e)}"
             }
+    
+    # @deprecated: 此方法已废弃，功能已整合到parse_intent方法中
+    # 为了向后兼容保留此方法，但不应再调用
+    async def _generate_tree_config(self, user_input: str, intent_result: Dict[str, Any], tools=None) -> Dict[str, Any]:
+        """生成行为树配置
+        
+        Args:
+            user_input: 用户输入
+            intent_result: 意图解析结果
+            tools: 可用工具列表
+        
+        Returns:
+            行为树配置字典
+        """
+        # 此方法已废弃，不应再调用
+        # 直接抛出异常，提示调用者使用新的parse_intent方法
+        raise NotImplementedError("_generate_tree_config方法已废弃，请使用parse_intent方法，tree_config已整合到parse_intent的返回值中")

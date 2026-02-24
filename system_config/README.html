@@ -1,9 +1,10 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>系统配置说明</title>
+    <title>README</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -117,59 +118,61 @@
     </style>
 </head>
 <body>
-<h1>系统配置说明</h1>
-
+    <h1 id="_1">系统配置说明</h1>
 <p>本文件夹包含系统的核心配置文件，这些配置文件由系统维护，<strong>用户不应该修改</strong>。</p>
-
-<h2>配置文件说明</h2>
-
-<h3>cache_config.json</h3>
-
+<h2 id="_2">配置文件说明</h2>
+<h3 id="cache_configjson">cache_config.json</h3>
 <p>缓存关键参数配置文件，用于控制缓存匹配行为。</p>
+<h4 id="_3">配置结构</h4>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;cache_key_params&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;global&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;operation&quot;</span><span class="p">],</span>
+<span class="w">    </span><span class="nt">&quot;tools&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;document_converter&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;operation&quot;</span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;file_operations&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;operation&quot;</span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;pdf_processor&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;operation&quot;</span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;text_processing&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;operation&quot;</span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;email_processor&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;operation&quot;</span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;network_request&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;operation&quot;</span><span class="p">]</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></td></tr></table></div>
 
-<h4>配置结构</h4>
-<pre><code>{
-  "cache_key_params": {
-    "global": ["operation"],
-    "tools": {
-      "document_converter": ["operation"],
-      "file_operations": ["operation"],
-      "pdf_processor": ["operation"],
-      "text_processing": ["operation"],
-      "email_processor": ["operation"],
-      "network_request": ["operation"]
-    }
-  }
-}</code></pre>
-
-<h4>配置项说明</h4>
+<h4 id="_4">配置项说明</h4>
 <ul>
-    <li><strong>global</strong>: 全局关键参数列表，适用于所有工具</li>
-    <li><strong>tools</strong>: 各工具特定的关键参数列表，可以覆盖全局配置</li>
+<li><strong>global</strong>: 全局关键参数列表，适用于所有工具</li>
+<li><strong>tools</strong>: 各工具特定的关键参数列表，可以覆盖全局配置</li>
 </ul>
-
-<h4>关键参数的作用</h4>
-<p>关键参数用于区分不同的操作类型，确保缓存的准确性。例如：</p>
+<h4 id="_5">关键参数的作用</h4>
+<p>关键参数用于区分不同的操作类型，确保缓存的准确性。例如：
+- <code>operation</code>: 区分不同的操作类型（如"pdf_to_word" vs "word_to_pdf"）
+- 当用户请求"把PDF转为Word"和"把Word转为PDF"时，虽然参数名称相同，但operation的值不同，因此会被识别为不同的意图</p>
+<h4 id="_6">影响范围</h4>
 <ul>
-    <li><code>operation</code>: 区分不同的操作类型（如"pdf_to_word" vs "word_to_pdf"）</li>
-    <li>当用户请求"把PDF转为Word"和"把Word转为PDF"时，虽然参数名称相同，但operation的值不同，因此会被识别为不同的意图</li>
+<li>缓存匹配精度：关键参数越多，缓存匹配越精确，但可能降低缓存命中率</li>
+<li>缓存命中率：关键参数越少，缓存命中率越高，但可能降低匹配精度</li>
+<li>系统性能：合理的配置可以平衡缓存命中率和匹配精度</li>
 </ul>
-
-<h4>影响范围</h4>
-<ul>
-    <li>缓存匹配精度：关键参数越多，缓存匹配越精确，但可能降低缓存命中率</li>
-    <li>缓存命中率：关键参数越少，缓存命中率越高，但可能降低匹配精度</li>
-    <li>系统性能：合理的配置可以平衡缓存命中率和匹配精度</li>
-</ul>
-
-<h4>修改建议</h4>
+<h4 id="_7">修改建议</h4>
 <p><strong>用户不应该修改此文件</strong>。如果需要调整关键参数，请联系系统维护人员。</p>
-
-<h2>注意事项</h2>
-<ul>
-    <li>本文件夹中的配置文件由系统维护，用户不应该修改</li>
-    <li>修改系统配置可能导致缓存失效或系统行为异常</li>
-    <li>如果需要调整配置，请联系系统维护人员</li>
-</ul>
+<h2 id="_8">注意事项</h2>
+<ol>
+<li>本文件夹中的配置文件由系统维护，用户不应该修改</li>
+<li>修改系统配置可能导致缓存失效或系统行为异常</li>
+<li>如果需要调整配置，请联系系统维护人员</li>
+</ol>
 </body>
 </html>

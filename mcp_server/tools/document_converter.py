@@ -1,10 +1,55 @@
-# 文档转换工具
+# 工具创建规则：
+# 1. 必须在文件最前面定义工具说明，包括工具名称、支持的操作类型、必需参数、可选参数、参数验证规则和返回格式
+# 2. 必须定义操作类型配置（OPERATION_CONFIG或其他类似配置），包含各操作类型的描述、必需参数和可选参数
+# 3. 必须实现validate_parameters函数，用于验证和调整参数，返回(调整后的参数字典, 配置错误信息)
+# 4. 必须在工具函数开始时调用validate_parameters进行参数验证，如果存在config_error则返回包含config_error字段的错误结果
+# 5. 必须统一返回字典格式结果，包含success字段和formatted_message字段
+# 6. 配置错误时返回{"success": False, "config_error": "...", "formatted_message": "❌ 配置错误: ..."}
+# 7. 执行失败时返回{"success": False, "error": "...", "formatted_message": "❌ 错误: ..."}
+# 8. 成功时返回{"success": True, "result": "...", "formatted_message": "✅ ..."}
+# 9. 必须包含operation参数，用于指定具体的操作类型
+# 10. 只有当返回结果包含config_error字段时，行为树自动修复机制才会触发配置修复
+# 11. formatted_message字段是系统返回给UI的信息，必须包含清晰的操作结果描述和状态标识
+# 
+# 原因：
+# - 统一的参数验证机制确保LLM生成的配置能够被正确验证，避免参数错误导致执行失败
+# - 统一的返回格式便于行为树自动修复机制识别配置错误和执行失败，只在配置错误时触发修复
+# - 标准化的工具文档和配置格式便于维护和扩展，提高代码可读性
+# - config_error字段明确区分配置错误和执行失败，避免误触发自动修复机制
+# - operation参数是工具操作的核心标识符，确保工具能够正确执行指定的操作
+# - 只有通过config_error字段，行为树系统才能准确识别LLM生成的配置错误，从而触发修复机制
+# - formatted_message字段为UI提供清晰的操作结果展示，提升用户体验
+
+
+# 工具说明：
+# 工具名称：document_converter
+# 支持的操作类型（operation）：
+#   - "pdf_to_word": PDF 转 Word
+#   - "word_to_pdf": Word 转 PDF
+# 必需参数：
+#   - operation: 操作类型（必需）
+#   - input_path: 输入文件路径（必需，支持通配符如 *.docx）
+#   - output_path: 输出文件路径（必需，可以是文件路径或文件夹路径）
+# 可选参数：
+#   - ctx: FastMCP上下文，用于elicitation（可选）
+#
+# 参数验证规则：
+#   - operation: 必须是支持的操作类型之一
+#   - input_path: 不能为空
+#   - output_path: 不能为空
+#
+# 返回格式：
+#   - 成功：{"success": True, "result": "...", "input_path": "...", "output_path": "...", "formatted_message": "..."}
+#   - 配置错误：{"success": False, "config_error": "..."}
+#   - 执行失败：{"success": False, "error": "...", "formatted_message": "..."}
+
 
 import os
 import subprocess
 import glob
+from enum import Enum
 from pathlib import Path
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, List, Tuple
 from pydantic import BaseModel
 from mcp.server.fastmcp import Context
 
@@ -26,6 +71,64 @@ else:
 from mcp_server.tools.file_operations import process_path
 
 
+# 操作类型枚举
+class DocumentOperationEnum(str, Enum):
+    PDF_TO_WORD = "pdf_to_word"
+    WORD_TO_PDF = "word_to_pdf"
+
+# 操作类型配置
+OPERATION_CONFIG = {
+    'pdf_to_word': {
+        'description': 'PDF 转 Word',
+        'required_params': ['input_path', 'output_path'],
+        'optional_params': ['ctx']
+    },
+    'word_to_pdf': {
+        'description': 'Word 转 PDF',
+        'required_params': ['input_path', 'output_path'],
+        'optional_params': ['ctx']
+    }
+}
+
+
+def validate_parameters(operation: DocumentOperationEnum, input_path: str, output_path: str) -> Tuple[Dict[str, Any], Optional[str]]:
+    """验证并调整参数
+    
+    Args:
+        operation: 操作类型
+        input_path: 输入文件路径
+        output_path: 输出文件路径
+    
+    Returns:
+        (调整后的参数字典, 配置错误信息)
+    """
+    params = {
+        'operation': operation.value,
+        'input_path': input_path,
+        'output_path': output_path
+    }
+    
+    config_error = None
+    
+    # 验证operation参数
+    if not operation:
+        config_error = "operation参数不能为空"
+    elif operation.value not in OPERATION_CONFIG:
+        config_error = f"不支持的操作类型: {operation.value}，支持的操作: {', '.join(OPERATION_CONFIG.keys())}"
+    
+    # 如果存在配置错误，直接返回
+    if config_error:
+        return params, config_error
+    
+    # 验证必需参数
+    if not input_path:
+        config_error = config_error or "input_path参数不能为空"
+    if not output_path:
+        config_error = config_error or "output_path参数不能为空"
+    
+    return params, config_error
+
+
 def register_document_converter_tools(mcp, security_checker=None, output_callback=None):
     """注册文档转换工具到MCP服务器
     
@@ -37,7 +140,7 @@ def register_document_converter_tools(mcp, security_checker=None, output_callbac
     
     @mcp.tool()
     async def document_converter(
-        operation: str,
+        operation: DocumentOperationEnum,
         input_path: str,
         output_path: str,
         ctx: Optional[Context] = None
@@ -74,6 +177,21 @@ def register_document_converter_tools(mcp, security_checker=None, output_callbac
             - PDF 转 Word: document_converter("pdf_to_word", "input.pdf", "output.docx")
             - Word 转 PDF: document_converter("word_to_pdf", "input.docx", "output.pdf")
         """
+        # 验证参数
+        validated_params, config_error = validate_parameters(operation, input_path, output_path)
+        if config_error:
+            return {
+                "success": False,
+                "config_error": config_error,
+                "input_path": input_path,
+                "output_path": output_path,
+                "formatted_message": f"❌ 配置错误: {config_error}"
+            }
+        
+        # 使用验证后的参数
+        input_path = validated_params['input_path']
+        output_path = validated_params['output_path']
+        
         try:
             # 处理路径
             input_path = process_path(input_path)
@@ -97,7 +215,7 @@ def register_document_converter_tools(mcp, security_checker=None, output_callbac
             }
 
 
-async def _batch_convert(operation: str, input_pattern: str, output_path: str) -> Dict[str, Any]:
+async def _batch_convert(operation: DocumentOperationEnum, input_pattern: str, output_path: str) -> Dict[str, Any]:
     """批量转换文件
     
     Args:
@@ -121,17 +239,17 @@ async def _batch_convert(operation: str, input_pattern: str, output_path: str) -
         }
     
     # 确定输出扩展名
-    if operation == "pdf_to_word":
+    if operation == DocumentOperationEnum.PDF_TO_WORD:
         output_ext = ".docx"
-    elif operation == "word_to_pdf":
+    elif operation == DocumentOperationEnum.WORD_TO_PDF:
         output_ext = ".pdf"
     else:
         return {
             "success": False,
-            "error": f"不支持的操作: {operation}",
+            "error": f"不支持的操作: {operation.value}",
             "input_path": input_pattern,
             "output_path": output_path,
-            "formatted_message": f"❌ 错误: 不支持的操作 '{operation}'"
+            "formatted_message": f"❌ 错误: 不支持的操作 '{operation.value}'"
         }
     
     # 检查输出路径是否是文件夹
@@ -210,7 +328,7 @@ async def _batch_convert(operation: str, input_pattern: str, output_path: str) -
     }
 
 
-async def _single_convert(operation: str, input_path: str, output_path: str) -> Dict[str, Any]:
+async def _single_convert(operation: DocumentOperationEnum, input_path: str, output_path: str) -> Dict[str, Any]:
     """单个文件转换
     
     Args:
@@ -228,9 +346,9 @@ async def _single_convert(operation: str, input_path: str, output_path: str) -> 
         input_name, _ = os.path.splitext(input_filename)
         
         # 根据操作类型确定输出扩展名
-        if operation == "pdf_to_word":
+        if operation == DocumentOperationEnum.PDF_TO_WORD:
             output_ext = ".docx"
-        elif operation == "word_to_pdf":
+        elif operation == DocumentOperationEnum.WORD_TO_PDF:
             output_ext = ".pdf"
         else:
             output_ext = ""
@@ -247,7 +365,7 @@ async def _single_convert(operation: str, input_path: str, output_path: str) -> 
     return await _convert_single_file(operation, input_path, output_path)
 
 
-async def _convert_single_file(operation: str, input_path: str, output_path: str) -> Dict[str, Any]:
+async def _convert_single_file(operation: DocumentOperationEnum, input_path: str, output_path: str) -> Dict[str, Any]:
     """转换单个文件的核心逻辑
     
     Args:
@@ -260,7 +378,7 @@ async def _convert_single_file(operation: str, input_path: str, output_path: str
     """
     try:
         # 检查文件扩展名是否正确
-        if operation == "pdf_to_word":
+        if operation == DocumentOperationEnum.PDF_TO_WORD:
             if not input_path.lower().endswith(".pdf"):
                 return {
                     "success": False, 
@@ -277,7 +395,7 @@ async def _convert_single_file(operation: str, input_path: str, output_path: str
                     "output_path": output_path,
                     "formatted_message": f"❌ 错误: 输出文件必须是Word格式(.docx)\n📄 输出文件: {os.path.basename(output_path)}"
                 }
-        elif operation == "word_to_pdf":
+        elif operation == DocumentOperationEnum.WORD_TO_PDF:
             if not (input_path.lower().endswith(".docx") or input_path.lower().endswith(".doc")):
                 return {
                     "success": False, 
@@ -297,14 +415,14 @@ async def _convert_single_file(operation: str, input_path: str, output_path: str
         else:
             return {
                 "success": False, 
-                "error": f"不支持的操作: {operation}", 
+                "error": f"不支持的操作: {operation.value}", 
                 "input_path": input_path, 
                 "output_path": output_path,
-                "formatted_message": f"❌ 错误: 不支持的操作 '{operation}'"
+                "formatted_message": f"❌ 错误: 不支持的操作 '{operation.value}'"
             }
         
         # 尝试使用不同的方法进行转换
-        if operation == "pdf_to_word":
+        if operation == DocumentOperationEnum.PDF_TO_WORD:
             # 尝试使用 PyPDF2 或其他库
             try:
                 if not PDF_AVAILABLE:
@@ -354,7 +472,7 @@ async def _convert_single_file(operation: str, input_path: str, output_path: str
                     "output_path": output_path,
                     "formatted_message": f"❌ 转换失败: {str(e)}\n📄 输入文件: {os.path.basename(input_path)}"
                 }
-        elif operation == "word_to_pdf":
+        elif operation == DocumentOperationEnum.WORD_TO_PDF:
             # 尝试使用 python-docx 或其他库
             try:
                 if not DOCX_AVAILABLE:

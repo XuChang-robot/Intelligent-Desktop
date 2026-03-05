@@ -1,17 +1,12 @@
 #!/usr/bin/env python3
 # MCP Client 启动脚本
 
-import logging
 import asyncio
 from mcp_client.client import MCPClient, initialize_global_session, close_global_session
-from user_config.config import load_config
+from utils.logging_config import configure_root_logger
 
 # 配置日志
-config = load_config()
-logging.basicConfig(
-    level=getattr(logging, config["logging"]["level"]),
-    format=config["logging"]["format"]
-)
+configure_root_logger()
 
 async def main():
     """主函数"""

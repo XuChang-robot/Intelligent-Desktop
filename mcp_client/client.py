@@ -5,6 +5,7 @@ import logging
 import json
 import sqlite3
 import hashlib
+import os
 from typing import Dict, Any, Optional, Callable
 from contextlib import AsyncExitStack
 from mcp import ClientSession
@@ -15,6 +16,7 @@ from mcp_client.intent_parser import IntentParser
 from mcp_client.hybrid_cache import HybridTaskPlanCache
 from mcp_client.elicitation import ElicitationManager
 from mcp_client.behavior_tree import BehaviorTree
+from mcp_client.behavior_tree.tree_repair import BehaviorTreeRepair
 from user_config.config import load_config
 
 # 配置日志
@@ -210,6 +212,15 @@ class MCPClient:
         # 初始化行为树系统
         self.behavior_tree = BehaviorTree()
         
+        # 获取日志目录配置
+        log_config = self.config.get('logging', {})
+        self.log_dir = log_config.get('log_dir', 'logs')
+        # 确保日志目录存在
+        os.makedirs(self.log_dir, exist_ok=True)
+        
+        # 获取开发模式配置
+        self.dev_mode = log_config.get('dev_mode', False)
+        
         # 从config中读取缓存配置
         cache_config = self.config.get('cache', {})
         self.enable_hash_match = cache_config.get('enable_hash_match', True)
@@ -234,8 +245,25 @@ class MCPClient:
         else:
             self.cache = None
         self.elicitation_manager = ElicitationManager(self.llm_client)
+        
         self.session_manager: Optional[SessionManager] = None
         self.logger = logging.getLogger(__name__)
+        
+        # 初始化行为树自动修复模块
+        bt_config = self.config.get('behavior_tree', {}).get('auto_repair', {})
+        self.auto_repair_enabled = bt_config.get('enabled', True)
+        self.max_repair_attempts = bt_config.get('max_repair_attempts', 3)
+        
+        if self.auto_repair_enabled:
+            self.behavior_tree_repair = BehaviorTreeRepair(
+                llm=self.llm_client,
+                max_repair_attempts=self.max_repair_attempts
+            )
+            self.logger.info(f"行为树自动修复模块初始化完成，最大尝试次数: {self.max_repair_attempts}")
+        else:
+            self.behavior_tree_repair = None
+            self.logger.info("行为树自动修复模块已禁用")
+        
         self.elicitation_callback = None
         self.ui_callback = None
         self.tools = None  # 保存工具列表
@@ -254,6 +282,11 @@ class MCPClient:
             # 获取工具列表
             self.tools = self.session_manager.tools
             self.logger.info(f"成功连接到MCP Server，获取到{len(self.tools) if self.tools else 0}个工具")
+            
+            # 更新行为树修复模块的工具信息
+            if self.auto_repair_enabled and self.behavior_tree_repair:
+                self.behavior_tree_repair.tools = self.tools
+                self.logger.info("行为树修复模块工具信息更新完成")
             return True
                 
         except Exception as e:
@@ -428,6 +461,9 @@ class MCPClient:
                     
                     self.logger.info(f"缓存命中（{match_type}），直接使用缓存的tree_config")
                     
+                    # 自动保存行为树配置到日志目录
+                    self._save_tree_config(tree_config, query)
+                    
                     if self.ui_callback:
                         if match_type == "exact":
                             self.ui_callback("task_update", {"description": "✅ 缓存精确命中"})
@@ -531,6 +567,9 @@ class MCPClient:
                 tree_config = intent["tree_config"]
                 self.logger.info(f"使用行为树配置: {tree_config}")
                 
+                # 自动保存行为树配置到日志目录
+                self._save_tree_config(tree_config, query)
+                
                 if self.ui_callback:
                     self.ui_callback("task_update", {"description": f"行为树配置生成完成"})
                     self.ui_callback("loading", True, "行为树配置生成完成...")
@@ -565,21 +604,100 @@ class MCPClient:
                         if self.cache is not None:
                             self.logger.info(f"行为树执行成功，缓存tree_config: {query}")
                             self.cache.set(query, tree_config, self.tools)
+                        
+                        # 格式化执行结果
+                        summary = self._format_tree_execution_result(execution_result)
+                        
+                        return {
+                            "summary": summary,
+                            "tree_config": tree_config,
+                            "execution_result": execution_result
+                        }
                     else:
                         self.logger.warning(f"行为树执行失败，不缓存tree_config: {query}")
-                    
-                    # 格式化执行结果
-                    summary = self._format_tree_execution_result(execution_result)
-                    
-                    return {
-                        "summary": summary,
-                        "tree_config": tree_config,
-                        "execution_result": execution_result
-                    }
+                        
+                        # 格式化执行结果
+                        summary = self._format_tree_execution_result(execution_result)
+                        
+                        return {
+                            "summary": summary,
+                            "tree_config": tree_config,
+                            "execution_result": execution_result
+                        }
                 except Exception as e:
                     self.logger.error(f"行为树执行失败: {e}")
                     import traceback
                     traceback.print_exc()
+                    
+                    # 捕获到异常，尝试自动修复
+                    if self.auto_repair_enabled and self.behavior_tree_repair:
+                        self.logger.info(f"捕获到异常，尝试自动修复...")
+                        
+                        # 重置修复计数
+                        self.behavior_tree_repair.reset_repair_count()
+                        
+                        # 循环尝试修复，最多尝试3次
+                        for attempt in range(self.max_repair_attempts):
+                            self.logger.info(f"自动修复尝试 {attempt + 1}/{self.max_repair_attempts}...")
+                            
+                            # 尝试修复
+                            repaired_config = await self.behavior_tree_repair.repair_behavior_tree(
+                                tree_config, 
+                                str(e)
+                            )
+                            
+                            if repaired_config:
+                                self.logger.info("行为树修复成功，尝试重新执行...")
+                                
+                                # 重新执行修复后的行为树
+                                try:
+                                    if self.ui_callback:
+                                        self.ui_callback("task_update", {"description": f"行为树修复成功，重新执行... (尝试 {attempt + 1}/{self.max_repair_attempts})"})
+                                        self.ui_callback("loading", True, "行为树修复成功，重新执行...")
+                                        self.ui_callback("progress", True, 40)
+                                    
+                                    # 从修复后的配置构建树
+                                    self.behavior_tree.build_from_config(repaired_config)
+                                    
+                                    # 执行行为树
+                                    execution_result = await self.behavior_tree.execute()
+                                    
+                                    if self.ui_callback:
+                                        self.ui_callback("loading", True, "修复后任务执行完成...")
+                                        self.ui_callback("progress", True, 100)
+                                        self.ui_callback("task_update", {"description": "🎉 修复后任务执行完成！", "status": "完成"})
+                                    
+                                    # 检查行为树执行是否成功
+                                    if execution_result.get("success", False):
+                                        # 只有在行为树执行成功后才缓存修复后的tree_config
+                                        if self.cache is not None:
+                                            self.logger.info(f"修复后行为树执行成功，缓存修复后的tree_config: {query}")
+                                            self.cache.set(query, repaired_config, self.tools)
+                                        
+                                        # 格式化执行结果
+                                        summary = self._format_tree_execution_result(execution_result)
+                                        
+                                        return {
+                                            "summary": summary,
+                                            "tree_config": repaired_config,
+                                            "execution_result": execution_result,
+                                            "repaired": True,
+                                            "repair_attempts": attempt + 1
+                                        }
+                                    else:
+                                        self.logger.warning(f"修复后行为树执行失败，尝试再次修复...")
+                                        # 更新错误信息
+                                        error_str = execution_result.get("error", str(e))
+                                except Exception as repair_exec_error:
+                                    self.logger.error(f"修复后行为树执行失败: {repair_exec_error}")
+                                    # 更新错误信息
+                                    error_str = str(repair_exec_error)
+                            else:
+                                self.logger.error("行为树修复失败，尝试再次修复...")
+                        
+                        self.logger.warning(f"已达到最大修复尝试次数 ({self.max_repair_attempts})，修复失败")
+                    
+                    # 如果无法修复或修复失败，返回原始错误
                     return {
                         "summary": f"任务执行失败: {str(e)}",
                         "tree_config": tree_config,
@@ -623,6 +741,22 @@ class MCPClient:
             "summary": "处理完成",
             "plan": {}
         }
+
+    def _save_tree_config(self, tree_config: Dict[str, Any], query: str):
+        """保存行为树配置到日志目录（仅在开发者模式下）
+        
+        Args:
+            tree_config: 行为树配置
+            query: 用户查询（用于生成文件名）
+        """
+        from datetime import datetime
+        # 生成文件名（基于时间戳和查询的MD5哈希）
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        query_hash = hashlib.md5(query.encode('utf-8')).hexdigest()[:8]
+        filename = f"behavior_tree_{timestamp}_{query_hash}.json"
+        
+        # 使用llm_client的_save_debug_file方法保存
+        self.llm_client._save_debug_file(filename, tree_config, "行为树配置")
 
     def _format_tree_execution_result(self, execution_result: Dict[str, Any]) -> str:
         """格式化行为树执行结果
@@ -669,238 +803,4 @@ class MCPClient:
         # 将所有 formatted_message 用换行符连接
         return "\n\n".join(formatted_messages)
     
-    def _is_valid_python(self, code: str) -> bool:
-        """检查代码是否是有效的 Python 语法"""
-        try:
-            # 尝试直接编译代码
-            compile(code, '<string>', 'exec')
-            return True
-        except SyntaxError as e:
-            # 如果编译失败，尝试清理代码中的无关文本
-            cleaned_code = self._clean_code(code)
-            try:
-                compile(cleaned_code, '<string>', 'exec')
-                return True
-            except SyntaxError:
-                return False
-    
-    def _clean_code(self, code: str) -> str:
-        """清理代码中的无关文本"""
-        # 移除常见的无关文本模式
-        lines = code.split('\n')
-        cleaned_lines = []
-        
-        # 检测代码结束位置
-        code_ended = False
-        
-        for line in lines:
-            # 跳过看起来像提示词或无关文本的行
-            stripped = line.strip()
-            
-            # 检测代码是否已经结束（遇到if __name__ == "__main__":块的结束）
-            if 'if __name__ == "__main__":' in line or 'if __name__ == "__main__":' in line:
-                code_ended = False
-            
-            # 如果代码已经结束，检查是否还有代码内容
-            if code_ended:
-                # 跳过所有非代码行
-                if not stripped or stripped.startswith('#'):
-                    continue
-                # 检查是否是新的代码开始（不太可能）
-                if any(keyword in stripped for keyword in ['def ', 'class ', 'import ', 'from ']):
-                    code_ended = False
-                else:
-                    continue
-            
-            # 检测代码结束（空行或注释行，且之前有代码）
-            if not code_ended and (not stripped or stripped.startswith('#')):
-                # 检查前面是否有代码内容
-                if cleaned_lines and any(c.strip() for c in cleaned_lines[-5:]):
-                    # 可能是代码结束，但还不能确定
-                    pass
-            
-            # 跳过空行（保留代码中的空行，但跳过连续的空行）
-            if not stripped:
-                if cleaned_lines and cleaned_lines[-1].strip():
-                    cleaned_lines.append(line)
-                continue
-            
-            # 跳过包含"你是一个"的行（可能是提示词）
-            if '你是一个' in stripped:
-                code_ended = True
-                continue
-            
-            # 跳过包含"用户输入"的行
-            if '用户输入' in stripped:
-                code_ended = True
-                continue
-            
-            # 跳过包含"规则"和"请"的行（可能是提示词）
-            if '规则' in stripped and '请' in stripped:
-                code_ended = True
-                continue
-            
-            # 跳过包含"内容违规"的行
-            if '内容违规' in stripped:
-                code_ended = True
-                continue
-            
-            # 跳过包含"请按规则回答"的行
-            if '请按规则回答' in stripped:
-                code_ended = True
-                continue
-            
-            # 跳过包含"首先，用户输入是"的行
-            if '首先，用户输入是' in stripped:
-                code_ended = True
-                continue
-            
-            # 跳过包含"现在，分析用户输入"的行
-            if '现在，分析用户输入' in stripped:
-                code_ended = True
-                continue
-            
-            # 跳过包含"可能的响应"的行
-            if '可能的响应' in stripped:
-                code_ended = True
-                continue
-            
-            # 跳过包含"例如："的行（可能是示例）
-            if '例如：' in stripped and len(stripped) < 50:
-                code_ended = True
-                continue
-            
-            # 跳过包含"计算字数"的行
-            if '计算字数' in stripped:
-                code_ended = True
-                continue
-            
-            # 跳过包含"确保"和"字数"的行
-            if '确保' in stripped and '字数' in stripped:
-                code_ended = True
-                continue
-            
-            # 跳过包含"最终响应"的行
-            if '最终响应' in stripped:
-                code_ended = True
-                continue
-            
-            # 跳过包含"现在，写响应"的行
-            if '现在，写响应' in stripped:
-                code_ended = True
-                continue
-            
-            # 跳过包含"字数："的行
-            if '字数：' in stripped:
-                code_ended = True
-                continue
-            
-            # 跳过以数字开头的行（可能是编号的规则）
-            if stripped and stripped[0].isdigit() and '如果' in stripped and '，' in stripped:
-                code_ended = True
-                continue
-            
-            # 跳过包含"AI相关"的行
-            if 'AI相关' in stripped:
-                code_ended = True
-                continue
-            
-            # 跳过包含"简洁、专业的解释"的行
-            if '简洁、专业的解释' in stripped:
-                code_ended = True
-                continue
-            
-            # 跳过包含"错误或不完整的信息"的行
-            if '错误或不完整的信息' in stripped:
-                code_ended = True
-                continue
-            
-            # 跳过包含"敏感词"的行
-            if '敏感词' in stripped:
-                code_ended = True
-                continue
-            
-            # 跳过包含"不超过100字"的行
-            if '不超过100字' in stripped:
-                code_ended = True
-                continue
-            
-            # 跳过包含"用中文回答"的行
-            if '用中文回答' in stripped:
-                code_ended = True
-                continue
-            
-            # 跳过包含"请确保"的行
-            if '请确保' in stripped:
-                code_ended = True
-                continue
-            
-            # 跳过包含"检查是否有错误"的行
-            if '检查是否有错误' in stripped:
-                code_ended = True
-                continue
-            
-            # 跳过包含"规则中"的行
-            if '规则中' in stripped:
-                code_ended = True
-                continue
-            
-            # 跳过包含"指令中"的行
-            if '指令中' in stripped:
-                code_ended = True
-                continue
-            
-            # 跳过包含"描述了规则"的行
-            if '描述了规则' in stripped:
-                code_ended = True
-                continue
-            
-            # 跳过包含"没有明显错误"的行
-            if '没有明显错误' in stripped:
-                code_ended = True
-                continue
-            
-            # 跳过包含"所以，根据规则"的行
-            if '所以，根据规则' in stripped:
-                code_ended = True
-                continue
-            
-            # 跳过包含"我应该"的行
-            if '我应该' in stripped:
-                code_ended = True
-                continue
-            
-            # 跳过包含"指令说"的行
-            if '指令说' in stripped:
-                code_ended = True
-                continue
-            
-            # 跳过包含"所以不能"的行
-            if '所以不能' in stripped:
-                code_ended = True
-                continue
-            
-            # 跳过包含"添加额外内容"的行
-            if '添加额外内容' in stripped:
-                code_ended = True
-                continue
-            
-            # 跳过包含"可能的响应"的行
-            if '可能的响应' in stripped:
-                code_ended = True
-                continue
-            
-            # 跳过包含"例如"的行（可能是示例）
-            if '例如' in stripped and len(stripped) < 50:
-                code_ended = True
-                continue
-            
-            cleaned_lines.append(line)
-        
-        # 重新组合代码
-        cleaned_code = '\n'.join(cleaned_lines)
-        
-        # 移除末尾的空行
-        cleaned_code = cleaned_code.rstrip()
-        
-        return cleaned_code
+       

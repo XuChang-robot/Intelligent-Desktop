@@ -1,0 +1,27 @@
+digraph pastafarianism {
+    graph [fontname="SimHei,Microsoft YaHei,Heiti TC,WenQuanYi Micro Hei,sans-serif"];
+    node [fontname="SimHei,Microsoft YaHei,Heiti TC,WenQuanYi Micro Hei,sans-serif"];
+    edge [fontname="SimHei,Microsoft YaHei,Heiti TC,WenQuanYi Micro Hei,sans-serif"];
+ordering=out;
+测试Selector和条件节点 [label="Ⓜ 测试Selector和条件节点", shape=box, style=filled, fillcolor=orange, fontsize=9, fontcolor=black];
+查询北京天气 [label=查询北京天气, shape=ellipse, style=filled, fillcolor=gray, fontsize=9, fontcolor=black];
+测试Selector和条件节点 -> 查询北京天气;
+天气条件选择 [label=天气条件选择, shape=octagon, style=filled, fillcolor=cyan, fontsize=9, fontcolor=black];
+测试Selector和条件节点 -> 天气条件选择;
+判断天气是否晴朗 [label=判断天气是否晴朗, shape=ellipse, style=filled, fillcolor=gray, fontsize=9, fontcolor=black];
+天气条件选择 -> 判断天气是否晴朗;
+创建户外活动文档 [label=创建户外活动文档, shape=ellipse, style=filled, fillcolor=gray, fontsize=9, fontcolor=black];
+天气条件选择 -> 创建户外活动文档;
+判断天气是否下雨 [label=判断天气是否下雨, shape=ellipse, style=filled, fillcolor=gray, fontsize=9, fontcolor=black];
+天气条件选择 -> 判断天气是否下雨;
+创建室内活动文档 [label=创建室内活动文档, shape=ellipse, style=filled, fillcolor=gray, fontsize=9, fontcolor=black];
+天气条件选择 -> 创建室内活动文档;
+判断天气是否下雪 [label=判断天气是否下雪, shape=ellipse, style=filled, fillcolor=gray, fontsize=9, fontcolor=black];
+天气条件选择 -> 判断天气是否下雪;
+创建冬季活动文档 [label=创建冬季活动文档, shape=ellipse, style=filled, fillcolor=gray, fontsize=9, fontcolor=black];
+天气条件选择 -> 创建冬季活动文档;
+判断天气是否多云 [label=判断天气是否多云, shape=ellipse, style=filled, fillcolor=gray, fontsize=9, fontcolor=black];
+天气条件选择 -> 判断天气是否多云;
+创建备选活动文档 [label=创建备选活动文档, shape=ellipse, style=filled, fillcolor=gray, fontsize=9, fontcolor=black];
+天气条件选择 -> 创建备选活动文档;
+}

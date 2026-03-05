@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8'>
+    <title>行为树可视化 (DOT解析)</title>
+    <link rel='stylesheet' href='styles.css'>
+    <script src='script.js'></script>
+</head>
+<body>
+    <div class='container'>
+        <div class='title'>🌳 行为树可视化</div>
+        <div class='tree'>
+            <div class='node-container'>
+                <div class='node' style='background: #f97316; font-size: 9px'>
+                    <div class='node-content'>
+                        <span class='node-icon'>Ⓜ</span>
+                        <span class='node-name'>创建天气数据记录系统</span>
+                    </div>
+                </div>
+                <div class='children-container'>
+                    <div class='edge-curve'></div>
+                    <div class='edge-horizontal'></div>
+                    <div class='children'>
+                        <div class='child'>
+                            <div class='child-edge-curve'></div>
+            <div class='node-container'>
+                <div class='node' style='background: #f97316; font-size: 9px'>
+                    <div class='node-content'>
+                        <span class='node-icon'>Ⓜ</span>
+                        <span class='node-name'>准备工作</span>
+                    </div>
+                </div>
+                <div class='children-container'>
+                    <div class='edge-curve'></div>
+                    <div class='edge-horizontal'></div>
+                    <div class='children'>
+                        <div class='child'>
+                            <div class='child-edge-curve'></div>
+            <div class='node-container'>
+                <div class='node' style='background: #6b7280; font-size: 9px'>
+                    <div class='node-content'>
+                        <span class='node-name'>创建主目录</span>
+                    </div>
+                </div>
+            </div>
+                        </div>
+                        <div class='child'>
+                            <div class='child-edge-curve'></div>
+            <div class='node-container'>
+                <div class='node' style='background: #6b7280; font-size: 9px'>
+                    <div class='node-content'>
+                        <span class='node-name'>创建当前天气目录</span>
+                    </div>
+                </div>
+            </div>
+                        </div>
+                        <div class='child'>
+                            <div class='child-edge-curve'></div>
+            <div class='node-container'>
+                <div class='node' style='background: #6b7280; font-size: 9px'>
+                    <div class='node-content'>
+                        <span class='node-name'>创建天气预报目录</span>
+                    </div>
+                </div>
+            </div>
+                        </div>
+                        <div class='child'>
+                            <div class='child-edge-curve'></div>
+            <div class='node-container'>
+                <div class='node' style='background: #6b7280; font-size: 9px'>
+                    <div class='node-content'>
+                        <span class='node-name'>创建天气报告目录</span>
+                    </div>
+                </div>
+            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+                        </div>
+                        <div class='child'>
+                            <div class='child-edge-curve'></div>
+            <div class='node-container'>
+                <div class='node' style='background: #fbbf24; font-size: 9px'>
+                    <div class='node-content'>
+                        <span class='node-icon'>⚡</span>
+                        <span class='node-name'>并行天气查询</span>
+                    </div>
+                    <div class='node-type'>SuccessOnAll</div>
+                </div>
+                <div class='children-container'>
+                    <div class='edge-curve'></div>
+                    <div class='edge-horizontal'></div>
+                    <div class='children'>
+                        <div class='child'>
+                            <div class='child-edge-curve'></div>
+            <div class='node-container'>
+                <div class='node' style='background: #f97316; font-size: 9px'>
+                    <div class='node-content'>
+                        <span class='node-icon'>Ⓜ</span>
+                        <span class='node-name'>查询当前IP天气</span>
+                    </div>
+                </div>
+                <div class='children-container'>
+                    <div class='edge-curve'></div>
+                    <div class='edge-horizontal'></div>
+                    <div class='children'>
+                        <div class='child'>
+                            <div class='child-edge-curve'></div>
+            <div class='node-container'>
+                <div class='node' style='background: #6b7280; font-size: 9px'>
+                    <div class='node-content'>
+                        <span class='node-name'>查询IP天气</span>
+                    </div>
+                </div>
+            </div>
+                        </div>
+                        <div class='child'>
+                            <div class='child-edge-curve'></div>
+            <div class='node-container'>
+                <div class='node' style='background: #6b7280; font-size: 9px'>
+                    <div class='node-content'>
+                        <span class='node-name'>保存IP天气数据</span>
+                    </div>
+                </div>
+            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+                        </div>
+                        <div class='child'>
+                            <div class='child-edge-curve'></div>
+            <div class='node-container'>
+                <div class='node' style='background: #f97316; font-size: 9px'>
+                    <div class='node-content'>
+                        <span class='node-icon'>Ⓜ</span>
+                        <span class='node-name'>查询国内城市天气</span>
+                    </div>
+                </div>
+                <div class='children-container'>
+                    <div class='edge-curve'></div>
+                    <div class='edge-horizontal'></div>
+                    <div class='children'>
+                        <div class='child'>
+                            <div class='child-edge-curve'></div>
+            <div class='node-container'>
+                <div class='node' style='background: #f97316; font-size: 9px'>
+                    <div class='node-content'>
+                        <span class='node-icon'>Ⓜ</span>
+                        <span class='node-name'>查询北京天气</span>
+                    </div>
+                </div>
+                <div class='children-container'>
+                    <div class='edge-curve'></div>
+                    <div class='edge-horizontal'></div>
+                    <div class='children'>
+                        <div class='child'>
+                            <div class='child-edge-curve'></div>
+            <div class='node-container'>
+                <div class='node' style='background: #6b7280; font-size: 9px'>
+                    <div class='node-content'>
+                        <span class='node-name'>查询北京天气*</span>
+                    </div>
+                </div>
+            </div>
+                        </div>
+                        <div class='child'>
+                            <div class='child-edge-curve'></div>
+            <div class='node-container'>
+                <div class='node' style='background: #6b7280; font-size: 9px'>
+                    <div class='node-content'>
+                        <span class='node-name'>保存北京天气数据</span>
+                    </div>
+                </div>
+            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+                        </div>
+                        <div class='child'>
+                            <div class='child-edge-curve'></div>
+            <div class='node-container'>
+                <div class='node' style='background: #f97316; font-size: 9px'>
+                    <div class='node-content'>
+                        <span class='node-icon'>Ⓜ</span>
+                        <span class='node-name'>查询上海天气</span>
+                    </div>
+                </div>
+                <div class='children-container'>
+                    <div class='edge-curve'></div>
+                    <div class='edge-horizontal'></div>
+                    <div class='children'>
+                        <div class='child'>
+                            <div class='child-edge-curve'></div>
+            <div class='node-container'>
+                <div class='node' style='background: #6b7280; font-size: 9px'>
+                    <div class='node-content'>
+                        <span class='node-name'>查询上海天气*</span>
+                    </div>
+                </div>
+            </div>
+                        </div>
+                        <div class='child'>
+                            <div class='child-edge-curve'></div>
+            <div class='node-container'>
+                <div class='node' style='background: #6b7280; font-size: 9px'>
+                    <div class='node-content'>
+                        <span class='node-name'>保存上海天气数据</span>
+                    </div>
+                </div>
+            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+                        </div>
+                        <div class='child'>
+                            <div class='child-edge-curve'></div>
+            <div class='node-container'>
+                <div class='node' style='background: #f97316; font-size: 9px'>
+                    <div class='node-content'>
+                        <span class='node-icon'>Ⓜ</span>
+                        <span class='node-name'>查询广州天气</span>
+                    </div>
+                </div>
+                <div class='children-container'>
+                    <div class='edge-curve'></div>
+                    <div class='edge-horizontal'></div>
+                    <div class='children'>
+                        <div class='child'>
+                            <div class='child-edge-curve'></div>
+            <div class='node-container'>
+                <div class='node' style='background: #6b7280; font-size: 9px'>
+                    <div class='node-content'>
+                        <span class='node-name'>查询广州天气*</span>
+                    </div>
+                </div>
+            </div>
+                        </div>
+                        <div class='child'>
+                            <div class='child-edge-curve'></div>
+            <div class='node-container'>
+                <div class='node' style='background: #6b7280; font-size: 9px'>
+                    <div class='node-content'>
+                        <span class='node-name'>保存广州天气数据</span>
+                    </div>
+                </div>
+            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+                        </div>
+                        <div class='child'>
+                            <div class='child-edge-curve'></div>
+            <div class='node-container'>
+                <div class='node' style='background: #f97316; font-size: 9px'>
+                    <div class='node-content'>
+                        <span class='node-icon'>Ⓜ</span>
+                        <span class='node-name'>查询深圳天气</span>
+                    </div>
+                </div>
+                <div class='children-container'>
+                    <div class='edge-curve'></div>
+                    <div class='edge-horizontal'></div>
+                    <div class='children'>
+                        <div class='child'>
+                            <div class='child-edge-curve'></div>
+            <div class='node-container'>
+                <div class='node' style='background: #6b7280; font-size: 9px'>
+                    <div class='node-content'>
+                        <span class='node-name'>查询深圳天气*</span>
+                    </div>
+                </div>
+            </div>
+                        </div>
+                        <div class='child'>
+                            <div class='child-edge-curve'></div>
+            <div class='node-container'>
+                <div class='node' style='background: #6b7280; font-size: 9px'>
+                    <div class='node-content'>
+                        <span class='node-name'>保存深圳天气数据</span>
+                    </div>
+                </div>
+            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+                        </div>
+                        <div class='child'>
+                            <div class='child-edge-curve'></div>
+            <div class='node-container'>
+                <div class='node' style='background: #f97316; font-size: 9px'>
+                    <div class='node-content'>
+                        <span class='node-icon'>Ⓜ</span>
+                        <span class='node-name'>查询国外城市天气</span>
+                    </div>
+                </div>
+                <div class='children-container'>
+                    <div class='edge-curve'></div>
+                    <div class='edge-horizontal'></div>
+                    <div class='children'>
+                        <div class='child'>
+                            <div class='child-edge-curve'></div>
+            <div class='node-container'>
+                <div class='node' style='background: #f97316; font-size: 9px'>
+                    <div class='node-content'>
+                        <span class='node-icon'>Ⓜ</span>
+                        <span class='node-name'>查询纽约天气</span>
+                    </div>
+                </div>
+                <div class='children-container'>
+                    <div class='edge-curve'></div>
+                    <div class='edge-horizontal'></div>
+                    <div class='children'>
+                        <div class='child'>
+                            <div class='child-edge-curve'></div>
+            <div class='node-container'>
+                <div class='node' style='background: #6b7280; font-size: 9px'>
+                    <div class='node-content'>
+                        <span class='node-name'>查询纽约天气*</span>
+                    </div>
+                </div>
+            </div>
+                        </div>
+                        <div class='child'>
+                            <div class='child-edge-curve'></div>
+            <div class='node-container'>
+                <div class='node' style='background: #6b7280; font-size: 9px'>
+                    <div class='node-content'>
+                        <span class='node-name'>保存纽约天气数据</span>
+                    </div>
+                </div>
+            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+                        </div>
+                        <div class='child'>
+                            <div class='child-edge-curve'></div>
+            <div class='node-container'>
+                <div class='node' style='background: #f97316; font-size: 9px'>
+                    <div class='node-content'>
+                        <span class='node-icon'>Ⓜ</span>
+                        <span class='node-name'>查询伦敦天气</span>
+                    </div>
+                </div>
+                <div class='children-container'>
+                    <div class='edge-curve'></div>
+                    <div class='edge-horizontal'></div>
+                    <div class='children'>
+                        <div class='child'>
+                            <div class='child-edge-curve'></div>
+            <div class='node-container'>
+                <div class='node' style='background: #6b7280; font-size: 9px'>
+                    <div class='node-content'>
+                        <span class='node-name'>查询伦敦天气*</span>
+                    </div>
+                </div>
+            </div>
+                        </div>
+                        <div class='child'>
+                            <div class='child-edge-curve'></div>
+            <div class='node-container'>
+                <div class='node' style='background: #6b7280; font-size: 9px'>
+                    <div class='node-content'>
+                        <span class='node-name'>保存伦敦天气数据</span>
+                    </div>
+                </div>
+            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+                        </div>
+                        <div class='child'>
+                            <div class='child-edge-curve'></div>
+            <div class='node-container'>
+                <div class='node' style='background: #f97316; font-size: 9px'>
+                    <div class='node-content'>
+                        <span class='node-icon'>Ⓜ</span>
+                        <span class='node-name'>查询东京天气</span>
+                    </div>
+                </div>
+                <div class='children-container'>
+                    <div class='edge-curve'></div>
+                    <div class='edge-horizontal'></div>
+                    <div class='children'>
+                        <div class='child'>
+                            <div class='child-edge-curve'></div>
+            <div class='node-container'>
+                <div class='node' style='background: #6b7280; font-size: 9px'>
+                    <div class='node-content'>
+                        <span class='node-name'>查询东京天气*</span>
+                    </div>
+                </div>
+            </div>
+                        </div>
+                        <div class='child'>
+                            <div class='child-edge-curve'></div>
+            <div class='node-container'>
+                <div class='node' style='background: #6b7280; font-size: 9px'>
+                    <div class='node-content'>
+                        <span class='node-name'>保存东京天气数据</span>
+                    </div>
+                </div>
+            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+                        </div>
+                        <div class='child'>
+                            <div class='child-edge-curve'></div>
+            <div class='node-container'>
+                <div class='node' style='background: #f97316; font-size: 9px'>
+                    <div class='node-content'>
+                        <span class='node-icon'>Ⓜ</span>
+                        <span class='node-name'>数据记录</span>
+                    </div>
+                </div>
+                <div class='children-container'>
+                    <div class='edge-curve'></div>
+                    <div class='edge-horizontal'></div>
+                    <div class='children'>
+                        <div class='child'>
+                            <div class='child-edge-curve'></div>
+            <div class='node-container'>
+                <div class='node' style='background: #6b7280; font-size: 9px'>
+                    <div class='node-content'>
+                        <span class='node-name'>保存IP天气数据*</span>
+                    </div>
+                </div>
+            </div>
+                        </div>
+                        <div class='child'>
+                            <div class='child-edge-curve'></div>
+            <div class='node-container'>
+                <div class='node' style='background: #6b7280; font-size: 9px'>
+                    <div class='node-content'>
+                        <span class='node-name'>保存北京天气数据*</span>
+                    </div>
+                </div>
+            </div>
+                        </div>
+                        <div class='child'>
+                            <div class='child-edge-curve'></div>
+            <div class='node-container'>
+                <div class='node' style='background: #6b7280; font-size: 9px'>
+                    <div class='node-content'>
+                        <span class='node-name'>保存上海天气数据*</span>
+                    </div>
+                </div>
+            </div>
+                        </div>
+                        <div class='child'>
+                            <div class='child-edge-curve'></div>
+            <div class='node-container'>
+                <div class='node' style='background: #6b7280; font-size: 9px'>
+                    <div class='node-content'>
+                        <span class='node-name'>保存广州天气数据*</span>
+                    </div>
+                </div>
+            </div>
+                        </div>
+                        <div class='child'>
+                            <div class='child-edge-curve'></div>
+            <div class='node-container'>
+                <div class='node' style='background: #6b7280; font-size: 9px'>
+                    <div class='node-content'>
+                        <span class='node-name'>保存深圳天气数据*</span>
+                    </div>
+                </div>
+            </div>
+                        </div>
+                        <div class='child'>
+                            <div class='child-edge-curve'></div>
+            <div class='node-container'>
+                <div class='node' style='background: #6b7280; font-size: 9px'>
+                    <div class='node-content'>
+                        <span class='node-name'>保存国外城市天气数据</span>
+                    </div>
+                </div>
+            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+                        </div>
+                        <div class='child'>
+                            <div class='child-edge-curve'></div>
+            <div class='node-container'>
+                <div class='node' style='background: #f97316; font-size: 9px'>
+                    <div class='node-content'>
+                        <span class='node-icon'>Ⓜ</span>
+                        <span class='node-name'>报告生成</span>
+                    </div>
+                </div>
+                <div class='children-container'>
+                    <div class='edge-curve'></div>
+                    <div class='edge-horizontal'></div>
+                    <div class='children'>
+                        <div class='child'>
+                            <div class='child-edge-curve'></div>
+            <div class='node-container'>
+                <div class='node' style='background: #6b7280; font-size: 9px'>
+                    <div class='node-content'>
+                        <span class='node-name'>生成详细天气报告</span>
+                    </div>
+                </div>
+            </div>
+                        </div>
+                        <div class='child'>
+                            <div class='child-edge-curve'></div>
+            <div class='node-container'>
+                <div class='node' style='background: #6b7280; font-size: 9px'>
+                    <div class='node-content'>
+                        <span class='node-name'>生成简洁天气摘要</span>
+                    </div>
+                </div>
+            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+                        </div>
+                        <div class='child'>
+                            <div class='child-edge-curve'></div>
+            <div class='node-container'>
+                <div class='node' style='background: #f97316; font-size: 9px'>
+                    <div class='node-content'>
+                        <span class='node-icon'>Ⓜ</span>
+                        <span class='node-name'>验证和清理</span>
+                    </div>
+                </div>
+                <div class='children-container'>
+                    <div class='edge-curve'></div>
+                    <div class='edge-horizontal'></div>
+                    <div class='children'>
+                        <div class='child'>
+                            <div class='child-edge-curve'></div>
+            <div class='node-container'>
+                <div class='node' style='background: #6b7280; font-size: 9px'>
+                    <div class='node-content'>
+                        <span class='node-name'>验证文件创建</span>
+                    </div>
+                </div>
+            </div>
+                        </div>
+                        <div class='child'>
+                            <div class='child-edge-curve'></div>
+            <div class='node-container'>
+                <div class='node' style='background: #6b7280; font-size: 9px'>
+                    <div class='node-content'>
+                        <span class='node-name'>生成任务完成报告</span>
+                    </div>
+                </div>
+            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

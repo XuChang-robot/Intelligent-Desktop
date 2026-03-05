@@ -1,10 +1,39 @@
+# 工具创建规则：
+# 1. 必须在文件最前面定义工具说明，包括工具名称、支持的操作类型、必需参数、可选参数、参数验证规则和返回格式
+# 2. 必须定义操作类型配置（OPERATION_CONFIG或其他类似配置），包含各操作类型的描述、必需参数和可选参数
+# 3. 必须实现validate_parameters函数，用于验证和调整参数，返回(调整后的参数字典, 配置错误信息)
+# 4. 必须在工具函数开始时调用validate_parameters进行参数验证，如果存在config_error则返回包含config_error字段的错误结果
+# 5. 必须统一返回字典格式结果，包含success字段和formatted_message字段
+# 6. 配置错误时返回{"success": False, "config_error": "...", "formatted_message": "❌ 配置错误: ..."}
+# 7. 执行失败时返回{"success": False, "error": "...", "formatted_message": "❌ 错误: ..."}
+# 8. 成功时返回{"success": True, "result": "...", "formatted_message": "✅ ..."}
+# 9. 必须包含operation参数，用于指定具体的操作类型
+# 10. 只有当返回结果包含config_error字段时，行为树自动修复机制才会触发配置修复
+# 11. formatted_message字段是系统返回给UI的信息，必须包含清晰的操作结果描述和状态标识
+# 
+# 原因：
+# - 统一的参数验证机制确保LLM生成的配置能够被正确验证，避免参数错误导致执行失败
+# - 统一的返回格式便于行为树自动修复机制识别配置错误和执行失败，只在配置错误时触发修复
+# - 标准化的工具文档和配置格式便于维护和扩展，提高代码可读性
+# - operation参数是工具操作的核心标识符，确保工具能够正确执行指定的操作
+# - formatted_message字段为UI提供清晰的操作结果展示，提升用户体验
+
+
 # 天气查询工具
 
 import requests
 import os
+from enum import Enum
 from typing import Dict, Any, Tuple, List, Optional
+from pydantic import Field
 from user_config.config import get_config
 
+
+# 操作类型枚举
+class WeatherOperationEnum(str, Enum):
+    IP_WEATHER = "ip_weather"
+    DOMESTIC_WEATHER = "domestic_weather"
+    FOREIGN_WEATHER = "foreign_weather"
 
 # 参数范围配置
 PARAMETER_RANGES = {
@@ -43,33 +72,62 @@ PARAMETER_RANGES = {
 }
 
 
-def validate_parameters(operation: str, days: int = None, day: int = None, hourtype: int = None, suntimetype: int = None) -> Tuple[Dict[str, Any], List[str]]:
+def validate_parameters(operation: WeatherOperationEnum, days: int = None, day: int = None, hourtype: int = None, suntimetype: int = None, province: str = None, city: str = None) -> Tuple[Dict[str, Any], List[str], Optional[str]]:
     """验证并调整参数
     
     Args:
-        operation: 操作类型，"domestic"或"foreign"
+        operation: 操作类型，"ip_weather"、"domestic_weather"或"foreign_weather"
         days: 查询天数
         day: 查询某一天的天气
         hourtype: 是否返回时段天气预报
         suntimetype: 是否返回日出日落时间
+        province: 省份名称（仅domestic_weather需要）
+        city: 城市名称（domestic_weather和foreign_weather需要）
     
     Returns:
-        (调整后的参数字典, 警告信息列表)
+        (调整后的参数字典, 警告信息列表, 配置错误信息)
     """
     params = {
+        'operation': operation,
         'days': days,
         'day': day,
         'hourtype': hourtype,
-        'suntimetype': suntimetype
+        'suntimetype': suntimetype,
+        'province': province,
+        'city': city
     }
     
     warnings = []
+    config_error = None
+    
+    # 验证必需参数
+    if operation == WeatherOperationEnum.DOMESTIC_WEATHER:
+        if not province:
+            config_error = "国内天气查询需要提供province参数"
+        elif not city:
+            config_error = "国内天气查询需要提供city参数"
+    elif operation == WeatherOperationEnum.FOREIGN_WEATHER:
+        if not city:
+            config_error = "国外天气查询需要提供city参数"
+    
+    # 如果存在配置错误，直接返回
+    if config_error:
+        return params, warnings, config_error
     
     # 获取对应的参数范围配置
-    if operation not in PARAMETER_RANGES:
-        return params, warnings
+    range_key = None
+    if operation == WeatherOperationEnum.DOMESTIC_WEATHER:
+        range_key = 'domestic'
+    elif operation == WeatherOperationEnum.FOREIGN_WEATHER:
+        range_key = 'foreign'
+    elif operation == WeatherOperationEnum.IP_WEATHER:
+        # IP天气查询使用国内天气的参数范围配置
+        range_key = 'domestic'
     
-    range_config = PARAMETER_RANGES[operation]
+    if not range_key:
+        return params, warnings, config_error
+    
+    range_config = PARAMETER_RANGES[range_key]
     
     # 验证days参数
     if days is not None and 'days' in range_config:
@@ -87,7 +145,7 @@ def validate_parameters(operation: str, days: int = None, day: int = None, hourt
             if config.get('ignore_if_out_of_range'):
                 params['day'] = None
     
-    return params, warnings
+    return params, warnings, config_error
 
 
 def get_public_ip() -> str:
@@ -424,7 +482,15 @@ def query_ip_weather(ip: str = None, days: int = 1, day: int = None, suntimetype
     user_id, api_key = get_weather_api_config()
     
     # 使用统一的参数验证机制，强制hourtype为1
-    params, warning_params = validate_parameters('domestic', days, day, 1, suntimetype)
+    params, warning_params, config_error = validate_parameters('ip', days, day, 1, suntimetype, None, None)
+    
+    # 如果存在配置错误，返回错误
+    if config_error:
+        return {
+            "success": False,
+            "config_error": config_error
+        }
+    
     days = params['days']
     day = params['day']
     hourtype = 1
@@ -492,11 +558,21 @@ def query_domestic_weather(province: str, city: str, days: int = 1, day: int = N
     user_id, api_key = get_weather_api_config()
     
     # 使用统一的参数验证机制，强制hourtype为1
-    params, warning_params = validate_parameters('domestic', days, day, 1, suntimetype)
+    params, warning_params, config_error = validate_parameters('domestic', days, day, 1, suntimetype, province, city)
+    
+    # 如果存在配置错误，返回错误
+    if config_error:
+        return {
+            "success": False,
+            "config_error": config_error
+        }
+    
     days = params['days']
     day = params['day']
     hourtype = 1
     suntimetype = params['suntimetype']
+    province = params['province']
+    city = params['city']
     
     url = f'https://cn.apihz.cn/api/tianqi/tqyb.php?id={user_id}&key={api_key}&sheng={province}&place={city}'
     
@@ -547,9 +623,18 @@ def query_foreign_weather(city: str, days: int = 1, day: int = None, dkey: str =
     user_id, api_key = get_weather_api_config()
     
     # 使用统一的参数验证机制
-    params, warning_params = validate_parameters('foreign', days, day, None, None)
+    params, warning_params, config_error = validate_parameters('foreign', days, day, None, None, None, city)
+    
+    # 如果存在配置错误，返回错误
+    if config_error:
+        return {
+            "success": False,
+            "config_error": config_error
+        }
+    
     days = params['days']
     day = params['day']
+    city = params['city']
     
     url = f'http://101.35.2.25/api/tianqi/tqybun.php?id={user_id}&key={api_key}&city={city}'
     
@@ -721,25 +806,28 @@ def register_weather_query_tools(mcp):
     """
     
     @mcp.tool()
-    async def weather_query(operation: str, province: str = None, city: str = None, ip: str = None, days: int = 1, day: int = None, suntimetype: int = None, dkey: str = None, uip: str = None) -> Dict[str, Any]:
+    async def weather_query(
+        operation: WeatherOperationEnum,
+        province: str = None,
+        city: str = None,
+        ip: str = None,
+        days: int = 1,
+        day: int = None,
+        suntimetype: int = None,
+        dkey: str = None,
+        uip: str = None
+    ) -> Dict[str, Any]:
         """天气查询工具
         
         用于查询天气信息，包括实时天气、7天预报、小时预报、日出日落时间和气象预警等。
-
-        根据operation参数执行不同类型的天气查询：
-        - "ip_weather": 根据当前IP地址自动查询天气信息，。如果不提供ip参数，会自动获取当前公网IP地址。
-        - "domestic_weather": 查询中国境内指定省份和城市的天气，支持7天预报
-        - "foreign_weather": 查询国外主要城市的天气，支持6天预报
-        
-        注意：
-        如果参数只提供了中国国内的城市，则需要自动补全省份参数
-        例如："哈尔滨天气" -> province="黑龙江", city="哈尔滨"
+        # 天气查询工具
+        # 支持的操作类型：
+        #   - "ip_weather": 根据当前IP地址查询天气（忽略city参数）
+        #   - "domestic_weather": 查询中国国内城市天气（必需province和city参数）
+        #   - "foreign_weather": 查询中国以外城市天气（必需city参数）
 
         Args:
-            operation: 操作类型，可选值：
-                - "ip_weather": IP地址天气查询，适用于用户没有指定具体地点的天气查询，如"今天天气如何"、"天气怎么样"等。
-                - "domestic_weather": 适用于中国国内天气查询
-                - "foreign_weather": 适用于中国以外的天气查询
+            operation: 操作类型
             province: 省份名称（仅domestic_weather需要，必填参数），例如："北京"、"上海"、"广东"、"湖南"
             city: 城市名称（domestic_weather和foreign_weather需要），例如："朝阳"、"浦东"、"深圳"、"东京"、"纽约"
             ip: IP地址（仅ip_weather），要查询的ip地址，如不传则自动获取当前公网IP地址
@@ -760,12 +848,14 @@ def register_weather_query_tools(mcp):
                 "alarm": "...",
                 "message": "错误信息（如果失败）"
             }
-        
+
+        注意：
+            - 如果是中国国内城市天气查询，必须根据提供的中国国内城市自动补全省份。例如："长春市天气" -> province="吉林", city="长春"
+
         Examples:
-            - 查询当前IP地址天气: weather_query("ip_weather")
-            - x天日出日落时间: weather_query("ip_weather", day=x, suntimetype=1)
-            - 查询未来x天天气，包含日出日落: weather_query("ip_weather", day=None, days=x, suntimetype=1)
-            - 根据提供的中国国内城市自动补全省份："长春市天气" -> province="吉林", city="长春"
+            - 查询今天天气: weather_query("ip_weather")
+            - 哈尔滨市未来第x天日出日落时间: weather_query("domestic_weather", province="黑龙江", city="哈尔滨", day=x, suntimetype=1)
+            - 查询伦敦未来x天天气，包含日出日落: weather_query("foreign_weather", city="伦敦", day=None, days=x, suntimetype=1)
         """
         try:
             print(f"weather_query被调用，参数: operation={operation}, province={province}, city={city}, ip={ip}, days={days}, day={day}, suntimetype={suntimetype}")
@@ -773,53 +863,24 @@ def register_weather_query_tools(mcp):
             if operation == "ip_weather":
                 return query_ip_weather(ip, days, day, suntimetype, dkey, uip)
             elif operation == "domestic_weather":
-                if not province or not city:
-                    return {
-                        "success": False,
-                        "message": "国内天气查询需要提供province和city参数"
-                    }
-                return query_domestic_weather(province, city, "simple", days, day, suntimetype, dkey, uip)
+                return query_domestic_weather(province, city, days, day, suntimetype, dkey, uip)
             elif operation == "foreign_weather":
-                if not city:
-                    return {
-                        "success": False,
-                        "message": "国外天气查询需要提供city参数"
-                    }
-                
-                # 使用统一的参数验证机制
-                params, warning_params = validate_parameters('foreign', days, day, None, suntimetype)
-                
-                # 国外天气API不支持hourtype、suntimetype参数
-                unsupported_params = []
-                if params['hourtype'] is not None:
-                    unsupported_params.append("hourtype")
-                if params['suntimetype'] is not None:
-                    unsupported_params.append("suntimetype")
-                
-                print(f"调用query_foreign_weather，参数: city={city}, days={days}, day={day}")
-                result = query_foreign_weather(city, days, day, dkey, uip)
-                print(f"query_foreign_weather返回: {result}")
-                
-                if result.get("success"):
-                    # 添加警告信息
-                    if warning_params:
-                        warning_msg = "\n\n⚠️ 注意：" + "；".join(warning_params)
-                        result["formatted_message"] += warning_msg
-                        print(f"⚠️ {warning_msg}")
-                    
-                    if unsupported_params:
-                        unsupported_msg = f"\n\n⚠️ 注意：国外天气API不支持以下参数：{', '.join(unsupported_params)}。这些参数已被忽略。国外天气API仅支持dkey和uip可选参数。"
-                        result["formatted_message"] += unsupported_msg
-                        print(f"⚠️ 国外天气API不支持以下参数：{', '.join(unsupported_params)}")
-                
-                return result
+                return query_foreign_weather(city, days, day, dkey, uip)
             else:
+                # 返回包含config_error的字典
                 return {
                     "success": False,
-                    "message": f"不支持的操作类型: {operation}，支持的类型: ip_weather, domestic_weather, foreign_weather"
+                    "config_error": f"不支持的操作类型: {operation}，支持的类型: ip_weather, domestic_weather, foreign_weather"
                 }
                 
+        except ValueError as e:
+            # 重新抛出ValueError异常，触发自动修复机制
+            raise
         except Exception as e:
+            # 其他异常作为正常执行失败，返回错误字典
+            print(f"weather_query执行出错: {e}")
+            import traceback
+            traceback.print_exc()
             return {
                 "success": False,
                 "message": f"程序执行出错: {str(e)}"

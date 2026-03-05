@@ -1,4 +1,56 @@
-# 邮件处理工具
+# 工具创建规则：
+# 1. 必须在文件最前面定义工具说明，包括工具名称、支持的操作类型、必需参数、可选参数、参数验证规则和返回格式
+# 2. 必须定义操作类型配置（OPERATION_CONFIG或其他类似配置），包含各操作类型的描述、必需参数和可选参数
+# 3. 必须实现validate_parameters函数，用于验证和调整参数，返回(调整后的参数字典, 配置错误信息)
+# 4. 必须在工具函数开始时调用validate_parameters进行参数验证，如果存在config_error则返回包含config_error字段的错误结果
+# 5. 必须统一返回字典格式结果，包含success字段和formatted_message字段
+# 6. 配置错误时返回{"success": False, "config_error": "...", "formatted_message": "❌ 配置错误: ..."}
+# 7. 执行失败时返回{"success": False, "error": "...", "formatted_message": "❌ 错误: ..."}
+# 8. 成功时返回{"success": True, "result": "...", "formatted_message": "✅ ..."}
+# 9. 必须包含operation参数，用于指定具体的操作类型
+# 10. 只有当返回结果包含config_error字段时，行为树自动修复机制才会触发配置修复
+# 11. formatted_message字段是系统返回给UI的信息，必须包含清晰的操作结果描述和状态标识
+# 
+# 原因：
+# - 统一的参数验证机制确保LLM生成的配置能够被正确验证，避免参数错误导致执行失败
+# - 统一的返回格式便于行为树自动修复机制识别配置错误和执行失败，只在配置错误时触发修复
+# - 标准化的工具文档和配置格式便于维护和扩展，提高代码可读性
+# - config_error字段明确区分配置错误和执行失败，避免误触发自动修复机制
+# - operation参数是工具操作的核心标识符，确保工具能够正确执行指定的操作
+# - 只有通过config_error字段，行为树系统才能准确识别LLM生成的配置错误，从而触发修复机制
+# - formatted_message字段为UI提供清晰的操作结果展示，提升用户体验
+
+
+# 工具说明：
+# 工具名称：email_processor
+# 支持的操作类型（operation）：
+#   - "send": 发送邮件
+#   - "receive": 接收邮件
+# 必需参数：
+#   - operation: 操作类型（必需）
+#   - recipient: 收件人邮箱地址（send操作）或发件人邮箱地址（receive操作）（必需）
+# 可选参数：
+#   - smtp_server: SMTP服务器地址（用于发送邮件，默认从配置文件读取）
+#   - smtp_port: SMTP服务器端口（用于发送邮件，默认从配置文件读取）
+#   - smtp_username: SMTP用户名（用于发送邮件，默认从配置文件读取）
+#   - smtp_password: SMTP密码（用于发送邮件，默认从配置文件读取）
+#   - subject: 邮件主题（用于发送邮件）
+#   - body: 邮件正文（用于发送邮件）
+#   - attachments: 附件路径（用于发送邮件，多个附件用分号分隔）
+#   - imap_server: IMAP服务器地址（用于接收邮件，默认从配置文件读取）
+#   - imap_port: IMAP服务器端口（用于接收邮件，默认从配置文件读取）
+#   - ctx: FastMCP上下文，用于elicitation（可选）
+#
+# 参数验证规则：
+#   - operation: 必须是支持的操作类型之一
+#   - recipient: 不能为空，且必须是有效的邮箱地址格式
+#   - send操作需要subject和body参数
+#
+# 返回格式：
+#   - 成功：{"success": True, "result": "...", "formatted_message": "..."}
+#   - 配置错误：{"success": False, "config_error": "..."}
+#   - 执行失败：{"success": False, "error": "...", "formatted_message": "..."}
+
 
 import os
 import smtplib
@@ -6,10 +58,11 @@ import imaplib
 import email
 import socket
 import re
+from enum import Enum
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, List, Tuple
 from pydantic import BaseModel
 from mcp.server.fastmcp import Context
 
@@ -18,6 +71,76 @@ from mcp_server.tools.file_operations import process_path
 
 # 从config导入配置
 from user_config.config import get_config
+
+
+# 操作类型枚举
+class EmailOperationEnum(str, Enum):
+    SEND = "send"
+    RECEIVE = "receive"
+
+# 操作类型配置
+OPERATION_CONFIG = {
+    'send': {
+        'description': '发送邮件',
+        'required_params': ['recipient'],
+        'optional_params': ['subject', 'body', 'attachments', 'smtp_server', 'smtp_port', 'smtp_username', 'smtp_password', 'ctx']
+    },
+    'receive': {
+        'description': '接收邮件',
+        'required_params': ['recipient'],
+        'optional_params': ['imap_server', 'imap_port', 'smtp_username', 'smtp_password', 'ctx']
+    }
+}
+
+
+def validate_parameters(operation: EmailOperationEnum, recipient: str, subject: Optional[str] = None, body: Optional[str] = None) -> Tuple[Dict[str, Any], Optional[str]]:
+    """验证并调整参数
+    
+    Args:
+        operation: 操作类型
+        recipient: 收件人邮箱地址
+        subject: 邮件主题
+        body: 邮件正文
+    
+    Returns:
+        (调整后的参数字典, 配置错误信息)
+    """
+    params = {
+        'operation': operation.value,
+        'recipient': recipient,
+        'subject': subject,
+        'body': body
+    }
+    
+    config_error = None
+    
+    # 验证operation参数
+    if not operation:
+        config_error = "operation参数不能为空"
+    elif operation.value not in OPERATION_CONFIG:
+        config_error = f"不支持的操作类型: {operation.value}，支持的操作: {', '.join(OPERATION_CONFIG.keys())}"
+    
+    # 如果存在配置错误，直接返回
+    if config_error:
+        return params, config_error
+    
+    # 验证recipient参数
+    if not recipient:
+        config_error = config_error or "recipient参数不能为空"
+    else:
+        # 验证邮箱地址格式
+        pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        if not re.match(pattern, recipient):
+            config_error = config_error or f"邮箱地址格式不正确: {recipient}"
+    
+    # 验证send操作的必需参数
+    if operation == EmailOperationEnum.SEND:
+        if not subject:
+            config_error = config_error or "send操作需要subject参数"
+        if not body:
+            config_error = config_error or "send操作需要body参数"
+    
+    return params, config_error
 
 
 def register_email_processor_tools(mcp, security_checker=None, output_callback=None):
@@ -31,7 +154,7 @@ def register_email_processor_tools(mcp, security_checker=None, output_callback=N
     
     @mcp.tool()
     async def email_processor(
-        operation: str,
+        operation: EmailOperationEnum,
         recipient: str,
         smtp_server: Optional[str] = None,
         smtp_port: Optional[int] = None,
@@ -76,6 +199,20 @@ def register_email_processor_tools(mcp, security_checker=None, output_callback=N
             - 发送带附件的邮件: email_processor("send", "recipient@example.com", subject="测试邮件", body="这是一封带附件的测试邮件", attachments="文件1.pdf;文件2.docx")
             - 接收邮件: email_processor("receive", "sender@example.com")
         """
+        # 验证参数
+        validated_params, config_error = validate_parameters(operation, recipient, subject, body)
+        if config_error:
+            return {
+                "success": False,
+                "config_error": config_error,
+                "formatted_message": f"❌ 配置错误: {config_error}"
+            }
+        
+        # 使用验证后的参数
+        recipient = validated_params['recipient']
+        subject = validated_params.get('subject')
+        body = validated_params.get('body')
+        
         try:
             # 验证邮箱地址格式
             def validate_email(email_address: str) -> bool:
@@ -83,13 +220,13 @@ def register_email_processor_tools(mcp, security_checker=None, output_callback=N
                 pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
                 return bool(re.match(pattern, email_address))
             
-            # 验证收件人邮箱地址格式
-            if not validate_email(recipient):
-                return {
-                    "success": False, 
-                    "error": f"收件人邮箱地址格式不正确: {recipient}",
-                    "formatted_message": f"❌ 错误: 收件人邮箱地址格式不正确\n📧 邮箱: {recipient}"
-                }
+            # 验证收件人邮箱地址格式（已经在validate_parameters中验证过，这里可以移除）
+            # if not validate_email(recipient):
+            #     return {
+            #         "success": False, 
+            #         "error": f"收件人邮箱地址格式不正确: {recipient}",
+            #         "formatted_message": f"❌ 错误: 收件人邮箱地址格式不正确\n📧 邮箱: {recipient}"
+            #     }
             
             # 优先从环境变量读取，然后从配置文件读取，最后使用默认值
             smtp_server = smtp_server or os.getenv('SMTP_SERVER', '') or get_config("email.smtp.server", "smtp.example.com")
@@ -130,7 +267,7 @@ def register_email_processor_tools(mcp, security_checker=None, output_callback=N
             imap_port = imap_port or get_config("email.imap.port", 993)
             
             # 验证必要参数
-            if operation == "send":
+            if operation == EmailOperationEnum.SEND:
                 if not smtp_username:
                     return {
                         "success": False, 
@@ -143,7 +280,7 @@ def register_email_processor_tools(mcp, security_checker=None, output_callback=N
                         "error": "缺少SMTP密码，请在配置文件中设置或直接提供",
                         "formatted_message": "❌ 错误: 缺少SMTP密码，请在配置文件中设置或直接提供"
                     }
-            elif operation == "receive":
+            elif operation == EmailOperationEnum.RECEIVE:
                 if not smtp_username:
                     return {
                         "success": False, 
@@ -156,7 +293,7 @@ def register_email_processor_tools(mcp, security_checker=None, output_callback=N
                         "error": "缺少邮箱密码，请在配置文件中设置或直接提供",
                         "formatted_message": "❌ 错误: 缺少邮箱密码，请在配置文件中设置或直接提供"
                     }
-            if operation == "send":
+            if operation == EmailOperationEnum.SEND:
                 # 发送邮件
                 try:
                     # 创建邮件
@@ -260,7 +397,7 @@ def register_email_processor_tools(mcp, security_checker=None, output_callback=N
                         "formatted_message": f"❌ 发送邮件失败\n💬 错误: {str(e)}"
                     }
             
-            elif operation == "receive":
+            elif operation == EmailOperationEnum.RECEIVE:
                 # 接收邮件
                 try:
                     if not imap_server or not imap_port:
@@ -354,8 +491,8 @@ def register_email_processor_tools(mcp, security_checker=None, output_callback=N
             else:
                 return {
                     "success": False, 
-                    "error": f"不支持的操作: {operation}",
-                    "formatted_message": f"❌ 错误: 不支持的操作 '{operation}'"
+                    "error": f"不支持的操作: {operation.value}",
+                    "formatted_message": f"❌ 错误: 不支持的操作 '{operation.value}'"
                 }
         
         except Exception as e:

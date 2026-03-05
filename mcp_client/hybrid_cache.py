@@ -449,8 +449,8 @@ class HybridTaskPlanCache:
                     tree_config = json.loads(result[0])
                     timestamp = result[1]
                     
-                    # 更新最后访问时间
-                    cursor.execute('UPDATE cache SET last_accessed = datetime("now") WHERE user_input_hash = ?', (user_input_hash,))
+                    # 更新最后访问时间和timestamp（延长有效期）
+                    cursor.execute('UPDATE cache SET last_accessed = datetime("now"), timestamp = datetime("now") WHERE user_input_hash = ?', (user_input_hash,))
                     conn.commit()
                     
                     self.logger.info(f"缓存精确命中（user_input_hash: {user_input_hash}）")
@@ -495,8 +495,8 @@ class HybridTaskPlanCache:
                                 cached_user_input = result[1]
                                 timestamp = result[2]
                                 
-                                # 更新最后访问时间
-                                cursor.execute('UPDATE cache SET last_accessed = datetime("now") WHERE faiss_id = ?', (faiss_id,))
+                                # 更新最后访问时间和timestamp（延长有效期）
+                                cursor.execute('UPDATE cache SET last_accessed = datetime("now"), timestamp = datetime("now") WHERE faiss_id = ?', (faiss_id,))
                                 conn.commit()
                                 
                                 self.logger.info(f"缓存语义命中（相似度: {similarity:.2f}）")

@@ -115,7 +115,7 @@ class IntentParser:
         """
         self.logger.info(f"开始解析用户意图: {user_input[:50]}...")
         try:
-            # 调用parse_intent，获取意图类型和entities
+            # 调用parse_intent，获取意图类型
             intent_result = await self.parse_intent(user_input, tools)
             
             # 检查意图是否有效
@@ -169,7 +169,6 @@ class IntentParser:
                 result = {
                     "type": "task",
                     "user_input": user_input,
-                    "entities": intent_result.get("entities", {}),
                     "confidence": intent_result.get("confidence", 0.5),
                     "tree_config": tree_config
                 }
@@ -192,20 +191,3 @@ class IntentParser:
                 "user_input": user_input,
                 "error": f"意图解析失败：{str(e)}"
             }
-    
-    # @deprecated: 此方法已废弃，功能已整合到parse_intent方法中
-    # 为了向后兼容保留此方法，但不应再调用
-    async def _generate_tree_config(self, user_input: str, intent_result: Dict[str, Any], tools=None) -> Dict[str, Any]:
-        """生成行为树配置
-        
-        Args:
-            user_input: 用户输入
-            intent_result: 意图解析结果
-            tools: 可用工具列表
-        
-        Returns:
-            行为树配置字典
-        """
-        # 此方法已废弃，不应再调用
-        # 直接抛出异常，提示调用者使用新的parse_intent方法
-        raise NotImplementedError("_generate_tree_config方法已废弃，请使用parse_intent方法，tree_config已整合到parse_intent的返回值中")

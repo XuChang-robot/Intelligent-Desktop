@@ -13,8 +13,8 @@ mcp:
 llm:
   model: "qwen3:8b"
   base_url: "http://localhost:11434"
-  temperature: 0.6
-  max_tokens: 4000
+  temperature: 0
+  max_tokens: 100000
   repeat_penalty: 1.1
   top_p: 0.9
   top_k: 40
@@ -35,8 +35,11 @@ ui:
 
 # 日志配置
 logging:
+  dev_mode: true
+  log_dir: "logs"
   level: "INFO"
   format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  visualization_dir: "logs/visualizations"
 
 # 邮件服务配置
 email:
@@ -48,15 +51,20 @@ email:
 
 # 缓存配置
 cache:
-  enabled: true  #总开关
+  enabled: false  #总开关
   # 匹配策略开关
-  enable_hash_match: false  # 哈希精确匹配开关
+  enable_hash_match: true  # 哈希精确匹配开关
   enable_faiss_match: false  # FAISS语义匹配开关
-  type: "faiss"  # FAISS向量搜索 + SQLite元数据存储
   cache_dir: "cache"
+
+  # Embedding模型
+  embedding_model: "nomic-embed-text"
   
+  # 相似度阈值
+  similarity_threshold: 0.95
+
   # 时间策略
-  ttl: 604800  # 缓存过期时间（秒），默认一周
+  ttl: 604800  # 缓存过期时间（秒），默认一周604800
   
   # 大小策略
   max_total_size_mb: 1024  # 总大小限制（1GB）
@@ -70,14 +78,16 @@ cache:
   cleanup_interval: 3600  # 清理间隔（秒），默认1小时
   cleanup_on_startup: true  # 启动时清理过期缓存
 
-  # Embedding模型
-  embedding_model: "nomic-embed-text"
-  
-  # 相似度阈值
-  similarity_threshold: 0.95
 
 # 接口盒子API配置，官网https://www.apihz.cn/
 interfacebox:
   api:
     user_id: ""  # 接口盒子用户ID（可通过环境变量INTERFACEBOX_API_USER_ID覆盖）
     api_key: ""  # 接口盒子API密钥（可通过环境变量INTERFACEBOX_API_KEY覆盖）  
+
+# 行为树自动修复配置
+behavior_tree:
+  auto_repair:
+    enabled: false  # 自动修复开关
+    max_repair_attempts: 2  # 最大修复尝试次数
+    repair_timeout: 30  # 修复超时时间（秒）

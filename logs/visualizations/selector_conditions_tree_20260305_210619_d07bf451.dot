@@ -1,0 +1,37 @@
+digraph pastafarianism {
+    graph [fontname="SimHei,Microsoft YaHei,Heiti TC,WenQuanYi Micro Hei,sans-serif"];
+    node [fontname="SimHei,Microsoft YaHei,Heiti TC,WenQuanYi Micro Hei,sans-serif"];
+    edge [fontname="SimHei,Microsoft YaHei,Heiti TC,WenQuanYi Micro Hei,sans-serif"];
+ordering=out;
+天气条件执行任务 [label="Ⓜ 天气条件执行任务", shape=box, style=filled, fillcolor=orange, fontsize=9, fontcolor=black];
+创建测试文件夹 [label=创建测试文件夹, shape=ellipse, style=filled, fillcolor=gray, fontsize=9, fontcolor=black];
+天气条件执行任务 -> 创建测试文件夹;
+查询北京天气 [label=查询北京天气, shape=ellipse, style=filled, fillcolor=gray, fontsize=9, fontcolor=black];
+天气条件执行任务 -> 查询北京天气;
+天气条件选择器 [label=天气条件选择器, shape=octagon, style=filled, fillcolor=cyan, fontsize=9, fontcolor=black];
+天气条件执行任务 -> 天气条件选择器;
+晴朗天气处理 [label="Ⓜ 晴朗天气处理", shape=box, style=filled, fillcolor=orange, fontsize=9, fontcolor=black];
+天气条件选择器 -> 晴朗天气处理;
+判断是否晴朗 [label=判断是否晴朗, shape=ellipse, style=filled, fillcolor=gray, fontsize=9, fontcolor=black];
+晴朗天气处理 -> 判断是否晴朗;
+创建户外活动文档 [label=创建户外活动文档, shape=ellipse, style=filled, fillcolor=gray, fontsize=9, fontcolor=black];
+晴朗天气处理 -> 创建户外活动文档;
+下雨天气处理 [label="Ⓜ 下雨天气处理", shape=box, style=filled, fillcolor=orange, fontsize=9, fontcolor=black];
+天气条件选择器 -> 下雨天气处理;
+判断是否下雨 [label=判断是否下雨, shape=ellipse, style=filled, fillcolor=gray, fontsize=9, fontcolor=black];
+下雨天气处理 -> 判断是否下雨;
+创建室内活动文档 [label=创建室内活动文档, shape=ellipse, style=filled, fillcolor=gray, fontsize=9, fontcolor=black];
+下雨天气处理 -> 创建室内活动文档;
+下雪天气处理 [label="Ⓜ 下雪天气处理", shape=box, style=filled, fillcolor=orange, fontsize=9, fontcolor=black];
+天气条件选择器 -> 下雪天气处理;
+判断是否下雪 [label=判断是否下雪, shape=ellipse, style=filled, fillcolor=gray, fontsize=9, fontcolor=black];
+下雪天气处理 -> 判断是否下雪;
+创建冬季活动文档 [label=创建冬季活动文档, shape=ellipse, style=filled, fillcolor=gray, fontsize=9, fontcolor=black];
+下雪天气处理 -> 创建冬季活动文档;
+多云天气处理 [label="Ⓜ 多云天气处理", shape=box, style=filled, fillcolor=orange, fontsize=9, fontcolor=black];
+天气条件选择器 -> 多云天气处理;
+判断是否多云 [label=判断是否多云, shape=ellipse, style=filled, fillcolor=gray, fontsize=9, fontcolor=black];
+多云天气处理 -> 判断是否多云;
+创建备选活动文档 [label=创建备选活动文档, shape=ellipse, style=filled, fillcolor=gray, fontsize=9, fontcolor=black];
+多云天气处理 -> 创建备选活动文档;
+}

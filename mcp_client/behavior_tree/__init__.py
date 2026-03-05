@@ -3,6 +3,7 @@ from .blackboard import BehaviorTreeBlackboard
 from .nodes import NodeFactory, MCPActionNode, ConditionNode
 from .tree_builder import TreeBuilder
 from .tree_executor import TreeExecutor
+from .visualizer import TreeVisualizer
 
 __all__ = [
     'BehaviorTree',
@@ -11,5 +12,6 @@ __all__ = [
     'MCPActionNode',
     'ConditionNode',
     'TreeBuilder',
-    'TreeExecutor'
+    'TreeExecutor',
+    'TreeVisualizer'
 ]

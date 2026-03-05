@@ -1,7 +1,139 @@
 # 文本处理工具
 
 import asyncio
-from typing import Dict, Any
+from typing import Dict, Any, Optional, Tuple
+from enum import Enum
+from pathlib import Path
+from pydantic import Field
+
+
+# 工具创建规则：
+# 1. 必须在文件最前面定义工具说明，包括工具名称、支持的操作类型、必需参数、可选参数、参数验证规则和返回格式
+# 2. 必须定义操作类型配置（OPERATION_CONFIG或其他类似配置），包含各操作类型的描述、必需参数和可选参数
+# 3. 必须实现validate_parameters函数，用于验证和调整参数，返回(调整后的参数字典, 配置错误信息)
+# 4. 必须在工具函数开始时调用validate_parameters进行参数验证，如果存在config_error则返回包含config_error字段的错误结果
+# 5. 必须统一返回字典格式结果，包含success字段和formatted_message字段
+# 6. 配置错误时返回{"success": False, "config_error": "...", "formatted_message": "❌ 配置错误: ..."}
+# 7. 执行失败时返回{"success": False, "error": "...", "formatted_message": "❌ 错误: ..."}
+# 8. 成功时返回{"success": True, "result": "...", "formatted_message": "✅ ..."}
+# 9. 必须包含operation参数，用于指定具体的操作类型
+# 10. 只有当返回结果包含config_error字段时，行为树自动修复机制才会触发配置修复
+# 11. formatted_message字段是系统返回给UI的信息，必须包含清晰的操作结果描述和状态标识
+# 
+# 原因：
+# - 统一的参数验证机制确保LLM生成的配置能够被正确验证，避免参数错误导致执行失败
+# - 统一的返回格式便于行为树自动修复机制识别配置错误和执行失败，只在配置错误时触发修复
+# - 标准化的工具文档和配置格式便于维护和扩展，提高代码可读性
+# - config_error字段明确区分配置错误和执行失败，避免误触发自动修复机制
+# - operation参数是工具操作的核心标识符，确保工具能够正确执行指定的操作
+# - 只有通过config_error字段，行为树系统才能准确识别LLM生成的配置错误，从而触发修复机制
+# - formatted_message字段为UI提供清晰的操作结果展示，提升用户体验
+
+
+# 工具说明：
+# 工具名称：text_processing
+# 支持的操作类型（operation）：
+#   - "to_audio": 文字转语音（使用pyttsx3）
+#   - "summarize": 文本摘要（简单截取）
+#   - "format": 文本格式化
+#   - "count": 统计字符数、单词数、行数
+# 必需参数：
+#   - operation: 操作类型（必需）
+#   - text: 输入文本（必需，除非提供input_file）
+# 可选参数：
+#   - input_file: 输入文件路径（可选，用于从文件读取文本，支持.txt和.docx文件）
+#   - lang: 语言代码（用于to_audio，默认"zh"）
+#   - format_type: 格式化类型（用于format，可选"upper"、"lower"、"title"、"plain"）
+#   - output_path: 输出文件路径（用于to_audio，默认与输入文件同目录）
+#   - voice: 声音（用于to_audio，默认系统默认）
+#   - rate: 语速（用于to_audio，默认200，范围50-500）
+#   - volume: 音量（用于to_audio，默认1.0，范围0.0-2.0）
+#
+# 参数验证规则：
+#   - operation: 必须是支持的操作类型之一
+#   - text: 不能为空（除非提供input_file）
+#   - output_path: to_audio操作时不能为空
+#
+# 返回格式：
+#   - 成功：{"success": True, "result": "...", "file": "...", "formatted_message": "..."}
+#   - 配置错误：{"success": False, "config_error": "..."}
+#   - 执行失败：{"success": False, "error": "...", "formatted_message": "..."}
+
+
+# 操作类型枚举
+class TextOperationEnum(str, Enum):
+    TO_AUDIO = "to_audio"
+    SUMMARIZE = "summarize"
+    FORMAT = "format"
+    COUNT = "count"
+
+# 操作类型配置
+OPERATION_CONFIG = {
+    'to_audio': {
+        'description': '文字转语音',
+        'required_params': ['text'],
+        'optional_params': ['lang', 'output_path', 'voice', 'rate', 'volume']
+    },
+    'summarize': {
+        'description': '文本摘要',
+        'required_params': ['text'],
+        'optional_params': []
+    },
+    'format': {
+        'description': '文本格式化',
+        'required_params': ['text'],
+        'optional_params': ['format_type']
+    },
+    'count': {
+        'description': '统计字符数、单词数、行数',
+        'required_params': ['text'],
+        'optional_params': []
+    }
+}
+
+
+def validate_parameters(operation: TextOperationEnum, text: str = None, output_path: str = None) -> Tuple[Dict[str, Any], Optional[str]]:
+    """验证并调整参数
+    
+    Args:
+        operation: 操作类型
+        text: 输入文本
+        output_path: 输出文件路径
+    
+    Returns:
+        (调整后的参数字典, 配置错误信息)
+    """
+    params = {
+        'operation': operation,
+        'text': text,
+        'output_path': output_path
+    }
+    
+    config_error = None
+    
+    # 验证operation参数
+    if not operation:
+        config_error = "operation参数不能为空"
+    elif operation not in OPERATION_CONFIG:
+        config_error = f"不支持的操作类型: {operation}，支持的操作: {', '.join(OPERATION_CONFIG.keys())}"
+    
+    # 如果存在配置错误，直接返回
+    if config_error:
+        return params, config_error
+    
+    # 获取操作配置
+    op_config = OPERATION_CONFIG[operation]
+    
+    # 验证必需参数
+    for param in op_config['required_params']:
+        if param == 'text' and not text:
+            config_error = config_error or f"{operation}操作需要text参数"
+    
+    # 验证特定操作的必需参数
+    if operation == "to_audio" and not output_path:
+        config_error = config_error or "to_audio操作需要output_path参数"
+    
+    return params, config_error
 
 
 def register_text_processing_tools(mcp):
@@ -13,7 +145,7 @@ def register_text_processing_tools(mcp):
     
     @mcp.tool()
     async def text_processing(
-        operation: str,
+        operation: TextOperationEnum,
         text: str = None,
         input_file: str = None,
         lang: str = "zh",
@@ -29,11 +161,7 @@ def register_text_processing_tools(mcp):
         支持从文本文件和Word文档（.docx）读取内容。
         
         Args:
-            operation: 操作类型，可选值：
-                - "to_audio": 文字转语音（使用pyttsx3）
-                - "summarize": 文本摘要（简单截取）
-                - "format": 文本格式化
-                - "count": 统计字符数、单词数、行数
+            operation: 操作类型
             text: 输入文本（如果提供input_file则可选）
             input_file: 输入文件路径（可选，用于从文件读取文本，支持.txt和.docx文件）
             lang: 语言代码（用于to_audio，默认"zh"）
@@ -57,7 +185,16 @@ def register_text_processing_tools(mcp):
         """
         try:
             import os
-            from pathlib import Path
+            
+            # 参数验证
+            params, config_error = validate_parameters(operation, text, output_path)
+            
+            # 如果存在配置错误，返回错误
+            if config_error:
+                return {
+                    "success": False,
+                    "config_error": config_error
+                }
             
             # 处理输入文件（如果提供）
             if input_file:
@@ -118,14 +255,6 @@ def register_text_processing_tools(mcp):
                         "error": f"读取输入文件失败: {str(e)}",
                         "formatted_message": f"❌ 错误: 读取输入文件失败: {str(e)}"
                     }
-            
-            # 验证文本输入
-            if not text:
-                return {
-                    "success": False, 
-                    "error": "必须提供text或input_file参数",
-                    "formatted_message": "❌ 错误: 必须提供text或input_file参数"
-                }
             
             if operation == "to_audio":
                 # 确定输出文件路径
@@ -200,7 +329,7 @@ def register_text_processing_tools(mcp):
                         "formatted_message": f"❌ 错误: 音频生成失败: {str(e)}"
                     }
             
-            elif operation == "summarize":
+            elif operation == TextOperationEnum.SUMMARIZE:
                 summary = text[:100] + "..." if len(text) > 100 else text
                 return {
                     "success": True,
@@ -209,7 +338,7 @@ def register_text_processing_tools(mcp):
                     "formatted_message": f"📝 文本摘要\n📊 原始长度: {len(text)} 字符\n📊 摘要长度: {len(summary)} 字符\n\n摘要内容:\n{summary}"
                 }
             
-            elif operation == "format":
+            elif operation == TextOperationEnum.FORMAT:
                 if format_type == 'upper':
                     result = text.upper()
                 elif format_type == 'lower':

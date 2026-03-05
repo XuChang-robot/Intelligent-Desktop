@@ -1,0 +1,605 @@
+{
+  "type": "object",
+  "properties": {
+    "intent": {
+      "type": "string",
+      "enum": [
+        "task",
+        "chat",
+        "cannot_execute"
+      ]
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 1.0
+    },
+    "reason": {
+      "type": "string"
+    },
+    "tree_config": {
+      "$ref": "#/$defs/behaviorTreeNode"
+    }
+  },
+  "required": [
+    "intent"
+  ],
+  "$defs": {
+    "behaviorTreeNode": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "Sequence"
+            },
+            "name": {
+              "type": "string"
+            },
+            "id": {
+              "type": "string"
+            },
+            "children": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/behaviorTreeNode"
+              }
+            }
+          },
+          "required": [
+            "type",
+            "name",
+            "id",
+            "children"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "Selector"
+            },
+            "name": {
+              "type": "string"
+            },
+            "id": {
+              "type": "string"
+            },
+            "children": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/behaviorTreeNode"
+              }
+            }
+          },
+          "required": [
+            "type",
+            "name",
+            "id",
+            "children"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "Parallel"
+            },
+            "name": {
+              "type": "string"
+            },
+            "id": {
+              "type": "string"
+            },
+            "children": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/behaviorTreeNode"
+              }
+            }
+          },
+          "required": [
+            "type",
+            "name",
+            "id",
+            "children"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "Condition"
+            },
+            "name": {
+              "type": "string"
+            },
+            "id": {
+              "type": "string"
+            },
+            "condition": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "name",
+            "id",
+            "condition"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "Action"
+            },
+            "name": {
+              "type": "string"
+            },
+            "id": {
+              "type": "string"
+            },
+            "tool": {
+              "const": "file_operations"
+            },
+            "parameters": {
+              "type": "object",
+              "properties": {
+                "operation": {
+                  "type": "string",
+                  "enum": [
+                    "create",
+                    "read",
+                    "write",
+                    "delete",
+                    "move",
+                    "copy",
+                    "list",
+                    "search",
+                    "check_permission",
+                    "read_write"
+                  ]
+                },
+                "path": {
+                  "type": "string"
+                },
+                "content": {
+                  "type": "string"
+                },
+                "destination": {
+                  "type": "string"
+                },
+                "overwrite": {
+                  "type": "boolean"
+                },
+                "mode": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false,
+              "required": [
+                "operation",
+                "path"
+              ]
+            }
+          },
+          "required": [
+            "type",
+            "name",
+            "id",
+            "tool",
+            "parameters"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "Action"
+            },
+            "name": {
+              "type": "string"
+            },
+            "id": {
+              "type": "string"
+            },
+            "tool": {
+              "const": "system_info"
+            },
+            "parameters": {
+              "type": "object",
+              "properties": {
+                "info_type": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "type",
+            "name",
+            "id",
+            "tool",
+            "parameters"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "Action"
+            },
+            "name": {
+              "type": "string"
+            },
+            "id": {
+              "type": "string"
+            },
+            "tool": {
+              "const": "text_processing"
+            },
+            "parameters": {
+              "type": "object",
+              "properties": {
+                "operation": {
+                  "type": "string",
+                  "enum": [
+                    "to_audio",
+                    "summarize",
+                    "format",
+                    "count"
+                  ]
+                },
+                "text": {
+                  "type": "string"
+                },
+                "input_file": {
+                  "type": "string"
+                },
+                "lang": {
+                  "type": "string"
+                },
+                "format_type": {
+                  "type": "string"
+                },
+                "output_path": {
+                  "type": "string"
+                },
+                "voice": {
+                  "type": "string"
+                },
+                "rate": {
+                  "type": "integer"
+                },
+                "volume": {
+                  "type": "number"
+                }
+              },
+              "additionalProperties": false,
+              "required": [
+                "operation"
+              ]
+            }
+          },
+          "required": [
+            "type",
+            "name",
+            "id",
+            "tool",
+            "parameters"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "Action"
+            },
+            "name": {
+              "type": "string"
+            },
+            "id": {
+              "type": "string"
+            },
+            "tool": {
+              "const": "network_request"
+            },
+            "parameters": {
+              "type": "object",
+              "properties": {
+                "operation": {
+                  "type": "string",
+                  "enum": [
+                    "GET",
+                    "POST",
+                    "PUT",
+                    "DELETE"
+                  ]
+                },
+                "url": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "string"
+                },
+                "headers": {
+                  "type": "string"
+                },
+                "params": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false,
+              "required": [
+                "operation",
+                "url"
+              ]
+            }
+          },
+          "required": [
+            "type",
+            "name",
+            "id",
+            "tool",
+            "parameters"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "Action"
+            },
+            "name": {
+              "type": "string"
+            },
+            "id": {
+              "type": "string"
+            },
+            "tool": {
+              "const": "document_converter"
+            },
+            "parameters": {
+              "type": "object",
+              "properties": {
+                "operation": {
+                  "type": "string",
+                  "enum": [
+                    "pdf_to_word",
+                    "word_to_pdf"
+                  ]
+                },
+                "input_path": {
+                  "type": "string"
+                },
+                "output_path": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false,
+              "required": [
+                "operation",
+                "input_path",
+                "output_path"
+              ]
+            }
+          },
+          "required": [
+            "type",
+            "name",
+            "id",
+            "tool",
+            "parameters"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "Action"
+            },
+            "name": {
+              "type": "string"
+            },
+            "id": {
+              "type": "string"
+            },
+            "tool": {
+              "const": "pdf_processor"
+            },
+            "parameters": {
+              "type": "object",
+              "properties": {
+                "operation": {
+                  "type": "string",
+                  "enum": [
+                    "merge",
+                    "insert",
+                    "print",
+                    "extract",
+                    "split"
+                  ]
+                },
+                "input_path": {
+                  "type": "string"
+                },
+                "output_path": {
+                  "type": "string"
+                },
+                "insert_position": {
+                  "type": "string"
+                },
+                "pages": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false,
+              "required": [
+                "operation",
+                "input_path",
+                "output_path"
+              ]
+            }
+          },
+          "required": [
+            "type",
+            "name",
+            "id",
+            "tool",
+            "parameters"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "Action"
+            },
+            "name": {
+              "type": "string"
+            },
+            "id": {
+              "type": "string"
+            },
+            "tool": {
+              "const": "email_processor"
+            },
+            "parameters": {
+              "type": "object",
+              "properties": {
+                "operation": {
+                  "type": "string",
+                  "enum": [
+                    "send",
+                    "receive"
+                  ]
+                },
+                "recipient": {
+                  "type": "string"
+                },
+                "smtp_server": {
+                  "type": "string"
+                },
+                "smtp_port": {
+                  "type": "string"
+                },
+                "smtp_username": {
+                  "type": "string"
+                },
+                "smtp_password": {
+                  "type": "string"
+                },
+                "subject": {
+                  "type": "string"
+                },
+                "body": {
+                  "type": "string"
+                },
+                "attachments": {
+                  "type": "string"
+                },
+                "imap_server": {
+                  "type": "string"
+                },
+                "imap_port": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false,
+              "required": [
+                "operation",
+                "recipient"
+              ]
+            }
+          },
+          "required": [
+            "type",
+            "name",
+            "id",
+            "tool",
+            "parameters"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "Action"
+            },
+            "name": {
+              "type": "string"
+            },
+            "id": {
+              "type": "string"
+            },
+            "tool": {
+              "const": "weather_query"
+            },
+            "parameters": {
+              "type": "object",
+              "properties": {
+                "operation": {
+                  "type": "string",
+                  "enum": [
+                    "ip_weather",
+                    "domestic_weather",
+                    "foreign_weather"
+                  ]
+                },
+                "province": {
+                  "type": "string"
+                },
+                "city": {
+                  "type": "string"
+                },
+                "ip": {
+                  "type": "string"
+                },
+                "days": {
+                  "type": "integer"
+                },
+                "day": {
+                  "type": "integer"
+                },
+                "suntimetype": {
+                  "type": "integer"
+                },
+                "dkey": {
+                  "type": "string"
+                },
+                "uip": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false,
+              "required": [
+                "operation"
+              ]
+            }
+          },
+          "required": [
+            "type",
+            "name",
+            "id",
+            "tool",
+            "parameters"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    }
+  }
+}

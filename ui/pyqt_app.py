@@ -14,6 +14,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 from ui.pyqt_main_window import MainWindow, ModernStyle
 from mcp_client.client import MCPClient
 from user_config.config import load_config
+from utils.logging_config import configure_root_logger, get_logger
 
 class WorkerSignals(QObject):
     """工作线程信号"""
@@ -359,10 +360,7 @@ class App(QObject):
     def run(self):
         """运行应用"""
         # 配置日志
-        logging.basicConfig(
-            level=logging.INFO,
-            format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-        )
+        configure_root_logger()
         
         # 设置UI回调
         self.main_window.set_user_input_callback(self.on_user_input)

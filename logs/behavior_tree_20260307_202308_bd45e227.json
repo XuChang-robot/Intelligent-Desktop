@@ -1,0 +1,12 @@
+{
+  "type": "Action",
+  "name": "查询北京明天天气",
+  "id": "queryBeijingTomorrowWeather",
+  "tool": "weather_query",
+  "parameters": {
+    "operation": "domestic_weather",
+    "province": "北京",
+    "city": "北京",
+    "day": 2
+  }
+}

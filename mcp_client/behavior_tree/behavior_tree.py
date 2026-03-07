@@ -28,8 +28,6 @@ class BehaviorTree:
         
         # 行为树根节点
         self.root: Optional[py_trees.behaviour.Behaviour] = None
-        
-        self.logger.info("行为树初始化完成")
     
     def set_tool_executor(self, tool_executor: Callable):
         """设置工具执行回调
@@ -40,7 +38,6 @@ class BehaviorTree:
         self.tool_executor = tool_executor
         self.node_factory.tool_executor = tool_executor
         self.tree_executor.tool_executor = tool_executor
-        self.logger.info("工具执行器已更新")
     
     def build_from_config(self, config: Dict[str, Any]) -> py_trees.behaviour.Behaviour:
         """从JSON配置构建行为树
@@ -51,7 +48,6 @@ class BehaviorTree:
         Returns:
             行为树根节点
         """
-        self.logger.info("从配置构建行为树")
         
         # 标准化行为树配置，确保有根节点
         normalized_config = self._normalize_behavior_tree(config)
@@ -70,7 +66,7 @@ class BehaviorTree:
         """
         # 如果是单个Action节点，包装为Sequence
         if isinstance(config, dict) and config.get("type") == "Action":
-            self.logger.info("检测到单个Action节点，自动包装为Sequence根节点")
+            self.logger.debug("检测到单个Action节点，自动包装为Sequence根节点")
             return {
                 "type": "Sequence",
                 "name": "Root",
@@ -166,7 +162,6 @@ class BehaviorTree:
         Returns:
             行为树节点的JSON schema
         """
-        self.logger.info("开始构建行为树节点schema")
         
         # 首先创建一个带有$defs的基础schema结构
         behavior_tree_node_schema = {
@@ -241,7 +236,48 @@ class BehaviorTree:
             "additionalProperties": False
         }
         
-        all_branches.extend([sequence_schema, selector_schema, parallel_schema, condition_schema])
+        # Inverter装饰器节点
+        inverter_schema = {
+            "type": "object",
+            "properties": {
+                "type": {"const": "Inverter"},
+                "name": {"type": "string"},
+                "id": {"type": "string"},
+                "child": {"$ref": "#/$defs/behaviorTreeNode"}
+            },
+            "required": ["type", "name", "id", "child"],
+            "additionalProperties": False
+        }
+        
+        # Timeout装饰器节点
+        timeout_schema = {
+            "type": "object",
+            "properties": {
+                "type": {"const": "Timeout"},
+                "name": {"type": "string"},
+                "id": {"type": "string"},
+                "child": {"$ref": "#/$defs/behaviorTreeNode"},
+                "duration": {"type": "number", "default": 10.0}
+            },
+            "required": ["type", "name", "id", "child"],
+            "additionalProperties": False
+        }
+        
+        # Repeat装饰器节点
+        repeat_schema = {
+            "type": "object",
+            "properties": {
+                "type": {"const": "Repeat"},
+                "name": {"type": "string"},
+                "id": {"type": "string"},
+                "child": {"$ref": "#/$defs/behaviorTreeNode"},
+                "num_success": {"type": "integer", "default": 1}
+            },
+            "required": ["type", "name", "id", "child"],
+            "additionalProperties": False
+        }
+        
+        all_branches.extend([sequence_schema, selector_schema, parallel_schema, condition_schema, inverter_schema, timeout_schema, repeat_schema])
         
         # 如果有工具信息，为每种工具创建独立的Action节点schema
         if tools:
@@ -355,7 +391,7 @@ class BehaviorTree:
             "$defs": behavior_tree_node_schema["$defs"]
         }
         
-        self.logger.info(f"行为树节点schema构建完成，包含{len(all_branches)}个分支")
+        self.logger.debug(f"行为树节点schema构建完成，包含{len(all_branches)}个分支")
         return final_schema
     
     def __repr__(self) -> str:

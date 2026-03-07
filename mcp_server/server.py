@@ -5,7 +5,7 @@ from typing import Dict, Any, Optional, Callable
 from pydantic import BaseModel
 from mcp.server.fastmcp import FastMCP, Context
 from mcp_server.sandbox import SandboxExecutor
-from mcp_server.security import SecurityChecker
+from mcp_server.tools.security_sandbox import SecurityChecker, create_default_security_checker
 from user_config.config import load_config
 
 # 导入工具模块
@@ -21,7 +21,7 @@ class MCPServer:
     def __init__(self):
         self.config = load_config()
         self.sandbox = SandboxExecutor()
-        self.security_checker = SecurityChecker()
+        self.security_checker = create_default_security_checker()
         self.logger = logging.getLogger(__name__)
         self.output_callback: Optional[Callable[[str], None]] = None
         

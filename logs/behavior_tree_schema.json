@@ -112,6 +112,86 @@
           "type": "object",
           "properties": {
             "type": {
+              "const": "Inverter"
+            },
+            "name": {
+              "type": "string"
+            },
+            "id": {
+              "type": "string"
+            },
+            "child": {
+              "$ref": "#/$defs/behaviorTreeNode"
+            }
+          },
+          "required": [
+            "type",
+            "name",
+            "id",
+            "child"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "Timeout"
+            },
+            "name": {
+              "type": "string"
+            },
+            "id": {
+              "type": "string"
+            },
+            "child": {
+              "$ref": "#/$defs/behaviorTreeNode"
+            },
+            "duration": {
+              "type": "number",
+              "default": 10.0
+            }
+          },
+          "required": [
+            "type",
+            "name",
+            "id",
+            "child"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "Repeat"
+            },
+            "name": {
+              "type": "string"
+            },
+            "id": {
+              "type": "string"
+            },
+            "child": {
+              "$ref": "#/$defs/behaviorTreeNode"
+            },
+            "num_success": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          "required": [
+            "type",
+            "name",
+            "id",
+            "child"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
               "const": "Action"
             },
             "name": {

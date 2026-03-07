@@ -1,130 +1,20 @@
 {
   "intent": "task",
-  "confidence": 0.98,
+  "confidence": 0.95,
   "tree_config": {
     "type": "Sequence",
-    "name": "天气条件执行任务",
-    "id": "sequenceWeatherConditionTask",
+    "name": "创建cx.txt文件",
+    "id": "sequenceCreateCxTxt",
     "children": [
       {
         "type": "Action",
-        "name": "创建测试文件夹",
-        "id": "actionCreateTestFolder",
+        "name": "创建D盘根目录下的cx.txt文件",
+        "id": "actionCreateCxTxt",
         "tool": "file_operations",
         "parameters": {
           "operation": "create",
-          "path": "test_selector_conditions"
+          "path": "D:\\cx.txt"
         }
-      },
-      {
-        "type": "Action",
-        "name": "查询北京天气",
-        "id": "actionQueryBeijingWeather",
-        "tool": "weather_query",
-        "parameters": {
-          "operation": "domestic_weather",
-          "province": "北京",
-          "city": "北京"
-        }
-      },
-      {
-        "type": "Selector",
-        "name": "天气条件选择器",
-        "id": "selectorWeatherCondition",
-        "children": [
-          {
-            "type": "Sequence",
-            "name": "晴朗天气处理",
-            "id": "sequenceSunnyWeather",
-            "children": [
-              {
-                "type": "Condition",
-                "name": "判断是否晴朗",
-                "id": "conditionSunny",
-                "condition": "actionQueryBeijingWeather.result['current']['skycon'] == '晴'"
-              },
-              {
-                "type": "Action",
-                "name": "创建户外活动文档",
-                "id": "actionCreateOutdoorDoc",
-                "tool": "file_operations",
-                "parameters": {
-                  "operation": "create",
-                  "path": "test_selector_conditions/outdoor_activities.docx"
-                }
-              }
-            ]
-          },
-          {
-            "type": "Sequence",
-            "name": "下雨天气处理",
-            "id": "sequenceRainyWeather",
-            "children": [
-              {
-                "type": "Condition",
-                "name": "判断是否下雨",
-                "id": "conditionRainy",
-                "condition": "actionQueryBeijingWeather.result['current']['skycon'] == '雨'"
-              },
-              {
-                "type": "Action",
-                "name": "创建室内活动文档",
-                "id": "actionCreateIndoorDoc",
-                "tool": "file_operations",
-                "parameters": {
-                  "operation": "create",
-                  "path": "test_selector_conditions/indoor_activities.docx"
-                }
-              }
-            ]
-          },
-          {
-            "type": "Sequence",
-            "name": "下雪天气处理",
-            "id": "sequenceSnowyWeather",
-            "children": [
-              {
-                "type": "Condition",
-                "name": "判断是否下雪",
-                "id": "conditionSnowy",
-                "condition": "actionQueryBeijingWeather.result['current']['skycon'] == '雪'"
-              },
-              {
-                "type": "Action",
-                "name": "创建冬季活动文档",
-                "id": "actionCreateWinterDoc",
-                "tool": "file_operations",
-                "parameters": {
-                  "operation": "create",
-                  "path": "test_selector_conditions/winter_activities.docx"
-                }
-              }
-            ]
-          },
-          {
-            "type": "Sequence",
-            "name": "多云天气处理",
-            "id": "sequenceCloudyWeather",
-            "children": [
-              {
-                "type": "Condition",
-                "name": "判断是否多云",
-                "id": "conditionCloudy",
-                "condition": "actionQueryBeijingWeather.result['current']['skycon'] == '多云'"
-              },
-              {
-                "type": "Action",
-                "name": "创建备选活动文档",
-                "id": "actionCreateAlternativeDoc",
-                "tool": "file_operations",
-                "parameters": {
-                  "operation": "create",
-                  "path": "test_selector_conditions/alternative_activities.docx"
-                }
-              }
-            ]
-          }
-        ]
       }
     ]
   }

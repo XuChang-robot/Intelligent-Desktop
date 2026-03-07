@@ -30,7 +30,6 @@ class TreeBuilder:
         Raises:
             ValueError: 配置无效时
         """
-        self.logger.info("开始构建行为树")
         
         # 验证配置
         self._validate_config(config)
@@ -38,7 +37,7 @@ class TreeBuilder:
         # 递归构建节点
         root_node = self._build_node(config)
         
-        self.logger.info(f"行为树构建完成: {root_node.name}")
+        self.logger.info(f"行为树已构建")
         
         return root_node
     
@@ -56,6 +55,10 @@ class TreeBuilder:
         
         self.logger.debug(f"构建节点: {node_name} (类型: {node_type})")
         
+        # 处理装饰器节点（只有一个子节点）
+        if node_type in ["Inverter", "Timeout", "Repeat"]:
+            return self._build_decorator_node(config)
+        
         # 使用工厂创建节点
         node = self.node_factory.create(node_type, node_name, config)
         
@@ -71,6 +74,49 @@ class TreeBuilder:
                 node.add_child(child_node)
         
         return node
+    
+    def _build_decorator_node(self, config: Dict[str, Any]) -> py_trees.behaviour.Behaviour:
+        """构建装饰器节点
+        
+        装饰器节点只有一个子节点（child），不是多个子节点（children）。
+        
+        Args:
+            config: 装饰器节点配置
+        
+        Returns:
+            构建的装饰器节点
+        """
+        node_type = config.get("type")
+        node_name = config.get("name", node_type)
+        
+        self.logger.debug(f"构建装饰器节点: {node_name} (类型: {node_type})")
+        
+        # 检查是否有子节点配置
+        if "child" not in config:
+            raise ValueError(f"装饰器节点 {node_name} 必须包含 child 字段")
+        
+        child_config = config["child"]
+        
+        # 递归构建子节点
+        child_node = self._build_node(child_config)
+        
+        # 根据类型创建对应的装饰器节点
+        if node_type == "Inverter":
+            from .nodes import InverterNode
+            return InverterNode(name=node_name, child=child_node)
+        
+        elif node_type == "Timeout":
+            from .nodes import TimeoutNode
+            duration = config.get("duration", 30.0)
+            return TimeoutNode(name=node_name, child=child_node, duration=duration)
+        
+        elif node_type == "Repeat":
+            from .nodes import RepeatNode
+            num_success = config.get("num_success", 3)
+            return RepeatNode(name=node_name, child=child_node, num_success=num_success)
+        
+        else:
+            raise ValueError(f"不支持的装饰器节点类型: {node_type}")
     
     def _validate_config(self, config: Dict[str, Any]) -> bool:
         """验证配置有效性
@@ -93,7 +139,7 @@ class TreeBuilder:
         node_type = config["type"]
         
         # 验证节点类型
-        valid_types = ["Sequence", "Selector", "Parallel", "Action", "Condition"]
+        valid_types = ["Sequence", "Selector", "Parallel", "Action", "Condition", "Inverter", "Timeout", "Repeat"]
         if node_type not in valid_types:
             raise ValueError(f"不支持的节点类型: {node_type}, 支持的类型: {valid_types}")
         
@@ -106,7 +152,14 @@ class TreeBuilder:
             if "condition" not in config:
                 raise ValueError("Condition 节点必须包含 condition 字段")
         
-        # 递归验证子节点
+        # 验证装饰器节点
+        elif node_type in ["Inverter", "Timeout", "Repeat"]:
+            if "child" not in config:
+                raise ValueError(f"{node_type} 装饰器节点必须包含 child 字段")
+            # 递归验证子节点
+            self._validate_config(config["child"])
+        
+        # 递归验证子节点（复合节点）
         if "children" in config:
             children_config = config["children"]
             if not isinstance(children_config, list):

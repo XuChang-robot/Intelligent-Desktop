@@ -228,31 +228,6 @@ class WorkerThread(QThread):
                 self.signals.loading.emit(True, f'正在执行: {step_description}')
                 self.signals.task.emit(step)
                 await asyncio.sleep(0.1)
-            
-            # 检查是否有results（仅用于调试，不重复显示）
-            content = result.get('content', {})
-            if isinstance(content, dict):
-                # 检查是否有results（调试信息）
-                results = content.get('results', [])
-                if results:
-                    self.logger.info(f"执行结果数量: {len(results)}")
-                    # 遍历results，查找formatted_message（仅用于调试）
-                    for i, step_result in enumerate(results):
-                        if isinstance(step_result, dict):
-                            # 查找formatted_message字段
-                            formatted_message = step_result.get('formatted_message')
-                            if formatted_message:
-                                self.logger.info(f"步骤 {i+1} 的formatted_message: {formatted_message[:50]}...")
-                
-                # 如果没有results，检查content本身是否有formatted_message（仅用于调试）
-                if not results:
-                    formatted_message = content.get('formatted_message')
-                    if formatted_message:
-                        self.logger.info(f"content中的formatted_message: {formatted_message[:50]}...")
-                
-                # 如果content本身是字符串（LLM直接回答）
-                elif isinstance(content, str):
-                    self.logger.info(f"content是字符串: {content[:50]}...")
                 
         except Exception as e:
             # 结束流式消息

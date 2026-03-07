@@ -1,5 +1,74 @@
 # 更新日志
 
+## [2026-03-07] 文件系统安全沙箱与错误信息显示修复
+
+### 安全沙箱系统
+
+1. **新增安全沙箱模块（mcp_server/tools/security_sandbox.py）**
+   - 创建 `SecurityPolicy` 类，定义安全策略配置
+   - 创建 `SecurityChecker` 类，实现安全检查逻辑
+   - 支持路径安全检查、操作安全检查、资源安全检查
+   - 提供默认、严格、宽松三种安全策略级别
+
+2. **安全策略配置**
+   - 当前只针对file_operations.py中的文件操作工具进行限制
+   - 路径限制：允许桌面、文档、下载、图片、音乐、视频、当前工作目录
+   - 非系统盘支持：允许在 D、E 等非系统盘的任何路径操作
+   - 禁止路径：Windows、Program Files、System32 等系统目录
+   - 操作白名单：create、read、write、list、copy、check_permission、search、read_write
+   - 危险操作确认：delete、move 操作需要用户确认
+
+3. **文件操作工具集成（mcp_server/tools/file_operations.py）**
+   - 在文件操作前添加安全检查
+   - 路径安全检查、目标路径安全检查、操作安全检查、资源安全检查
+   - 危险操作自动提示用户确认
+   - 自动使用默认安全检查器
+
+### 错误信息显示修复
+
+1. **行为树节点错误处理（mcp_client/behavior_tree/nodes.py）**
+   - 同时检查 `config_error` 和 `error` 字段
+   - 合并多个错误信息，用 `; ` 分隔
+   - 将错误信息写入 `self.result["error"]` 字段，确保 UI 能获取到
+   - 区分配置错误和执行错误，分别标识
+
+2. **行为树执行器错误获取（mcp_client/behavior_tree/tree_executor.py）**
+   - 从多个字段获取错误信息：`error`、`message`、`formatted_message`
+   - 处理 `formatted_message` 格式，移除前面的 `❌` 符号
+   - 提供默认错误信息 "未知错误"
+
+3. **安全检查器导入修复（mcp_server/server.py）**
+   - 修复导入路径：从 `security.py` 改为 `tools.security_sandbox`
+   - 使用 `create_default_security_checker()` 创建安全检查器实例
+   - 解决 `'SecurityChecker' object has no attribute 'check_path'` 错误
+
+### 安全功能
+
+1. **路径安全**
+   - 沙箱边界：限制在指定根目录
+   - 禁止路径：阻止访问系统敏感目录
+   - 路径遍历检测：防止 `../../../` 攻击
+   - 符号链接检查：禁止通过符号链接访问沙箱外
+
+2. **操作安全**
+   - 操作白名单：只允许安全的操作类型
+   - 危险操作确认：删除、移动操作需要用户确认
+   - 操作频率限制：每分钟最多 60 次操作
+
+3. **资源限制**
+   - 文件大小限制：10GB
+   - 操作频率限制：60 次/分钟
+   - 搜索深度限制：10 层
+
+### 效果
+
+- 用户尝试在 C 盘根目录创建文件夹时，会显示具体错误原因
+- 错误信息会正确传递到 UI 并显示在对话历史中
+- 文件系统操作受到多层安全防护
+- 非系统盘操作更加灵活
+
+---
+
 ## [2026-03-05] 修复行为树条件节点与单节点bug
 
 ### 行为树系统改进

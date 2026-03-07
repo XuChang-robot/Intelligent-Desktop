@@ -1,0 +1,17 @@
+{
+  "type": "Sequence",
+  "name": "创建cx文件夹",
+  "id": "sequenceCreateCxFolder",
+  "children": [
+    {
+      "type": "Action",
+      "name": "创建C盘根目录下的cx文件夹",
+      "id": "actionCreateCxFolder",
+      "tool": "file_operations",
+      "parameters": {
+        "operation": "create",
+        "path": "C:\\cx"
+      }
+    }
+  ]
+}

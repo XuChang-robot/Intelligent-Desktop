@@ -40,7 +40,7 @@ class BehaviorTreeBlackboard:
         """
         # 直接使用 Blackboard.storage
         py_trees.blackboard.Blackboard.storage[node_id] = result
-        self.logger.info(f"存储节点结果: {node_id} = {result}")
+        self.logger.debug(f"存储节点结果: {node_id} = {result}")
     
     def get_node_result(self, node_id: str) -> Optional[Dict[str, Any]]:
         """获取节点结果
@@ -93,4 +93,4 @@ class BehaviorTreeBlackboard:
         """清空黑板"""
         self.entities.clear()
         py_trees.blackboard.Blackboard.storage.clear()
-        self.logger.info("黑板已清空")
+        self.logger.debug("黑板已清空")

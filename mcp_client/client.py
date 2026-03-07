@@ -110,7 +110,6 @@ class SessionManager:
         """
         logging.info("服务器需要更多信息...")
         logging.info(f"消息: {params.message}")
-        logging.info(f"elicitation_callback: {self.elicitation_callback}")
         
         if self.elicitation_callback:
             try:
@@ -142,7 +141,6 @@ class SessionManager:
     
     async def call_tool(self, tool_name, params):
         """调用工具"""
-        logging.info(f"[SessionManager.call_tool] 开始调用工具: {tool_name}")
         
         if not self.connected:
             logging.info(f"[SessionManager.call_tool] 未连接，正在连接...")
@@ -152,21 +150,15 @@ class SessionManager:
             logging.error(f"[SessionManager.call_tool] 会话未初始化")
             raise RuntimeError("会话未初始化")
         
-        logging.info(f"调用工具: {tool_name}")
-        logging.info(f"参数: {params}")
-        
         try:
             # 使用 asyncio.wait_for 添加超时
             import asyncio
-            logging.info(f"[SessionManager.call_tool] 开始调用 session.call_tool")
-            logging.info(f"[SessionManager.call_tool] session 对象: {self.session}")
-            logging.info(f"[SessionManager.call_tool] session 类型: {type(self.session)}")
             
             result = await asyncio.wait_for(
                 self.session.call_tool(tool_name, params),
-                timeout=30.0  # 30秒超时
+                timeout=120.0  # 120秒超时
             )
-            logging.info(f"工具调用成功，结果: {result}")
+
             return result
         except asyncio.TimeoutError:
             logging.error(f"工具调用超时: {tool_name}")
@@ -316,7 +308,6 @@ class MCPClient:
 
     async def send_tool_call(self, tool_name: str, tool_args: Dict[str, Any]) -> Dict[str, Any]:
         """发送工具调用请求"""
-        self.logger.info(f"[send_tool_call] 开始执行工具: {tool_name}")
         
         if not self.session_manager:
             self.logger.info("[send_tool_call] 连接 session_manager")
@@ -324,13 +315,10 @@ class MCPClient:
         
         try:
             # 使用官方MCP Client API调用工具
-            self.logger.info(f"[send_tool_call] 调用 session_manager.call_tool")
             result = await self.session_manager.call_tool(tool_name, tool_args)
-            self.logger.info(f"[send_tool_call] call_tool 返回: {result}")
             
             # 解析结果
             if hasattr(result, 'content'):
-                self.logger.info(f"[send_tool_call] 解析结果 content")
                 # 处理官方MCP返回的结果格式
                 content = result.content
                 if content and len(content) > 0:
@@ -344,7 +332,7 @@ class MCPClient:
                             parsed = json.loads(text)
                             if isinstance(parsed, dict):
                                 # 如果是字典，直接返回
-                                self.logger.info(f"[send_tool_call] 返回 JSON 结果")
+                                self.logger.debug(f"[send_tool_call] 返回 JSON 结果")
                                 return {
                                     "type": "tool_response",
                                     "result": parsed
@@ -352,20 +340,20 @@ class MCPClient:
                         except (json.JSONDecodeError, ValueError):
                             # 如果不是JSON，直接返回文本
                             pass
-                        self.logger.info(f"[send_tool_call] 返回文本结果")
+                        self.logger.debug(f"[send_tool_call] 返回文本结果")
                         return {
                             "type": "tool_response",
                             "result": text
                         }
                     elif hasattr(first_item, 'data'):
-                        self.logger.info(f"[send_tool_call] 返回数据结果")
+                        self.logger.debug(f"[send_tool_call] 返回数据结果")
                         return {
                             "type": "tool_response",
                             "result": first_item.data
                         }
             
             # 如果无法解析，返回原始结果
-            self.logger.info(f"[send_tool_call] 返回原始结果")
+            self.logger.debug(f"[send_tool_call] 返回原始结果")
             return {
                 "type": "tool_response",
                 "result": str(result)
@@ -473,14 +461,12 @@ class MCPClient:
                     # 执行行为树
                     try:
                         if self.ui_callback:
-                            self.ui_callback("task_update", {"description": "行为树配置生成完成"})
                             self.ui_callback("loading", True, "行为树配置生成完成...")
                             self.ui_callback("progress", True, 30)
                         
                         # 定义工具执行回调（异步）
                         async def async_tool_executor(tool_name: str, parameters: Dict[str, Any]) -> Dict[str, Any]:
                             """执行MCP工具的回调函数"""
-                            self.logger.info(f"执行工具: {tool_name}, 参数: {parameters}")
                             result = await self.send_tool_call(tool_name, parameters)
                             return result
                         
@@ -565,7 +551,7 @@ class MCPClient:
                     return
                 
                 tree_config = intent["tree_config"]
-                self.logger.info(f"使用行为树配置: {tree_config}")
+                self.logger.debug(f"使用行为树配置: {tree_config}")
                 
                 # 自动保存行为树配置到日志目录
                 self._save_tree_config(tree_config, query)
@@ -578,7 +564,6 @@ class MCPClient:
                 # 定义工具执行回调（异步）
                 async def async_tool_executor(tool_name: str, parameters: Dict[str, Any]) -> Dict[str, Any]:
                     """执行MCP工具的回调函数"""
-                    self.logger.info(f"执行工具: {tool_name}, 参数: {parameters}")
                     result = await self.send_tool_call(tool_name, parameters)
                     return result
                 

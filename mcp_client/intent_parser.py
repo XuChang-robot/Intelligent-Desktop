@@ -73,7 +73,7 @@ class IntentParser:
         try:
             # 使用LLM解析意图
             intent = await self.llm_client.parse_intent(user_input, tools)
-            self.logger.info(f"解析意图成功: {intent}")
+            self.logger.debug(f"解析意图成功: {intent}")
             return intent
         except ConnectionError as e:
             # LLM连接错误

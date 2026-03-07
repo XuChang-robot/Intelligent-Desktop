@@ -1,0 +1,127 @@
+{
+  "type": "Sequence",
+  "name": "准备工作",
+  "id": "sequencePrepareWork",
+  "children": [
+    {
+      "type": "Action",
+      "name": "创建天气数据主目录",
+      "id": "actionCreateWeatherDataDir",
+      "tool": "file_operations",
+      "parameters": {
+        "operation": "create",
+        "path": "weather_data"
+      }
+    },
+    {
+      "type": "Action",
+      "name": "创建当前天气子目录",
+      "id": "actionCreateCurrentWeatherDir",
+      "tool": "file_operations",
+      "parameters": {
+        "operation": "create",
+        "path": "weather_data/current_weather"
+      }
+    },
+    {
+      "type": "Action",
+      "name": "创建天气预报子目录",
+      "id": "actionCreateWeatherForecastDir",
+      "tool": "file_operations",
+      "parameters": {
+        "operation": "create",
+        "path": "weather_data/weather_forecast"
+      }
+    },
+    {
+      "type": "Action",
+      "name": "创建天气报告子目录",
+      "id": "actionCreateWeatherReportDir",
+      "tool": "file_operations",
+      "parameters": {
+        "operation": "create",
+        "path": "weather_data/weather_report"
+      }
+    },
+    {
+      "type": "Action",
+      "name": "创建北京天气子目录",
+      "id": "actionCreateBeijingWeatherDir",
+      "tool": "file_operations",
+      "parameters": {
+        "operation": "create",
+        "path": "weather_data/weather_report/beijing_weather"
+      }
+    },
+    {
+      "type": "Action",
+      "name": "创建上海天气子目录",
+      "id": "actionCreateShanghaiWeatherDir",
+      "tool": "file_operations",
+      "parameters": {
+        "operation": "create",
+        "path": "weather_data/weather_report/shanghai_weather"
+      }
+    },
+    {
+      "type": "Action",
+      "name": "创建广州天气子目录",
+      "id": "actionCreateGuangzhouWeatherDir",
+      "tool": "file_operations",
+      "parameters": {
+        "operation": "create",
+        "path": "weather_data/weather_report/guangzhou_weather"
+      }
+    },
+    {
+      "type": "Action",
+      "name": "创建深圳天气子目录",
+      "id": "actionCreateShenzhenWeatherDir",
+      "tool": "file_operations",
+      "parameters": {
+        "operation": "create",
+        "path": "weather_data/weather_report/shenzhen_weather"
+      }
+    },
+    {
+      "type": "Action",
+      "name": "保存当前天气数据",
+      "id": "actionSaveCurrentWeather",
+      "tool": "file_operations",
+      "parameters": {
+        "operation": "write",
+        "path": "weather_data/current_weather.txt"
+      }
+    },
+    {
+      "type": "Action",
+      "name": "保存天气预报数据",
+      "id": "actionSaveWeatherForecastDir",
+      "tool": "file_operations",
+      "parameters": {
+        "operation": "write",
+        "path": "weather_data/weather_forecast.txt"
+      }
+    },
+    {
+      "type": "Action",
+      "name": "保存天气报告数据",
+      "id": "actionSaveWeatherReportDir",
+      "tool": "file_operations",
+      "parameters": {
+        "operation": "write",
+        "path": "weather_data/weather_report.txt"
+      }
+    },
+    {
+      "type": "Action",
+      "name": "创建任务完成报告",
+      "id": "actionCompleteTask",
+      "tool": "file_operations",
+      "parameters": {
+        "operation": "write",
+        "path": "weather_data/completion_info.txt"
+      }
+    }
+  ]
+}

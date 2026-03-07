@@ -66,7 +66,7 @@ class LLMClient:
                 import json
                 with open(file_path, "w", encoding="utf-8") as f:
                     json.dump(content, f, ensure_ascii=False, indent=2)
-            self.logger.info(f"{description}已保存到 {file_path}")
+            self.logger.debug(f"{description}已保存到 {file_path}")
         except Exception as e:
             self.logger.error(f"保存调试文件失败: {e}")
     
@@ -356,27 +356,36 @@ class LLMClient:
 
         try:
             #仅调试输出思考才用，当前版本的format与think参数同时使用会相互影响导致think不能正常输出
-            if self.dev_mode:
-                response = ollama.generate(
-                    model=self.model,
-                    prompt=user_prompt,
-                    system=system_prompt,
-                    options={
-                        "temperature": self.temperature,
-                        "repeat_penalty": self.repeat_penalty,
-                        "top_p": self.top_p,
-                        "top_k": self.top_k,
-                        "num_ctx": 8192,
-                    },
-                    think=True  # 启用思考功能
-                )
-                thinking_content = response.get("thinking", "")
-                if thinking_content:
-                    self.logger.debug(f"LLM思考: {thinking_content[:500]}...")
-                    # 保存思考内容到文件
-                    self._save_debug_file("llm_thinking.txt", thinking_content, "LLM思考内容")
+            if False:#self.dev_mode:
+                try:
+                    response = ollama.generate(
+                        model=self.model,
+                        prompt=user_prompt,
+                        system=system_prompt,
+                        options={
+                            "temperature": self.temperature,
+                            "repeat_penalty": self.repeat_penalty,
+                            "top_p": self.top_p,
+                            "top_k": self.top_k,
+                            "num_ctx": 8192,
+                        },
+                        think=True  # 启用思考功能
+                    )
+                    thinking_content = response.get("thinking", "")
+                    if thinking_content:
+                        self.logger.debug(f"LLM思考: {thinking_content[:500]}...")
+                        # 保存思考内容到文件
+                        self._save_debug_file("llm_thinking.txt", thinking_content, "LLM思考内容")
+                except Exception as e:
+                    # 处理模型不支持思考功能的情况
+                    if "does not support thinking" in str(e):
+                        self.logger.warning(f"模型 {self.model} 不支持思考功能，跳过思考输出")
+                    else:
+                        self.logger.error(f"获取思考内容失败: {e}")
 
             # 使用ollama.generate API，启用结构化输出
+            import time
+            start_time = time.time()
             response = ollama.generate(
                 model=self.model,
                 prompt=user_prompt,
@@ -391,6 +400,9 @@ class LLMClient:
                 },
                 think=False  # 启用思考功能
             )
+            end_time = time.time()
+            elapsed_time = end_time - start_time
+            self.logger.info(f"LLM生成响应耗时: {elapsed_time:.2f}秒")
             
             # 获取响应内容
             response_content = response.get("response", "")

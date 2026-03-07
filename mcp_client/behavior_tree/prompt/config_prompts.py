@@ -99,25 +99,15 @@ SEMANTIC_NODE_ID_EXAMPLES = """
 
 # 行为树配置原则
 BEHAVIOR_TREE_CONFIG_PRINCIPLES = f"""
-行为树要有一个根节点，根节点的类型必须是Sequence、Selector或Parallel。
-
 行为树节点类型：
 - Sequence: 序列节点（所有子节点按顺序执行，全部成功才返回成功）
 - Selector: 选择器节点（依次执行子节点，直到有一个成功）
 - Parallel: 并行节点（同时执行所有子节点，提高执行效率）
 - Action: 动作节点（调用MCP工具）
 - Condition: 条件节点（检查条件）
-
-节点配置格式：
-{{
-  "type": "节点类型",
-  "name": "节点名称",
-  "id": "语义化节点ID",  // 必须为每个节点指定有意义的ID
-  "children": [子节点列表],
-  "tool": "工具名称",  // Action节点
-  "parameters": {{}},     // Action节点参数
-  "condition": "条件表达式"  // Condition节点
-}}
+- Inverter: 反转装饰器（反转子节点状态：SUCCESS↔FAILURE）
+- Timeout: 超时装饰器（限制子节点执行时间）
+- Repeat: 重复装饰器（重复执行子节点指定次数）
 
 ## 语义化节点ID命名规则
 - 使用**驼峰命名法**（如"createMainDir"、"queryBeijingWeather"）

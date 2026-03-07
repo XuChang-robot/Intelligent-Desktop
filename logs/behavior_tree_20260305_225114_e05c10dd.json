@@ -1,0 +1,81 @@
+{
+  "type": "Sequence",
+  "name": "文件下载和处理流程",
+  "id": "sequenceFileDownloadProcessing",
+  "children": [
+    {
+      "type": "Action",
+      "name": "创建测试文件夹",
+      "id": "actionCreateTestFolder",
+      "tool": "file_operations",
+      "parameters": {
+        "operation": "create",
+        "path": "test_decorator_nodes"
+      }
+    },
+    {
+      "type": "Action",
+      "name": "检查文件是否存在",
+      "id": "actionCheckFileExistence",
+      "tool": "file_operations",
+      "parameters": {
+        "operation": "check_permission",
+        "path": "test_file.txt"
+      }
+    },
+    {
+      "type": "Selector",
+      "name": "文件不存在处理",
+      "id": "selectorFileNotExists",
+      "children": [
+        {
+          "type": "Inverter",
+          "name": "文件不存在",
+          "id": "inverterFileNotExists",
+          "child": {
+            "type": "Repeat",
+            "name": "下载文件重试",
+            "id": "repeatDownloadFile",
+            "child": {
+              "type": "Sequence",
+              "name": "下载和处理文件",
+              "id": "sequenceDownloadProcess",
+              "children": [
+                {
+                  "type": "Action",
+                  "name": "下载文件",
+                  "id": "actionDownloadFile",
+                  "tool": "network_request",
+                  "parameters": {
+                    "operation": "GET",
+                    "url": "http://example.com/test_file.txt",
+                    "headers": "{\"User-Agent\": \"Mozilla/5.0\"}"
+                  }
+                },
+                {
+                  "type": "Timeout",
+                  "name": "下载超时",
+                  "id": "timeoutDownload",
+                  "child": {
+                    "type": "Action",
+                    "name": "处理文件",
+                    "id": "actionProcessFile",
+                    "tool": "file_operations",
+                    "parameters": {
+                      "operation": "write",
+                      "path": "test_file.txt",
+                      "content": "下载内容",
+                      "overwrite": true
+                    }
+                  },
+                  "duration": 10
+                }
+              ]
+            },
+            "num_success": 3
+          }
+        }
+      ]
+    }
+  ]
+}

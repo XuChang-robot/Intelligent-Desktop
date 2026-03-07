@@ -1,0 +1,25 @@
+digraph pastafarianism {
+    graph [fontname="SimHei,Microsoft YaHei,Heiti TC,WenQuanYi Micro Hei,sans-serif"];
+    node [fontname="SimHei,Microsoft YaHei,Heiti TC,WenQuanYi Micro Hei,sans-serif"];
+    edge [fontname="SimHei,Microsoft YaHei,Heiti TC,WenQuanYi Micro Hei,sans-serif"];
+ordering=out;
+文件下载和处理流程 [label="Ⓜ 文件下载和处理流程", shape=box, style=filled, fillcolor=orange, fontsize=9, fontcolor=black];
+创建测试文件夹 [label=创建测试文件夹, shape=ellipse, style=filled, fillcolor=gray, fontsize=9, fontcolor=black];
+文件下载和处理流程 -> 创建测试文件夹;
+检查文件是否存在 [label=检查文件是否存在, shape=ellipse, style=filled, fillcolor=gray, fontsize=9, fontcolor=black];
+文件下载和处理流程 -> 检查文件是否存在;
+文件不存在处理 [label=文件不存在处理, shape=octagon, style=filled, fillcolor=cyan, fontsize=9, fontcolor=black];
+文件下载和处理流程 -> 文件不存在处理;
+文件不存在 [label=文件不存在, shape=ellipse, style=filled, fillcolor=ghostwhite, fontsize=9, fontcolor=black];
+文件不存在处理 -> 文件不存在;
+下载文件重试 [label=下载文件重试, shape=ellipse, style=filled, fillcolor=ghostwhite, fontsize=9, fontcolor=black];
+文件不存在 -> 下载文件重试;
+下载和处理文件 [label="Ⓜ 下载和处理文件", shape=box, style=filled, fillcolor=orange, fontsize=9, fontcolor=black];
+下载文件重试 -> 下载和处理文件;
+下载文件 [label=下载文件, shape=ellipse, style=filled, fillcolor=gray, fontsize=9, fontcolor=black];
+下载和处理文件 -> 下载文件;
+下载超时 [label=下载超时, shape=ellipse, style=filled, fillcolor=ghostwhite, fontsize=9, fontcolor=black];
+下载和处理文件 -> 下载超时;
+处理文件 [label=处理文件, shape=ellipse, style=filled, fillcolor=gray, fontsize=9, fontcolor=black];
+下载超时 -> 处理文件;
+}

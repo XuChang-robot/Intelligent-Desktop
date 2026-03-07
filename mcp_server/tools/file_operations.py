@@ -29,6 +29,7 @@ from typing import Dict, Any, Optional, Tuple, List
 from enum import Enum
 from pydantic import BaseModel, Field
 from mcp.server.fastmcp import Context
+from .security_sandbox import SecurityChecker, create_default_security_checker
 
 
 # 工具说明：
@@ -234,7 +235,9 @@ def register_file_operations_tools(mcp, security_checker=None, output_callback=N
         security_checker: 安全检查器（可选）
         output_callback: 输出回调函数（可选）
     """
-    
+    # 如果没有提供安全检查器，使用默认的
+    if security_checker is None:
+        security_checker = create_default_security_checker()
     @mcp.tool()
     async def file_operations(
         operation: FileOperationEnum,
@@ -287,78 +290,42 @@ def register_file_operations_tools(mcp, security_checker=None, output_callback=N
                 }
             
             # 处理路径
-            print(f"[DEBUG] 当前工作目录: {os.getcwd()}")
-            print(f"[DEBUG] 原始路径: {params['path']}")
-            print(f"[DEBUG] 原始路径类型: {type(params['path'])}")
-            path = process_path(params['path'])
-            print(f"[DEBUG] 处理后路径: {path}")
-            print(f"[DEBUG] 操作: {operation}")
+            processed_path = process_path(params['path'])
             
-            if operation == "create":
-                if path.endswith("/") or "." not in os.path.basename(path):
-                    # 创建文件夹
-                    if os.path.exists(path):
-                        return {
-                            "success": True, 
-                            "result": "文件夹已存在", 
-                            "path": path,
-                            "formatted_message": f"📁 文件夹已存在\n📍 路径: {path}"
-                        }
-                    os.makedirs(path, exist_ok=True)
+            # 安全检查
+            if security_checker:
+                # 检查路径安全
+                is_path_safe, path_error = security_checker.check_path(processed_path)
+                if not is_path_safe:
                     return {
-                        "success": True, 
-                        "result": "文件夹创建成功", 
-                        "path": path,
-                        "formatted_message": f"✅ 文件夹创建成功\n📁 文件夹: {os.path.basename(path)}\n📍 路径: {path}"
+                        "success": False,
+                        "error": path_error,
+                        "formatted_message": f"❌ 安全错误: {path_error}"
                     }
-                else:
-                    # 创建文件
-                    if os.path.exists(path):
+                
+                # 检查目标路径安全（如果有）
+                if params['destination']:
+                    dest_path = process_path(params['destination'])
+                    is_dest_safe, dest_error = security_checker.check_path(dest_path)
+                    if not is_dest_safe:
                         return {
-                            "success": True, 
-                            "result": "文件已存在", 
-                            "path": path,
-                            "formatted_message": f"📄 文件已存在\n📍 路径: {path}"
+                            "success": False,
+                            "error": dest_error,
+                            "formatted_message": f"❌ 安全错误: {dest_error}"
                         }
-                    dir_path = os.path.dirname(path)
-                    if dir_path:
-                        os.makedirs(dir_path, exist_ok=True)
-                    with open(path, 'w', encoding='utf-8') as f:
-                        f.write("")
+                
+                # 检查操作安全
+                is_op_safe, op_error = security_checker.check_operation(operation)
+                if not is_op_safe:
                     return {
-                        "success": True, 
-                        "result": "文件创建成功", 
-                        "path": path,
-                        "formatted_message": f"✅ 文件创建成功\n📄 文件: {os.path.basename(path)}\n📍 路径: {path}"
+                        "success": False,
+                        "error": op_error,
+                        "formatted_message": f"❌ 安全错误: {op_error}"
                     }
-            
-            elif operation == "write":
-                os.makedirs(os.path.dirname(path), exist_ok=True)
-                mode = 'a' if not overwrite else 'w'
-                content_length = len(content or "")
-                with open(path, mode, encoding='utf-8') as f:
-                    f.write(content or "")
-                return {
-                    "success": True, 
-                    "result": "文件写入成功", 
-                    "path": path,
-                    "formatted_message": f"✅ 文件写入成功\n📄 文件: {os.path.basename(path)}\n📍 路径: {path}\n📝 写入模式: {'追加' if not overwrite else '覆盖'}\n📊 写入长度: {content_length} 字符"
-                }
-            
-            elif operation == "read":
-                with open(path, 'r', encoding='utf-8') as f:
-                    content = f.read()
-                content_preview = content[:200] + ("..." if len(content) > 200 else "")
-                return {
-                    "success": True, 
-                    "result": content, 
-                    "path": path,
-                    "formatted_message": f"📄 文件读取成功\n📍 路径: {path}\n📊 文件长度: {len(content)} 字符\n\n预览:\n{content_preview}"
-                }
-            
-            elif operation == FileOperationEnum.DELETE:
-                if ctx:
-                    dangerous_message = f"检测到文件删除操作，要删除的文件: {path}，是否确认执行？"
+                
+                # 危险操作确认
+                if security_checker.is_dangerous_operation(operation) and ctx:
+                    dangerous_message = f"检测到危险操作 '{operation}'，要操作的路径: {processed_path}，是否确认执行？"
                     result = await ctx.elicit(
                         message=dangerous_message,
                         schema=ConfirmModel
@@ -367,29 +334,100 @@ def register_file_operations_tools(mcp, security_checker=None, output_callback=N
                         return {
                             "success": False, 
                             "error": "用户取消执行",
-                            "formatted_message": "❌ 用户取消删除操作"
+                            "formatted_message": "❌ 用户取消操作"
                         }
+            
+            print(f"[DEBUG] 当前工作目录: {os.getcwd()}")
+            print(f"[DEBUG] 原始路径: {params['path']}")
+            print(f"[DEBUG] 原始路径类型: {type(params['path'])}")
+            print(f"[DEBUG] 处理后路径: {processed_path}")
+            print(f"[DEBUG] 操作: {operation}")
+            
+            if operation == "create":
+                if processed_path.endswith("/") or "." not in os.path.basename(processed_path):
+                    # 创建文件夹
+                    if os.path.exists(processed_path):
+                        return {
+                            "success": True, 
+                            "result": "文件夹已存在", 
+                            "path": processed_path,
+                            "formatted_message": f"📁 文件夹已存在\n📍 路径: {processed_path}"
+                        }
+                    os.makedirs(processed_path, exist_ok=True)
+                    return {
+                        "success": True, 
+                        "result": "文件夹创建成功", 
+                        "path": processed_path,
+                        "formatted_message": f"✅ 文件夹创建成功\n📁 文件夹: {os.path.basename(processed_path)}\n📍 路径: {processed_path}"
+                    }
+                else:
+                    # 创建文件
+                    if os.path.exists(processed_path):
+                        return {
+                            "success": True, 
+                            "result": "文件已存在", 
+                            "path": processed_path,
+                            "formatted_message": f"📄 文件已存在\n📍 路径: {processed_path}"
+                        }
+                    dir_path = os.path.dirname(processed_path)
+                    if dir_path:
+                        os.makedirs(dir_path, exist_ok=True)
+                    with open(processed_path, 'w', encoding='utf-8') as f:
+                        f.write("")
+                    return {
+                        "success": True, 
+                        "result": "文件创建成功", 
+                        "path": processed_path,
+                        "formatted_message": f"✅ 文件创建成功\n📄 文件: {os.path.basename(processed_path)}\n📍 路径: {processed_path}"
+                    }
+            
+            elif operation == "write":
+                os.makedirs(os.path.dirname(processed_path), exist_ok=True)
+                mode = 'a' if not overwrite else 'w'
+                content_length = len(content or "")
+                with open(processed_path, mode, encoding='utf-8') as f:
+                    f.write(content or "")
+                return {
+                    "success": True, 
+                    "result": "文件写入成功", 
+                    "path": processed_path,
+                    "formatted_message": f"✅ 文件写入成功\n📄 文件: {os.path.basename(processed_path)}\n📍 路径: {processed_path}\n📝 写入模式: {'追加' if not overwrite else '覆盖'}\n📊 写入长度: {content_length} 字符"
+                }
+            
+            elif operation == "read":
+                with open(processed_path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                content_preview = content[:200] + ("..." if len(content) > 200 else "")
+                return {
+                    "success": True, 
+                    "result": content, 
+                    "path": processed_path,
+                    "formatted_message": f"📄 文件读取成功\n📍 路径: {processed_path}\n📊 文件长度: {len(content)} 字符\n\n预览:\n{content_preview}"
+                }
+            
+            elif operation == FileOperationEnum.DELETE:
+                # 危险操作确认已在安全检查中处理
                 
-                if os.path.isdir(path):
+                if os.path.isdir(processed_path):
                     item_type = "文件夹"
                 else:
                     item_type = "文件"
                 
-                if os.path.isdir(path):
-                    shutil.rmtree(path)
+                if os.path.isdir(processed_path):
+                    shutil.rmtree(processed_path)
                 else:
-                    os.remove(path)
+                    os.remove(processed_path)
                 return {
                     "success": True, 
                     "result": "删除成功", 
-                    "path": path,
-                    "formatted_message": f"✅ 删除成功\n{'📁' if os.path.isdir(path) else '📄'} {item_type}: {os.path.basename(path)}"
+                    "path": processed_path,
+                    "formatted_message": f"✅ 删除成功\n{'📁' if os.path.isdir(processed_path) else '📄'} {item_type}: {os.path.basename(processed_path)}"
                 }
             
             elif operation == FileOperationEnum.LIST:
-                items = os.listdir(path)
-                files = [item for item in items if os.path.isfile(os.path.join(path, item))]
-                folders = [item for item in items if os.path.isdir(os.path.join(path, item))]
+                items = os.listdir(processed_path)
+                files = [item for item in items if os.path.isfile(os.path.join(processed_path, item))]
+                folders = [item for item in items if os.path.isdir(os.path.join(processed_path, item))]
                 
                 formatted_items = []
                 if folders:
@@ -406,30 +444,32 @@ def register_file_operations_tools(mcp, security_checker=None, output_callback=N
                     if len(files) > 10:
                         formatted_items.append(f"  ... 等{len(files) - 10}个文件")
                 
-                message = f"📋 目录内容\n📍 路径: {path}\n📊 总计: {len(folders)}个文件夹, {len(files)}个文件\n\n" + "\n".join(formatted_items)
+                message = f"📋 目录内容\n📍 路径: {processed_path}\n📊 总计: {len(folders)}个文件夹, {len(files)}个文件\n\n" + "\n".join(formatted_items)
                 
                 return {
                     "success": True, 
                     "result": items, 
-                    "path": path,
+                    "path": processed_path,
                     "formatted_message": message
                 }
             
             elif operation == FileOperationEnum.MOVE:
+                # 危险操作确认已在安全检查中处理
+                
                 if not destination:
                     return {
                         "success": False, 
                         "error": "move操作需要destination参数",
                         "formatted_message": "❌ 错误: move操作需要destination参数"
                     }
-                destination = process_path(destination)
-                os.makedirs(os.path.dirname(destination), exist_ok=True)
-                shutil.move(path, destination)
+                dest_path = process_path(destination)
+                os.makedirs(os.path.dirname(dest_path), exist_ok=True)
+                shutil.move(processed_path, dest_path)
                 return {
                     "success": True, 
                     "result": "移动成功", 
-                    "path": destination,
-                    "formatted_message": f"✅ 移动成功\n📄 项目: {os.path.basename(path)}\n📍 目标路径: {destination}"
+                    "path": dest_path,
+                    "formatted_message": f"✅ 移动成功\n📄 项目: {os.path.basename(processed_path)}\n📍 目标路径: {dest_path}"
                 }
             
             elif operation == FileOperationEnum.COPY:
@@ -439,22 +479,28 @@ def register_file_operations_tools(mcp, security_checker=None, output_callback=N
                         "error": "copy操作需要destination参数",
                         "formatted_message": "❌ 错误: copy操作需要destination参数"
                     }
-                destination = process_path(destination)
-                os.makedirs(os.path.dirname(destination), exist_ok=True)
-                if os.path.isdir(path):
-                    shutil.copytree(path, destination, dirs_exist_ok=True)
+                dest_path = process_path(destination)
+                os.makedirs(os.path.dirname(dest_path), exist_ok=True)
+                if os.path.isdir(processed_path):
+                    shutil.copytree(processed_path, dest_path, dirs_exist_ok=True)
                 else:
-                    shutil.copy2(path, destination)
+                    shutil.copy2(processed_path, dest_path)
                 return {
                     "success": True, 
                     "result": "复制成功", 
-                    "path": destination,
-                    "formatted_message": f"✅ 复制成功\n{'📁' if os.path.isdir(path) else '📄'} {'文件夹' if os.path.isdir(path) else '文件'}: {os.path.basename(path)}\n📍 目标路径: {destination}"
+                    "path": dest_path,
+                    "formatted_message": f"✅ 复制成功\n{'📁' if os.path.isdir(processed_path) else '📄'} {'文件夹' if os.path.isdir(processed_path) else '文件'}: {os.path.basename(processed_path)}\n📍 目标路径: {dest_path}"
                 }
             
             elif operation == FileOperationEnum.SEARCH:
                 matches = []
-                for root, dirs, files in os.walk(path):
+                for root, dirs, files in os.walk(processed_path):
+                    # 限制搜索深度
+                    depth = root[len(processed_path):].count(os.sep)
+                    if depth > 10:  # 限制深度为10
+                        dirs[:] = []  # 清空dirs，停止递归
+                        continue
+                    
                     for file in files:
                         if content and content.lower() in file.lower():
                             matches.append(os.path.join(root, file))
@@ -465,17 +511,17 @@ def register_file_operations_tools(mcp, security_checker=None, output_callback=N
                 if len(matches) > 10:
                     formatted_matches.append(f"  ... 等{len(matches) - 10}个文件")
                 
-                message = f"🔍 搜索结果\n📍 搜索路径: {path}\n🔤 搜索关键词: {content}\n📊 找到 {len(matches)} 个匹配文件\n\n" + "\n".join(formatted_matches)
+                message = f"🔍 搜索结果\n📍 搜索路径: {processed_path}\n🔤 搜索关键词: {content}\n📊 找到 {len(matches)} 个匹配文件\n\n" + "\n".join(formatted_matches)
                 
                 return {
                     "success": True, 
                     "result": matches[:50], 
-                    "path": path,
+                    "path": processed_path,
                     "formatted_message": message
                 }
             
             elif operation == FileOperationEnum.CHECK_PERMISSION:
-                if not os.path.exists(path):
+                if not os.path.exists(processed_path):
                     return {
                         "success": True,
                         "result": {
@@ -486,15 +532,15 @@ def register_file_operations_tools(mcp, security_checker=None, output_callback=N
                             "is_file": False,
                             "is_dir": False
                         },
-                        "path": path,
-                        "formatted_message": f"🔍 文件权限检查完成\n📍 路径: {path}\n❌ 文件/文件夹不存在"
+                        "path": processed_path,
+                        "formatted_message": f"🔍 文件权限检查完成\n📍 路径: {processed_path}\n❌ 文件/文件夹不存在"
                     }
                 
-                is_file = os.path.isfile(path)
-                is_dir = os.path.isdir(path)
-                readable = os.access(path, os.R_OK)
-                writable = os.access(path, os.W_OK)
-                executable = os.access(path, os.X_OK)
+                is_file = os.path.isfile(processed_path)
+                is_dir = os.path.isdir(processed_path)
+                readable = os.access(processed_path, os.R_OK)
+                writable = os.access(processed_path, os.W_OK)
+                executable = os.access(processed_path, os.X_OK)
                 
                 permission_status = []
                 if readable:
@@ -512,7 +558,7 @@ def register_file_operations_tools(mcp, security_checker=None, output_callback=N
                 else:
                     permission_status.append("❌ 不可执行")
                 
-                message = f"🔍 文件权限检查完成\n{'📄' if is_file else '📁'} {'文件' if is_file else '文件夹'}: {os.path.basename(path)}\n📍 路径: {path}\n\n权限状态:\n" + "\n".join(permission_status)
+                message = f"🔍 文件权限检查完成\n{'📄' if is_file else '📁'} {'文件' if is_file else '文件夹'}: {os.path.basename(processed_path)}\n📍 路径: {processed_path}\n\n权限状态:\n" + "\n".join(permission_status)
                 
                 return {
                     "success": True,
@@ -524,7 +570,7 @@ def register_file_operations_tools(mcp, security_checker=None, output_callback=N
                         "is_file": is_file,
                         "is_dir": is_dir
                     },
-                    "path": path,
+                    "path": processed_path,
                     "formatted_message": message
                 }
             
@@ -533,20 +579,20 @@ def register_file_operations_tools(mcp, security_checker=None, output_callback=N
                     mode = ReadWriteMode.W_PLUS  # 默认使用w+模式
                 
                 # 检查文件是否存在（r+模式需要文件存在）
-                if mode == ReadWriteMode.R_PLUS and not os.path.exists(path):
+                if mode == ReadWriteMode.R_PLUS and not os.path.exists(processed_path):
                     return {
                         "success": False,
                         "error": "文件不存在",
-                        "formatted_message": f"❌ 错误: r+模式需要文件存在，但文件 '{path}' 不存在"
+                        "formatted_message": f"❌ 错误: r+模式需要文件存在，但文件 '{processed_path}' 不存在"
                     }
                 
-                os.makedirs(os.path.dirname(path), exist_ok=True)
+                os.makedirs(os.path.dirname(processed_path), exist_ok=True)
                 
                 # 读取原文件内容（如果文件存在）
                 original_content = ""
-                if os.path.exists(path):
+                if os.path.exists(processed_path):
                     try:
-                        with open(path, 'r', encoding='utf-8') as f:
+                        with open(processed_path, 'r', encoding='utf-8') as f:
                             original_content = f.read()
                     except Exception as e:
                         return {
@@ -557,7 +603,7 @@ def register_file_operations_tools(mcp, security_checker=None, output_callback=N
                 
                 # 写入新内容
                 try:
-                    with open(path, mode.value, encoding='utf-8') as f:
+                    with open(processed_path, mode.value, encoding='utf-8') as f:
                         if mode == ReadWriteMode.R_PLUS:
                             # r+模式：读取后修改，保留原内容
                             f.seek(0)
@@ -579,8 +625,8 @@ def register_file_operations_tools(mcp, security_checker=None, output_callback=N
                     return {
                         "success": True,
                         "result": "文件读写成功",
-                        "path": path,
-                        "formatted_message": f"✅ 文件读写成功\n📄 文件: {os.path.basename(path)}\n📍 路径: {path}\n📝 模式: {mode_desc}\n📊 写入长度: {content_length} 字符"
+                        "path": processed_path,
+                        "formatted_message": f"✅ 文件读写成功\n📄 文件: {os.path.basename(processed_path)}\n📍 路径: {processed_path}\n📝 模式: {mode_desc}\n📊 写入长度: {content_length} 字符"
                     }
                 except Exception as e:
                     return {

@@ -37,16 +37,6 @@
             "operation": "create",
             "path": "天气数据/天气预报"
           }
-        },
-        {
-          "type": "Action",
-          "name": "创建天气报告目录",
-          "id": "actionCreateReportDir",
-          "tool": "file_operations",
-          "parameters": {
-            "operation": "create",
-            "path": "天气数据/天气报告"
-          }
         }
       ]
     },
@@ -66,7 +56,7 @@
         },
         {
           "type": "Sequence",
-          "name": "国内城市天气查询",
+          "name": "查询国内城市天气",
           "id": "sequenceQueryDomesticCities",
           "children": [
             {
@@ -117,7 +107,7 @@
         },
         {
           "type": "Sequence",
-          "name": "国外城市天气查询",
+          "name": "查询国外城市天气",
           "id": "sequenceQueryForeignCities",
           "children": [
             {
@@ -222,7 +212,7 @@
           "parameters": {
             "operation": "write",
             "path": "天气数据/天气预报/foreign_weather.txt",
-            "content": "{{actionQueryNewYorkWeather.result}} {{actionQueryLondonWeather.result}} {{actionQueryTokyoWeather.result}}"
+            "content": "{{actionQueryNewYorkWeather.result}}\n{{actionQueryLondonWeather.result}}\n{{actionQueryTokyoWeather.result}}"
           }
         }
       ]
@@ -240,7 +230,7 @@
           "parameters": {
             "operation": "write",
             "path": "天气数据/天气报告/weather_report.txt",
-            "content": "所有城市天气信息汇总"
+            "content": "天气报告内容"
           }
         },
         {
@@ -251,7 +241,7 @@
           "parameters": {
             "operation": "write",
             "path": "天气数据/天气报告/weather_summary.txt",
-            "content": "天气摘要信息"
+            "content": "天气摘要内容"
           }
         }
       ]
@@ -279,7 +269,7 @@
           "parameters": {
             "operation": "write",
             "path": "天气数据/完成信息.txt",
-            "content": "天气数据记录系统已成功创建"
+            "content": "任务完成"
           }
         }
       ]

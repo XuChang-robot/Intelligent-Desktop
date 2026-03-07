@@ -46,16 +46,7 @@ class NodeFactory:
             )
         
         elif node_type == "Action":
-            # 优先使用配置中指定的语义化节点ID
-            if "id" in config:
-                node_id = config["id"]
-                self.logger.info(f"使用配置中指定的语义化节点ID: {node_id}")
-            else:
-                # 如果没有指定，则使用默认的计数器格式
-                node_id = f"action_{self.action_counter}"
-                self.action_counter += 1
-                self.logger.info(f"使用默认节点ID: {node_id}")
-            
+            node_id = config["id"]
             return MCPActionNode(
                 name=name,
                 config=config,
@@ -65,16 +56,7 @@ class NodeFactory:
             )
         
         elif node_type == "Condition":
-            # 优先使用配置中指定的语义化节点ID
-            if "id" in config:
-                node_id = config["id"]
-                self.logger.info(f"使用配置中指定的语义化节点ID: {node_id}")
-            else:
-                # 如果没有指定，则使用默认的计数器格式
-                node_id = f"condition_{self.condition_counter}"
-                self.condition_counter += 1
-                self.logger.info(f"使用默认节点ID: {node_id}")
-            
+            node_id = config["id"]
             return ConditionNode(
                 name=name,
                 config=config,
@@ -169,7 +151,7 @@ class MCPActionNode(py_trees.behaviour.Behaviour):
             # 解析参数引用
             parameters = self._resolve_parameters(parameters)
             
-            self.logger.info(f"调用工具: {tool_name}, 参数: {parameters}")
+            self.logger.debug(f"调用工具: {tool_name}, 参数: {parameters}")
             
             # 调用工具执行器
             result = self.tool_executor(tool_name, parameters)
@@ -194,16 +176,29 @@ class MCPActionNode(py_trees.behaviour.Behaviour):
             # 判断执行结果
             if isinstance(self.result, dict):
                 success = self.result.get("success", True)
-                # 检查是否存在config_error字段
-                config_error = self.result.get("config_error")
-                if config_error:
-                    # 存储配置错误信息到黑板
+                
+                # 收集所有错误信息
+                error_messages = []
+                if self.result.get("config_error"):
+                    error_messages.append(f"配置错误: {self.result['config_error']}")
+                if self.result.get("error"):
+                    error_messages.append(f"执行错误: {self.result['error']}")
+                
+                if error_messages:
+                    # 合并所有错误信息
+                    full_error = "; ".join(error_messages)
+                    
+                    # 将错误信息写入 self.result，确保UI能获取到
+                    self.result["error"] = full_error
+                    
+                    # 存储错误信息到黑板
                     self.blackboard.set_node_result(self.node_id, {
                         "type": "tool_response",
                         "result": self.result,
-                        "config_error": config_error
+                        "config_error": self.result.get("config_error"),
+                        "execution_error": self.result.get("error")
                     })
-                    self.logger.error(f"{self.name} 配置错误: {config_error}")
+                    self.logger.error(f"{self.name} 错误: {full_error}")
             else:
                 # 非字典结果默认为失败
                 success = False
@@ -237,12 +232,9 @@ class MCPActionNode(py_trees.behaviour.Behaviour):
         def resolve_value(value):
             """递归解析值"""
             if isinstance(value, str):
-                self.logger.info(f"开始解析值: {value}")
                 # 查找引用模式，如 {{weatherBeijing.result.formatted_message}}
                 pattern = r'\{\{([^}]+)\}\}'
                 matches = re.findall(pattern, value)
-                
-                self.logger.info(f"找到的引用: {matches}")
                 
                 if not matches:
                     return value
@@ -261,7 +253,6 @@ class MCPActionNode(py_trees.behaviour.Behaviour):
                     
                     # 从黑板获取数据
                     node_id = ref_path[0]
-                    self.logger.info(f"解析节点ID: {node_id}")
                     
                     node_result = self.blackboard.get_node_result(node_id)
                     
@@ -276,7 +267,6 @@ class MCPActionNode(py_trees.behaviour.Behaviour):
                                 data = result["formatted_message"]
                                 # 存储替换内容
                                 replacements[f'{{{{{match}}}}}'] = str(data)
-                                self.logger.info(f"添加替换: {{match}} -> {data[:50]}...")
                             else:
                                 self.logger.warning(f"无法找到formatted_message字段: {match}")
                                 # 保持原始引用，不替换
@@ -288,10 +278,8 @@ class MCPActionNode(py_trees.behaviour.Behaviour):
                 resolved_value = value
                 for old, new in replacements.items():
                     count = resolved_value.count(old)
-                    self.logger.info(f"替换 '{old}' -> '{new[:50]}...'，共 {count} 次")
                     resolved_value = resolved_value.replace(old, new)
                 
-                self.logger.info(f"解析后的值: {resolved_value[:100]}...")
                 return resolved_value
             elif isinstance(value, dict):
                 # 递归处理字典
@@ -303,9 +291,7 @@ class MCPActionNode(py_trees.behaviour.Behaviour):
                 return value
         
         resolved_params = resolve_value(parameters)
-        self.logger.info(f"参数引用解析: {parameters} -> {resolved_params}")
         return resolved_params
-
 
 class ConditionNode(py_trees.behaviour.Behaviour):
     """条件判断节点
@@ -343,7 +329,7 @@ class ConditionNode(py_trees.behaviour.Behaviour):
             # 评估条件表达式
             result = self._evaluate_condition(self.condition)
             
-            self.logger.info(f"条件评估结果: {self.name} = {result}")
+            self.logger.debug(f"条件评估结果: {self.name} = {result}")
             
             if result:
                 self.logger.debug(f"{self.name}.update()[SUCCESS]")
@@ -427,10 +413,10 @@ class ConditionNode(py_trees.behaviour.Behaviour):
                 
                 # 尝试两种contains比较
                 if str(right_value) in str(left_value):
-                    self.logger.info(f"==比较失败，使用 {right_value!r} in {left_value!r} 比较成功: {original_condition}")
+                    self.logger.debug(f"==比较失败，使用 {right_value!r} in {left_value!r} 比较成功: {original_condition}")
                     return True
                 if str(left_value) in str(right_value):
-                    self.logger.info(f"==比较失败，使用 {left_value!r} in {right_value!r} 比较成功: {original_condition}")
+                    self.logger.debug(f"==比较失败，使用 {left_value!r} in {right_value!r} 比较成功: {original_condition}")
                     return True
 
         except Exception as e:
@@ -601,3 +587,108 @@ class DictWrapper:
     
     def __repr__(self) -> str:
         return repr(self._data)
+
+
+# ==================== 装饰器节点 ====================
+
+class InverterNode(py_trees.decorators.Inverter):
+    """反转装饰器节点
+    
+    反转子节点的返回状态：
+    - SUCCESS → FAILURE
+    - FAILURE → SUCCESS
+    - RUNNING → RUNNING（保持不变）
+    """
+    
+    def __init__(self, name: str, child: py_trees.behaviour.Behaviour):
+        """
+        Args:
+            name: 节点名称
+            child: 子节点
+        """
+        super().__init__(name=name, child=child)
+        self.logger = logging.getLogger(__name__)
+    
+    def update(self):
+        """执行并反转子节点状态"""
+        self.logger.debug(f"{self.name}.update() [Inverter]")
+        
+        # 调用父类的update方法（会自动处理子节点并反转状态）
+        status = super().update()
+        
+        self.logger.info(f"反转器 {self.name}: 子节点状态反转后为 {status}")
+        return status
+
+
+class TimeoutNode(py_trees.decorators.Timeout):
+    """超时装饰器节点
+    
+    限制子节点的执行时间，如果超时则返回FAILURE。
+    """
+    
+    def __init__(self, name: str, child: py_trees.behaviour.Behaviour, 
+                 duration: float = 30.0):
+        """
+        Args:
+            name: 节点名称
+            child: 子节点
+            duration: 超时时间（秒），默认30秒
+        """
+        super().__init__(name=name, child=child, duration=duration)
+        self.logger = logging.getLogger(__name__)
+        self.duration = duration
+    
+    def update(self):
+        """执行子节点并检查是否超时"""
+        self.logger.debug(f"{self.name}.update() [Timeout: {self.duration}s]")
+        
+        # 调用父类的update方法
+        status = super().update()
+        
+        if status == py_trees.common.Status.FAILURE:
+            self.logger.warning(f"超时节点 {self.name}: 子节点执行超时 ({self.duration}s)")
+        else:
+            self.logger.debug(f"超时节点 {self.name}: 子节点状态 {status}")
+        
+        return status
+
+
+class RepeatNode(py_trees.decorators.Repeat):
+    """重复装饰器节点
+    
+    重复执行子节点指定次数，直到子节点返回FAILURE或达到重复次数。
+    """
+    
+    def __init__(self, name: str, child: py_trees.behaviour.Behaviour, 
+                 num_success: int = 3):
+        """
+        Args:
+            name: 节点名称
+            child: 子节点
+            num_success: 重复次数，默认3次
+        """
+        super().__init__(name=name, child=child, num_success=num_success)
+        self.logger = logging.getLogger(__name__)
+        self.num_success = num_success
+        self.current_iteration = 0
+    
+    def initialise(self):
+        """初始化重复计数器"""
+        super().initialise()
+        self.current_iteration = 0
+        self.logger.debug(f"重复节点 {self.name}: 开始执行，目标重复 {self.num_success} 次")
+    
+    def update(self):
+        """执行子节点并计数"""
+        self.logger.debug(f"{self.name}.update() [Repeat: {self.current_iteration}/{self.num_success}]")
+        
+        # 调用父类的update方法
+        status = super().update()
+        
+        if status == py_trees.common.Status.SUCCESS:
+            self.current_iteration += 1
+            self.logger.debug(f"重复节点 {self.name}: 第 {self.current_iteration}/{self.num_success} 次成功")
+        elif status == py_trees.common.Status.FAILURE:
+            self.logger.warning(f"重复节点 {self.name}: 子节点失败，停止重复")
+        
+        return status

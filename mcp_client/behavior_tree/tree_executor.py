@@ -70,8 +70,6 @@ class TreeExecutor:
             
             # 获取最终状态
             status = root.status
-            self.logger.info(f"行为树最终状态: {status}")
-            
             execution_time = time.time() - start_time
             
             # 返回执行结果
@@ -82,7 +80,9 @@ class TreeExecutor:
                 "tick_count": tick_count,
                 "blackboard": self.blackboard.get_all()
             }
-            
+
+            self.logger.info(f"行为树最终状态: {status}，执行时间: {execution_time:.4f}秒，tick次数: {tick_count}")
+
             # 如果执行失败，尝试获取失败原因
             if status == py_trees.common.Status.FAILURE:
                 # 从黑板中获取失败原因
@@ -99,10 +99,15 @@ class TreeExecutor:
                             tool_result = tool_result["result"]
                         if isinstance(tool_result, dict):
                             if not tool_result.get("success", True):
-                                result["error"] = tool_result.get("message", "未知错误")
+                                # 尝试从多个字段获取错误信息
+                                error_msg = tool_result.get("error") or tool_result.get("message") or tool_result.get("formatted_message") or "未知错误"
+                                # 如果是formatted_message，提取错误内容
+                                if error_msg.startswith("❌"):
+                                    error_msg = error_msg[2:].strip()
+                                result["error"] = error_msg
                                 break
             
-            self.logger.info(f"行为树执行完成: {result}")
+            self.logger.debug(f"行为树执行结果: {result}")
             
             return result
         

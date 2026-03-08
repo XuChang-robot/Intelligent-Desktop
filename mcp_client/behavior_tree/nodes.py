@@ -232,7 +232,7 @@ class MCPActionNode(py_trees.behaviour.Behaviour):
         def resolve_value(value):
             """递归解析值"""
             if isinstance(value, str):
-                # 查找引用模式，如 {{weatherBeijing.result.formatted_message}}
+                # 查找引用模式，如 {{weatherBeijing.result.result_blackboard}}
                 pattern = r'\{\{([^}]+)\}\}'
                 matches = re.findall(pattern, value)
                 
@@ -243,7 +243,7 @@ class MCPActionNode(py_trees.behaviour.Behaviour):
                 # 先收集所有需要替换的内容，然后一次性替换
                 replacements = {}
                 for match in matches:
-                    # 解析引用路径，如 weatherBeijing.result.formatted_message
+                    # 解析引用路径，如 weatherBeijing.result.result_blackboard
                     ref_path = match.split('.')
                     
                     if len(ref_path) < 2:
@@ -260,15 +260,15 @@ class MCPActionNode(py_trees.behaviour.Behaviour):
                         self.logger.warning(f"无法找到节点结果: {node_id}")
                         # 保持原始引用，不替换
                     else:
-                        # 直接获取formatted_message字段，这是标准的工具执行结果
+                        # 直接获取result_blackboard字段，这是用于行为树节点结果的标准字段
                         if isinstance(node_result, dict) and "result" in node_result:
                             result = node_result["result"]
-                            if isinstance(result, dict) and "formatted_message" in result:
-                                data = result["formatted_message"]
+                            if isinstance(result, dict) and "result_blackboard" in result:
+                                data = result["result_blackboard"]
                                 # 存储替换内容
                                 replacements[f'{{{{{match}}}}}'] = str(data)
                             else:
-                                self.logger.warning(f"无法找到formatted_message字段: {match}")
+                                self.logger.warning(f"无法找到result_blackboard字段: {match}")
                                 # 保持原始引用，不替换
                         else:
                             self.logger.warning(f"无法找到result字段: {match}")
@@ -440,8 +440,8 @@ class ConditionNode(py_trees.behaviour.Behaviour):
             node_id = match.group(1)
             # 从黑板获取节点结果
             node_result = self.blackboard.get_node_result(node_id)
-            # 提取formatted_message
-            node_value = self._get_formatted_message(node_result)
+            # 提取result_blackboard
+            node_value = self._get_result_blackboard(node_result)
             # 转义字符串中的特殊字符
             node_value = node_value.replace('\\', '\\\\')  # 转义反斜杠
             node_value = node_value.replace('\n', '\\n')    # 转义换行符
@@ -480,8 +480,8 @@ class ConditionNode(py_trees.behaviour.Behaviour):
             # 从黑板获取节点结果
             node_result = self.blackboard.get_node_result(node_id)
             
-            # 强制使用 .result.formatted_message
-            node_value = self._get_formatted_message(node_result)
+            # 强制使用 .result.result_blackboard
+            node_value = self._get_result_blackboard(node_result)
             
             # 转义字符串中的特殊字符
             node_value = node_value.replace('\\', '\\\\')  # 转义反斜杠
@@ -496,24 +496,24 @@ class ConditionNode(py_trees.behaviour.Behaviour):
         
         return resolved_condition
     
-    def _get_formatted_message(self, node_result: Any) -> str:
-        """从节点结果中提取formatted_message
+    def _get_result_blackboard(self, node_result: Any) -> str:
+        """从节点结果中提取result_blackboard
         
         Args:
             node_result: 节点结果
         
         Returns:
-            formatted_message内容
+            result_blackboard内容
         """
         if node_result is None:
             return ""
         
         if isinstance(node_result, dict):
-            # 强制使用 result.formatted_message
+            # 强制使用 result.result_blackboard
             if "result" in node_result:
                 result = node_result["result"]
-                if isinstance(result, dict) and "formatted_message" in result:
-                    return result["formatted_message"]
+                if isinstance(result, dict) and "result_blackboard" in result:
+                    return result["result_blackboard"]
         
         return ""
     

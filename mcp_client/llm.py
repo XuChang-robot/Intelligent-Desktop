@@ -24,8 +24,10 @@ class LLMClient:
         
         # 获取日志目录配置
         self.log_dir = get_config("logging.log_dir", "logs")
-        # 获取开发模式配置
-        self.dev_mode = get_config("logging.dev_mode", False)
+        # 获取开发模式配置（嵌套结构）
+        self.dev_mode = get_config("logging.dev_mode.enabled", False)
+        # 获取思考模式开关（仅在dev_mode启用时有效）
+        self.enable_thinking = get_config("logging.dev_mode.enable_thinking", False)
         # 确保日志目录存在
         os.makedirs(self.log_dir, exist_ok=True)
         
@@ -352,11 +354,15 @@ class LLMClient:
             BEHAVIOR_TREE_CONFIG_PRINCIPLES=BEHAVIOR_TREE_CONFIG_PRINCIPLES,
             user_input=user_input
         )
-        user_prompt =f"""用户输入：{user_input}。"""
+        #对于提到的具体文件名或路径，无需额外添加验证或搜索子任务。
+        user_prompt =f"""
+        用户输入：
+        {user_input}。"""
 
         try:
-            #仅调试输出思考才用，当前版本的format与think参数同时使用会相互影响导致think不能正常输出
-            if False:#self.dev_mode:
+            # 仅调试输出思考才用，当前版本的format与think参数同时使用会相互影响导致think不能正常输出
+            # 思考模式需要同时满足：dev_mode=true 且 enable_thinking=true
+            if self.dev_mode and self.enable_thinking:
                 try:
                     response = ollama.generate(
                         model=self.model,
@@ -398,7 +404,7 @@ class LLMClient:
                     "top_k": self.top_k,
                     "num_ctx": 8192,
                 },
-                think=False  # 启用思考功能
+                think=False  # 禁用思考功能
             )
             end_time = time.time()
             elapsed_time = end_time - start_time

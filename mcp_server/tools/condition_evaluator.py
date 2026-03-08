@@ -19,8 +19,8 @@ from enum import Enum
 from pydantic import BaseModel
 from mcp.server.fastmcp import Context
 
-# 从file_operations导入process_path函数
-from mcp_server.tools.file_operations import process_path
+# 从file_operations导入FileOperationsTool
+from mcp_server.tools.file_operations import FileOperationsTool
 
 
 # 工具说明：

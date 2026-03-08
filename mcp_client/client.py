@@ -19,14 +19,10 @@ from mcp_client.behavior_tree import BehaviorTree
 from mcp_client.behavior_tree.tree_repair import BehaviorTreeRepair
 from user_config.config import load_config
 
-# 配置日志
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
-
-# 全局连接管理器实例
-_global_session_manager = None
 
 class SessionManager:
     """会话管理器，管理MCP会话"""
@@ -169,31 +165,74 @@ class SessionManager:
             logging.error(f"错误详情:\n{traceback.format_exc()}")
             raise
 
+class SessionManagerFactory:
+    """会话管理器工厂，使用单例模式管理全局会话"""
+    
+    _instance: Optional[SessionManager] = None
+    _lock = asyncio.Lock()
+    
+    @classmethod
+    async def get_instance(cls, server_url: Optional[str] = None) -> SessionManager:
+        """获取全局会话管理器实例（单例）
+        
+        Args:
+            server_url: 服务器URL，如果未提供则从配置文件读取
+            
+        Returns:
+            SessionManager实例
+        """
+        if cls._instance is None:
+            async with cls._lock:
+                if cls._instance is None:
+                    if server_url is None:
+                        config = load_config()
+                        host = config["mcp"]["server"]["host"]
+                        port = config["mcp"]["server"]["port"]
+                        server_url = f"http://{host}:{port}/mcp"
+                    cls._instance = SessionManager(server_url)
+        return cls._instance
+    
+    @classmethod
+    async def initialize(cls, server_url: Optional[str] = None) -> SessionManager:
+        """初始化并连接全局会话
+        
+        Args:
+            server_url: 服务器URL
+            
+        Returns:
+            已连接的SessionManager实例
+        """
+        manager = await cls.get_instance(server_url)
+        await manager.connect()
+        return manager
+    
+    @classmethod
+    async def close(cls):
+        """关闭并清理全局会话"""
+        async with cls._lock:
+            if cls._instance:
+                await cls._instance.close()
+                cls._instance = None
+    
+    @classmethod
+    def reset(cls):
+        """重置工厂状态（用于测试）"""
+        cls._instance = None
+
+
 async def get_session_manager(server_url=None):
-    """获取全局的会话管理器实例"""
-    global _global_session_manager
-    if _global_session_manager is None:
-        # 如果没有指定server_url，从配置文件读取
-        if server_url is None:
-            config = load_config()
-            host = config["mcp"]["server"]["host"]
-            port = config["mcp"]["server"]["port"]
-            server_url = f"http://{host}:{port}/mcp"
-        _global_session_manager = SessionManager(server_url)
-    return _global_session_manager
+    """获取全局的会话管理器实例（兼容旧接口）"""
+    return await SessionManagerFactory.get_instance(server_url)
+
 
 async def initialize_global_session(server_url=None):
-    """初始化全局会话"""
-    manager = await get_session_manager(server_url)
-    await manager.connect()
-    return manager
+    """初始化全局会话（兼容旧接口）"""
+    return await SessionManagerFactory.initialize(server_url)
+
 
 async def close_global_session():
-    """关闭全局会话"""
-    global _global_session_manager
-    if _global_session_manager:
-        await _global_session_manager.close()
-        _global_session_manager = None
+    """关闭全局会话（兼容旧接口）"""
+    await SessionManagerFactory.close()
 
 class MCPClient:
     def __init__(self):
@@ -210,8 +249,9 @@ class MCPClient:
         # 确保日志目录存在
         os.makedirs(self.log_dir, exist_ok=True)
         
-        # 获取开发模式配置
-        self.dev_mode = log_config.get('dev_mode', False)
+        # 获取开发模式配置（嵌套结构）
+        dev_mode_config = log_config.get('dev_mode', {})
+        self.dev_mode = dev_mode_config.get('enabled', False)
         
         # 从config中读取缓存配置
         cache_config = self.config.get('cache', {})
@@ -264,18 +304,13 @@ class MCPClient:
     async def connect(self) -> bool:
         """连接到MCP Server"""
         try:
-            # 获取全局会话管理器
-            self.session_manager = await get_session_manager()
-            # 设置elicitation_callback
+            self.session_manager = await SessionManagerFactory.get_instance()
             if self.elicitation_callback:
                 self.session_manager.elicitation_callback = self.elicitation_callback
-            # 连接到服务器
             await self.session_manager.connect()
-            # 获取工具列表
             self.tools = self.session_manager.tools
             self.logger.info(f"成功连接到MCP Server，获取到{len(self.tools) if self.tools else 0}个工具")
             
-            # 更新行为树修复模块的工具信息
             if self.auto_repair_enabled and self.behavior_tree_repair:
                 self.behavior_tree_repair.tools = self.tools
                 self.logger.info("行为树修复模块工具信息更新完成")
@@ -287,7 +322,7 @@ class MCPClient:
     
     async def disconnect(self):
         """断开连接"""
-        await close_global_session()
+        await SessionManagerFactory.close()
         self.session_manager = None
         self.logger.info("已断开与MCP Server的连接")
     
@@ -746,6 +781,8 @@ class MCPClient:
     def _format_tree_execution_result(self, execution_result: Dict[str, Any]) -> str:
         """格式化行为树执行结果
         
+        只输出最后一个节点的结果，避免信息爆炸。
+        
         Args:
             execution_result: 行为树执行结果
         
@@ -763,29 +800,28 @@ class MCPClient:
             error = execution_result.get("error", "未知错误")
             return f"❌ 任务执行失败: {error}"
         
-        # 收集所有工具的 formatted_message
-        formatted_messages = []
-        
+        # 获取所有非entities的节点结果，按节点ID排序
+        node_results = []
         for key, value in blackboard.items():
             if key != "entities" and isinstance(value, dict):
-                # 检查是否有 formatted_message
-                if "formatted_message" in value:
-                    formatted_messages.append(value["formatted_message"])
-                # 如果没有 formatted_message，但有 result 字段
-                elif "result" in value:
-                    result = value["result"]
-                    # 如果 result 是字典，检查其中是否有 formatted_message
-                    if isinstance(result, dict) and "formatted_message" in result:
-                        formatted_messages.append(result["formatted_message"])
-                    # 否则使用 result 字符串
-                    elif isinstance(result, str):
-                        formatted_messages.append(result)
+                node_results.append((key, value))
         
-        # 如果没有找到 formatted_message，返回默认消息
-        if not formatted_messages:
+        if not node_results:
             return "✅ 任务执行完成"
         
-        # 将所有 formatted_message 用换行符连接
-        return "\n\n".join(formatted_messages)
+        # 只取最后一个节点的结果
+        last_node_id, last_value = node_results[-1]
+        
+        # 提取 formatted_message
+        if "formatted_message" in last_value:
+            return last_value["formatted_message"]
+        elif "result" in last_value:
+            result = last_value["result"]
+            if isinstance(result, dict) and "formatted_message" in result:
+                return result["formatted_message"]
+            elif isinstance(result, str):
+                return result
+        
+        return "✅ 任务执行完成"
     
        

@@ -3,17 +3,42 @@
   "confidence": 0.95,
   "tree_config": {
     "type": "Sequence",
-    "name": "创建cx.txt文件",
-    "id": "sequenceCreateCxTxt",
+    "name": "将桌面说明文件转为语音",
+    "id": "sequenceConvertDesktopFileToAudio",
     "children": [
       {
         "type": "Action",
-        "name": "创建D盘根目录下的cx.txt文件",
-        "id": "actionCreateCxTxt",
+        "name": "获取桌面路径",
+        "id": "actionGetDesktopPath",
         "tool": "file_operations",
         "parameters": {
-          "operation": "create",
-          "path": "D:\\cx.txt"
+          "operation": "list",
+          "path": "桌面"
+        }
+      },
+      {
+        "type": "Action",
+        "name": "查找说明文件",
+        "id": "actionFindDescriptionFile",
+        "tool": "file_operations",
+        "parameters": {
+          "operation": "search",
+          "path": "桌面",
+          "content": "说明"
+        }
+      },
+      {
+        "type": "Action",
+        "name": "转为语音",
+        "id": "actionConvertToAudio",
+        "tool": "text_processing",
+        "parameters": {
+          "operation": "to_audio",
+          "input_file": "{{actionFindDescriptionFile.result}}",
+          "output_path": "桌面/说明语音.mp3",
+          "voice": "zh",
+          "rate": 200,
+          "volume": 1.0
         }
       }
     ]

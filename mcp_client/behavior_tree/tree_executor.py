@@ -104,7 +104,8 @@ class TreeExecutor:
                                 # 如果是formatted_message，提取错误内容
                                 if error_msg.startswith("❌"):
                                     error_msg = error_msg[2:].strip()
-                                result["error"] = error_msg
+                                # 在错误信息中包含节点名称，便于定位问题
+                                result["error"] = f"[{node_id}] {error_msg}"
                                 break
             
             self.logger.debug(f"行为树执行结果: {result}")

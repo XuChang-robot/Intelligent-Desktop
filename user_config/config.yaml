@@ -35,7 +35,9 @@ ui:
 
 # 日志配置
 logging:
-  dev_mode: true
+  dev_mode:
+    enabled: true  # 开发模式总开关
+    enable_thinking: false  # LLM思考输出开关（需要模型支持，仅在enabled=true时生效）
   log_dir: "logs"
   level: "INFO"
   format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"

@@ -1,12 +1,12 @@
 # UI主程序 (PyQt6版本)
 
+from typing import Optional, Dict, Any
 import sys
 import os
 import asyncio
 import logging
 from PyQt6.QtWidgets import QApplication, QMessageBox
 from PyQt6.QtCore import QThread, pyqtSignal, QObject, QTimer, QEvent, QCoreApplication
-from typing import Optional
 
 # Add project root to Python path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -31,7 +31,7 @@ class WorkerSignals(QObject):
     system_status = pyqtSignal(dict)
     error = pyqtSignal(str)
     log = pyqtSignal(str)
-    elicitation_request = pyqtSignal(str)
+    elicitation_request = pyqtSignal(str, dict)  # message, schema
 
 class TaskLogHandler(logging.Handler):
     """任务日志处理器"""
@@ -269,26 +269,27 @@ class WorkerThread(QThread):
                 message = "正在处理..."
             self.signals.loading.emit(visible, message)
     
-    async def _elicitation_callback(self, message: str) -> bool:
-        """MCP Client elicitation回调"""
+    async def _elicitation_callback(self, message: str, schema: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        """MCP Client elicitation回调，支持schema"""
         self.logger.info(f"收到elicitation请求: {message}")
+        self.logger.info(f"Schema: {schema}")
         
         # 通过信号发送到主线程
-        self.signals.elicitation_request.emit(message)
+        self.signals.elicitation_request.emit(message, schema)
         
         # 创建future等待用户响应
         self.elicitation_future = self.loop.create_future()
         
         # 等待用户响应
         try:
-            result = await asyncio.wait_for(self.elicitation_future, timeout=30.0)
+            result = await asyncio.wait_for(self.elicitation_future, timeout=60.0)
             self.logger.info(f"用户响应已收到: {result}")
         except asyncio.TimeoutError:
             self.logger.error("用户响应超时，默认拒绝")
-            result = False
+            result = {"action": "decline"}
         except Exception as e:
             self.logger.error(f"等待用户响应时出错: {e}")
-            result = False
+            result = {"action": "decline"}
         
         return result
     
@@ -301,7 +302,7 @@ class WorkerThread(QThread):
         if hasattr(self, 'loop') and not self.loop.is_closed():
             asyncio.run_coroutine_threadsafe(put_input(), self.loop)
     
-    def set_elicitation_result(self, result: bool):
+    def set_elicitation_result(self, result: Dict[str, Any]):
         """设置elicitation结果"""
         if self.elicitation_future and not self.elicitation_future.done():
             self.elicitation_future.set_result(result)
@@ -470,15 +471,23 @@ class App(QObject):
             "progress": None
         })
     
-    def on_elicitation_request(self, message: str):
+    def on_elicitation_request(self, message: str, schema: Optional[Dict[str, Any]] = None):
         """elicitation请求信号处理"""
-        # 在聊天区域显示交互式确认消息
-        def callback(confirmed: bool):
+        # 设置回调函数
+        def callback(response: Dict[str, Any]):
             # 设置结果
             if self.worker:
-                self.worker.set_elicitation_result(confirmed)
+                self.worker.set_elicitation_result(response)
         
-        self.main_window.add_elicitation_message(message, callback)
+        # 调用主窗口的on_elicitation_request方法
+        if hasattr(self.main_window, 'on_elicitation_request'):
+            # 传递回调函数
+            self.main_window.elicitation_callback = callback
+            self.main_window.on_elicitation_request(message, schema)
+        else:
+            # 兼容旧版本
+            self.main_window.elicitation_callback = callback
+            self.main_window.add_elicitation_message(message, callback)
     
 if __name__ == "__main__":
     app = App()

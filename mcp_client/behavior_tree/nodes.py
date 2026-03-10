@@ -3,6 +3,11 @@ import logging
 import asyncio
 from typing import Dict, Any, Callable, Optional
 from .blackboard import BehaviorTreeBlackboard
+from .intelligence import (
+    IntelligenceExecutionManager,
+    ExecutionStrategy,
+    IntelligenceExecutionResult
+)
 
 class NodeFactory:
     """节点工厂
@@ -52,7 +57,8 @@ class NodeFactory:
                 config=config,
                 tool_executor=self.tool_executor,
                 blackboard=self.blackboard,
-                node_id=node_id
+                node_id=node_id,
+                intelligence_config=config.get('intelligence_config', {})
             )
         
         elif node_type == "Condition":
@@ -72,10 +78,13 @@ class MCPActionNode(py_trees.behaviour.Behaviour):
     """MCP工具调用节点
     
     负责调用MCP工具并存储结果到黑板。
+    支持执行智能（推断、Elicitation、混合模式）。
     """
     
     def __init__(self, name: str, config: Dict[str, Any], tool_executor: Callable, 
-                 blackboard: BehaviorTreeBlackboard, node_id: str):
+                 blackboard: BehaviorTreeBlackboard, node_id: str,
+                 intelligence_config: Optional[Dict[str, Any]] = None,
+                 user_interaction_callback: Optional[Callable] = None):
         """
         Args:
             name: 节点名称
@@ -83,6 +92,8 @@ class MCPActionNode(py_trees.behaviour.Behaviour):
             tool_executor: 工具执行函数（可以是同步或异步函数）
             blackboard: 黑板实例
             node_id: 节点ID（用于条件引用）
+            intelligence_config: 执行智能配置（可选）
+            user_interaction_callback: 用户交互回调函数（用于Elicitation）
         """
         super().__init__(name)
         self.config = config
@@ -92,6 +103,23 @@ class MCPActionNode(py_trees.behaviour.Behaviour):
         self.result = None
         self.async_task = None
         self.logger = logging.getLogger(__name__)
+        
+        # 执行智能配置
+        self.intelligence_config = intelligence_config or config.get('intelligence_config', {})
+        self.intelligence_enabled = self.intelligence_config.get('enabled', False)
+        
+        # 初始化执行智能管理器（如果启用）
+        self.intelligence_manager: Optional[IntelligenceExecutionManager] = None
+        if self.intelligence_enabled:
+            strategy = ExecutionStrategy(self.intelligence_config.get('strategy', 'intelligent'))
+            self.intelligence_manager = IntelligenceExecutionManager(
+                strategy=strategy,
+                auto_execute_threshold=self.intelligence_config.get('auto_execute_threshold', 0.85),
+                confirm_threshold=self.intelligence_config.get('confirm_threshold', 0.60)
+            )
+            if user_interaction_callback:
+                self.intelligence_manager.set_user_interaction_callback(user_interaction_callback)
+            self.logger.info(f"节点 {name} 启用了执行智能（策略: {strategy.value}）")
     
     def setup(self):
         """初始化节点（在行为树开始执行前调用）"""
@@ -112,37 +140,7 @@ class MCPActionNode(py_trees.behaviour.Behaviour):
             
             # 如果已经有结果，存储到黑板并返回对应状态
             if self.result is not None:
-                # 存储结果到黑板
-                self.blackboard.set_node_result(self.node_id, self.result)
-                
-                # 解析实际的工具结果
-                tool_result = self.result
-                if isinstance(self.result, dict) and "result" in self.result:
-                    tool_result = self.result["result"]
-                
-                # 判断执行结果
-                if isinstance(tool_result, dict):
-                    success = tool_result.get("success", True)
-                    # 检查是否存在config_error字段
-                    config_error = tool_result.get("config_error")
-                    if config_error:
-                        # 存储配置错误信息到黑板
-                        self.blackboard.set_node_result(self.node_id, {
-                            "type": "tool_response",
-                            "result": tool_result,
-                            "config_error": config_error
-                        })
-                        self.logger.error(f"{self.name} 配置错误: {config_error}")
-                else:
-                    # 非字典结果默认为失败
-                    success = False
-                
-                if success:
-                    self.logger.debug(f"{self.name}.update()[SUCCESS]")
-                    return py_trees.common.Status.SUCCESS
-                else:
-                    self.logger.debug(f"{self.name}.update()[FAILURE]")
-                    return py_trees.common.Status.FAILURE
+                return self._process_result()
             
             # 首次执行
             tool_name = self.config["tool"]
@@ -151,10 +149,40 @@ class MCPActionNode(py_trees.behaviour.Behaviour):
             # 解析参数引用
             parameters = self._resolve_parameters(parameters)
             
+            # 检查是否需要执行智能
+            if self.intelligence_enabled and self.intelligence_manager:
+                # 构建上下文
+                context = self._build_intelligence_context(parameters)
+                
+                # 检查是否有缺失参数
+                missing_params = self._check_missing_params(parameters)
+                
+                if missing_params:
+                    # 参数缺失，启用执行智能进行推断
+                    self.logger.info(f"节点 {self.name} 检测到缺失参数，启用执行智能")
+                    # 创建异步任务执行智能步骤
+                    try:
+                        loop = asyncio.get_running_loop()
+                        self.async_task = loop.create_task(
+                            self._execute_with_intelligence(tool_name, parameters, context)
+                        )
+                        return py_trees.common.Status.RUNNING
+                    except RuntimeError:
+                        # 没有运行中的事件循环
+                        result = asyncio.run(
+                            self._execute_with_intelligence(tool_name, parameters, context)
+                        )
+                        self.result = result
+                        return self._process_result()
+            
             self.logger.debug(f"调用工具: {tool_name}, 参数: {parameters}")
             
+            # 添加 execution_mode 到参数中
+            execution_mode = self.intelligence_config.get('strategy', 'direct')
+            final_params = {**parameters, 'execution_mode': execution_mode}
+            
             # 调用工具执行器
-            result = self.tool_executor(tool_name, parameters)
+            result = self.tool_executor(tool_name, final_params)
             
             # 检查返回值是否是协程
             if asyncio.iscoroutine(result):
@@ -292,6 +320,128 @@ class MCPActionNode(py_trees.behaviour.Behaviour):
         
         resolved_params = resolve_value(parameters)
         return resolved_params
+    
+    def _process_result(self) -> py_trees.common.Status:
+        """处理执行结果"""
+        # 存储结果到黑板
+        self.blackboard.set_node_result(self.node_id, self.result)
+        
+        # 解析实际的工具结果
+        tool_result = self.result
+        if isinstance(self.result, dict) and "result" in self.result:
+            tool_result = self.result["result"]
+        
+        # 判断执行结果
+        if isinstance(tool_result, dict):
+            success = tool_result.get("success", True)
+            # 检查是否存在config_error字段
+            config_error = tool_result.get("config_error")
+            if config_error:
+                # 存储配置错误信息到黑板
+                self.blackboard.set_node_result(self.node_id, {
+                    "type": "tool_response",
+                    "result": tool_result,
+                    "config_error": config_error
+                })
+                self.logger.error(f"{self.name} 配置错误: {config_error}")
+        else:
+            # 非字典结果默认为失败
+            success = False
+        
+        if success:
+            self.logger.debug(f"{self.name}.update()[SUCCESS]")
+            return py_trees.common.Status.SUCCESS
+        else:
+            self.logger.debug(f"{self.name}.update()[FAILURE]")
+            return py_trees.common.Status.FAILURE
+    
+    def _build_intelligence_context(self, parameters: Dict[str, Any]) -> Dict[str, Any]:
+        """构建执行智能上下文"""
+        context = {
+            'user_input': self.blackboard.get_user_input(),
+            'available_data': self.blackboard.get_all_node_results(),
+            'previous_results': self.blackboard.get_all_node_results(),
+            'node_id': self.node_id,
+            'node_name': self.name,
+            'tool_name': self.config.get('tool', ''),
+            'current_params': parameters,
+            'execution_mode': self.intelligence_config.get('strategy', 'direct')
+        }
+        return context
+    
+    def _check_missing_params(self, parameters: Dict[str, Any]) -> list:
+        """检查缺失的参数"""
+        missing = []
+        param_config = self.config.get('parameters', {})
+        
+        for param_name, value in parameters.items():
+            if value is None or value == '':
+                # 获取参数配置
+                config = param_config.get(param_name, {}) if isinstance(param_config, dict) else {}
+                missing.append({
+                    'name': param_name,
+                    'description': config.get('description', '') if isinstance(config, dict) else '',
+                    'type': config.get('type', 'string') if isinstance(config, dict) else 'string',
+                    'required': True
+                })
+        
+        return missing
+    
+    async def _execute_with_intelligence(
+        self,
+        tool_name: str,
+        parameters: Dict[str, Any],
+        context: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """使用执行智能执行工具"""
+        if not self.intelligence_manager:
+            # 没有执行智能管理器，直接执行
+            return await self._execute_tool(tool_name, parameters)
+        
+        # 执行智能步骤
+        intelligence_result = await self.intelligence_manager.execute_intelligent_step(
+            self, context
+        )
+        
+        if intelligence_result.success:
+            # 合并推断的参数
+            final_params = {**parameters, **intelligence_result.final_params}
+            self.logger.info(f"执行智能成功，策略: {intelligence_result.strategy_used}")
+            
+            # 记录到黑板
+            self.blackboard.set_inference_result(
+                self.node_id,
+                {
+                    'strategy': intelligence_result.strategy_used,
+                    'inferred_params': intelligence_result.final_params,
+                    'confidence': intelligence_result.inference_result.confidence if intelligence_result.inference_result else None
+                }
+            )
+            
+            # 执行工具
+            return await self._execute_tool(tool_name, final_params)
+        else:
+            # 智能执行失败
+            self.logger.error(f"执行智能失败: {intelligence_result.error}")
+            return {
+                'success': False,
+                'error': f"执行智能失败: {intelligence_result.error}",
+                'intelligence_error': True
+            }
+    
+    async def _execute_tool(self, tool_name: str, parameters: Dict[str, Any]) -> Dict[str, Any]:
+        """执行工具"""
+        # 添加 execution_mode 到参数中
+        execution_mode = self.intelligence_config.get('strategy', 'direct')
+        
+        # 将 execution_mode 添加到参数中
+        final_params = {**parameters, 'execution_mode': execution_mode}
+        
+        result = self.tool_executor(tool_name, final_params)
+        
+        if asyncio.iscoroutine(result):
+            return await result
+        return result
 
 class ConditionNode(py_trees.behaviour.Behaviour):
     """条件判断节点

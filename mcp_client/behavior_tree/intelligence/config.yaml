@@ -1,0 +1,54 @@
+# 执行智能配置
+
+# 全局配置
+global:
+  # 默认执行策略: inference | elicitation | hybrid | auto
+  default_strategy: hybrid
+  
+  # 置信度阈值
+  thresholds:
+    auto_execute: 0.85   # 自动执行阈值
+    confirm: 0.60        # 确认模式阈值
+  
+  # Elicitation配置
+  elicitation:
+    timeout_seconds: 300
+    default_countdown: 5
+    allow_modify: true
+  
+  # 学习系统
+  learning:
+    enabled: true
+    model_path: "data/inference_learning.json"
+    save_interval: 10  # 每N条记录保存一次
+
+# 节点级别配置示例
+# 可以在行为树节点配置中覆盖全局设置
+node_examples:
+  # 示例1: 高确定性节点 - 自动执行
+  high_confidence_node:
+    intelligence_config:
+      enabled: true
+      strategy: hybrid
+      auto_execute_threshold: 0.90
+      confirm_threshold: 0.70
+  
+  # 示例2: 敏感操作节点 - 必须确认
+  sensitive_node:
+    intelligence_config:
+      enabled: true
+      strategy: elicitation  # 强制使用Elicitation
+  
+  # 示例3: 快速推断节点
+  fast_inference_node:
+    intelligence_config:
+      enabled: true
+      strategy: inference
+      cost_control:
+        model: "gemma3:1b"
+        max_tokens: 100
+  
+  # 示例4: 禁用执行智能
+  disabled_node:
+    intelligence_config:
+      enabled: false

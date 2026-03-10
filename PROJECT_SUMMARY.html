@@ -63,6 +63,66 @@
             padding: 0;
             color: #ecf0f1;
         }
+        /* 代码高亮行号样式 - 内联显示 */
+        .codehilite {
+            background-color: #2c3e50;
+            border-radius: 5px;
+            padding: 15px;
+            overflow-x: auto;
+        }
+        .codehilite pre {
+            margin: 0;
+            padding: 0;
+            background-color: transparent;
+        }
+        .codehilite table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: transparent;
+            margin: 0;
+        }
+        .codehilite td {
+            border: none;
+            padding: 0;
+            background-color: transparent;
+        }
+        .codehilite .linenos {
+            color: #7f8c8d;
+            text-align: right;
+            padding-right: 15px;
+            width: 40px;
+            user-select: none;
+            vertical-align: top;
+        }
+        .codehilite .code {
+            width: 100%;
+        }
+        .codehilite pre {
+            margin: 0;
+            line-height: 1.5;
+        }
+        /* 代码语法高亮颜色 */
+        .codehilite .k { color: #ff79c6; } /* Keyword */
+        .codehilite .n { color: #f8f8f2; } /* Name */
+        .codehilite .s { color: #f1fa8c; } /* String */
+        .codehilite .c { color: #6272a4; } /* Comment */
+        .codehilite .o { color: #ff79c6; } /* Operator */
+        .codehilite .p { color: #f8f8f2; } /* Punctuation */
+        .codehilite .mi { color: #bd93f9; } /* Number */
+        .codehilite .nb { color: #8be9fd; } /* Builtin */
+        .codehilite .nf { color: #50fa7b; } /* Function */
+        .codehilite .nc { color: #8be9fd; } /* Class */
+        .codehilite .nd { color: #50fa7b; } /* Decorator */
+        .codehilite .s1 { color: #f1fa8c; } /* String.Single */
+        .codehilite .s2 { color: #f1fa8c; } /* String.Double */
+        .codehilite .kn { color: #ff79c6; } /* Keyword.Namespace */
+        .codehilite .bp { color: #f8f8f2; } /* Name.Builtin.Pseudo */
+        .codehilite .fm { color: #50fa7b; } /* Name.Function.Magic */
+        .codehilite .sa { color: #f1fa8c; } /* String.Affix */
+        .codehilite .ow { color: #ff79c6; } /* Operator.Word */
+        .codehilite .ss { color: #f1fa8c; } /* String.Symbol */
+        .codehilite .vm { color: #8be9fd; } /* Name.Variable.Magic */
+        .codehilite .w { color: #f8f8f2; } /* Text.Whitespace */
         table {
             width: 100%;
             border-collapse: collapse;
@@ -177,25 +237,7 @@
 </li>
 </ol>
 <h3 id="_4">架构图</h3>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
-<span class="normal"> 2</span>
-<span class="normal"> 3</span>
-<span class="normal"> 4</span>
-<span class="normal"> 5</span>
-<span class="normal"> 6</span>
-<span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span>
-<span class="normal">14</span>
-<span class="normal">15</span>
-<span class="normal">16</span>
-<span class="normal">17</span>
-<span class="normal">18</span>
-<span class="normal">19</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nb">+---------------------+</span>
+<div class="codehilite"><pre><span></span><code><span class="nb">+---------------------+</span>
 <span class="c">|     用户界面层       |</span>
 <span class="c">|  (PyQt6</span><span class="nt">,</span><span class="c"> 聊天界面)   |</span>
 <span class="nb">+---------------------+</span>
@@ -214,7 +256,7 @@
 <span class="c">|    系统工具层        |</span>
 <span class="c">| (Python</span><span class="nt">,</span><span class="c"> 系统命令)   |</span>
 <span class="nb">+---------------------+</span>
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <h2 id="_5">技术特性</h2>
 <h3 id="1">1. 自然语言理解</h3>
@@ -263,33 +305,7 @@
 <li><strong>线程安全</strong>: 采用信号槽机制确保跨线程操作的安全性</li>
 </ul>
 <h2 id="_6">工作流程</h2>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
-<span class="normal"> 2</span>
-<span class="normal"> 3</span>
-<span class="normal"> 4</span>
-<span class="normal"> 5</span>
-<span class="normal"> 6</span>
-<span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span>
-<span class="normal">14</span>
-<span class="normal">15</span>
-<span class="normal">16</span>
-<span class="normal">17</span>
-<span class="normal">18</span>
-<span class="normal">19</span>
-<span class="normal">20</span>
-<span class="normal">21</span>
-<span class="normal">22</span>
-<span class="normal">23</span>
-<span class="normal">24</span>
-<span class="normal">25</span>
-<span class="normal">26</span>
-<span class="normal">27</span></pre></div></td><td class="code"><div><pre><span></span><code>用户输入自然语言指令
+<div class="codehilite"><pre><span></span><code>用户输入自然语言指令
     ↓
 UI层接收并显示用户输入
     ↓
@@ -316,7 +332,7 @@ MCP Server 返回执行结果
 MCP Client 总结执行结果 (LLM)
     ↓
 UI层显示结果和执行步骤
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <h2 id="api">核心API文档</h2>
 <h3 id="uiapi">UI模块API</h3>
@@ -517,25 +533,21 @@ UI层显示结果和执行步骤
 </ul>
 <h2 id="_7">快速开始</h2>
 <h3 id="1_1">1. 安装依赖</h3>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>PyQt6<span class="w"> </span>websockets<span class="w"> </span>pyyaml<span class="w"> </span>python-dotenv<span class="w"> </span>httpx
-</code></pre></div></td></tr></table></div>
+<div class="codehilite"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>PyQt6<span class="w"> </span>websockets<span class="w"> </span>pyyaml<span class="w"> </span>python-dotenv<span class="w"> </span>httpx
+</code></pre></div>
 
 <h3 id="2_1">2. 启动系统</h3>
 <p><strong>方式1: 使用启动脚本 (推荐)</strong></p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>start.bat
-</code></pre></div></td></tr></table></div>
+<div class="codehilite"><pre><span></span><code>start.bat
+</code></pre></div>
 
 <p><strong>方式2: 分别启动</strong></p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span>
-<span class="normal">5</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c1"># 终端1: 启动MCP Server</span>
+<div class="codehilite"><pre><span></span><code><span class="c1"># 终端1: 启动MCP Server</span>
 python<span class="w"> </span>mcp_server/start_server.py
 
 <span class="c1"># 终端2: 启动用户界面</span>
 python<span class="w"> </span>main_pyqt.py
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <h3 id="3_1">3. 使用系统</h3>
 <ol>
@@ -548,38 +560,31 @@ python<span class="w"> </span>main_pyqt.py
 </ol>
 <h2 id="_8">使用示例</h2>
 <h3 id="1_2">示例1: 数学计算</h3>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="err">用户</span><span class="o">:</span><span class="w"> </span><span class="err">计算</span><span class="mi">1</span><span class="o">+</span><span class="mi">1</span><span class="err">等于多少</span>
+<div class="codehilite"><pre><span></span><code><span class="err">用户</span><span class="o">:</span><span class="w"> </span><span class="err">计算</span><span class="mi">1</span><span class="o">+</span><span class="mi">1</span><span class="err">等于多少</span>
 <span class="err">系统</span><span class="o">:</span><span class="w"> </span><span class="err">执行</span><span class="n">Python代码计算1</span><span class="o">+</span><span class="mi">1</span><span class="err">，结果为</span><span class="mi">2</span>
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <h3 id="2_2">示例2: 文件操作</h3>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="err">用户</span><span class="o">:</span><span class="w"> </span><span class="err">列出当前目录的文件</span>
+<div class="codehilite"><pre><span></span><code><span class="err">用户</span><span class="o">:</span><span class="w"> </span><span class="err">列出当前目录的文件</span>
 <span class="err">系统</span><span class="o">:</span><span class="w"> </span><span class="err">执行</span><span class="n">Python代码列出当前目录文件</span><span class="err">，显示文件列表</span>
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <h3 id="3_2">示例3: 危险操作</h3>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="err">用户</span><span class="o">:</span><span class="w"> </span><span class="err">删除桌面上的</span><span class="s2">&quot;测试&quot;</span><span class="err">文件夹</span>
+<div class="codehilite"><pre><span></span><code><span class="err">用户</span><span class="o">:</span><span class="w"> </span><span class="err">删除桌面上的</span><span class="s2">&quot;测试&quot;</span><span class="err">文件夹</span>
 <span class="err">系统</span><span class="o">:</span><span class="w"> </span><span class="err">检测到文件删除操作，显示确认对话框</span>
 <span class="err">用户</span><span class="o">:</span><span class="w"> </span><span class="err">点击</span><span class="s2">&quot;确认执行&quot;</span><span class="err">按钮</span>
 <span class="err">系统</span><span class="o">:</span><span class="w"> </span><span class="err">执行</span><span class="n">Python代码删除文件夹</span><span class="err">，显示执行结果</span>
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <h3 id="4_1">示例4: 代码执行</h3>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="err">用户</span><span class="o">:</span><span class="w"> </span><span class="err">写一个</span><span class="n">Python脚本计算斐波那契数列的前10项</span>
+<div class="codehilite"><pre><span></span><code><span class="err">用户</span><span class="o">:</span><span class="w"> </span><span class="err">写一个</span><span class="n">Python脚本计算斐波那契数列的前10项</span>
 <span class="err">系统</span><span class="o">:</span><span class="w"> </span><span class="err">生成并执行</span><span class="n">Python代码</span><span class="err">，显示计算结果</span>
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <h3 id="5_1">示例5: 系统命令</h3>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="err">用户</span><span class="o">:</span><span class="w"> </span><span class="err">查看系统信息</span>
+<div class="codehilite"><pre><span></span><code><span class="err">用户</span><span class="o">:</span><span class="w"> </span><span class="err">查看系统信息</span>
 <span class="err">系统</span><span class="o">:</span><span class="w"> </span><span class="err">执行系统命令查看系统信息，显示结果</span>
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <h2 id="_9">配置说明</h2>
 <p>系统配置通过<code>config/config.py</code>加载，主要配置项包括:</p>
@@ -620,14 +625,7 @@ python<span class="w"> </span>main_pyqt.py
 </ul>
 <h2 id="_12">测试</h2>
 <h3 id="_13">单元测试</h3>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span>
-<span class="normal">5</span>
-<span class="normal">6</span>
-<span class="normal">7</span>
-<span class="normal">8</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c1"># 测试MCP客户端</span>
+<div class="codehilite"><pre><span></span><code><span class="c1"># 测试MCP客户端</span>
 python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>tests/test_client.py<span class="w"> </span>-v
 
 <span class="c1"># 测试LLM集成</span>
@@ -635,47 +633,23 @@ python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> <
 
 <span class="c1"># 测试UI组件</span>
 python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>tests/test_ui.py<span class="w"> </span>-v
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <h3 id="_14">集成测试</h3>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span>
-<span class="normal">5</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c1"># 启动MCP服务器</span>
+<div class="codehilite"><pre><span></span><code><span class="c1"># 启动MCP服务器</span>
 python<span class="w"> </span>mcp_server/start_server.py
 
 <span class="c1"># 在另一个终端运行集成测试</span>
 python<span class="w"> </span>tests/test_integration.py
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <h3 id="_15">端到端测试</h3>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c1"># 运行完整的端到端测试</span>
+<div class="codehilite"><pre><span></span><code><span class="c1"># 运行完整的端到端测试</span>
 python<span class="w"> </span>tests/test_end_to_end.py
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <h2 id="_16">文件结构</h2>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
-<span class="normal"> 2</span>
-<span class="normal"> 3</span>
-<span class="normal"> 4</span>
-<span class="normal"> 5</span>
-<span class="normal"> 6</span>
-<span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span>
-<span class="normal">14</span>
-<span class="normal">15</span>
-<span class="normal">16</span>
-<span class="normal">17</span>
-<span class="normal">18</span>
-<span class="normal">19</span>
-<span class="normal">20</span></pre></div></td><td class="code"><div><pre><span></span><code>Intelligence_Desktop/
+<div class="codehilite"><pre><span></span><code>Intelligence_Desktop/
 ├── config/                 # 配置文件
 │   └── config.py          # 配置加载模块
 ├── mcp_client/            # MCP Client 模块
@@ -695,7 +669,7 @@ python<span class="w"> </span>tests/test_end_to_end.py
 ├── README.md              # 项目说明
 ├── README_CN.md           # 中文使用说明
 └── PROJECT_SUMMARY.md     # 项目总结
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <h2 id="_17">技术栈</h2>
 <h3 id="_18">核心技术</h3>

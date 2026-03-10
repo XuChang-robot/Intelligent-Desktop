@@ -131,6 +131,13 @@ class EmailProcessorTool(ToolBase):
         )
         
         if operation == 'send':
+            if not await self._confirm_with_permission(
+                ctx,
+                f"确认发送邮件\n📧 收件人: {recipient}\n📝 主题: {subject or '无'}\n📎 附件: {f'（含{len(attachments.split(';')) if attachments else 0}个附件）' if attachments else ''}\n🌐 服务器: {smtp_server}:{smtp_port}",
+                **kwargs
+            ):
+                return ToolResult.error("用户取消发送邮件").build()
+            
             return self._send_email(
                 recipient, subject, body, attachments,
                 smtp_server, smtp_port, smtp_username, smtp_password
@@ -313,6 +320,7 @@ def register_email_processor_tools(mcp, security_checker=None, output_callback=N
         attachments: Optional[str] = None,
         imap_server: Optional[str] = None,
         imap_port: Optional[int] = None,
+        execution_mode: Optional[str] = None,
         ctx: Optional[Context] = None
     ) -> Dict[str, Any]:
         """邮件处理工具
@@ -352,7 +360,9 @@ def register_email_processor_tools(mcp, security_checker=None, output_callback=N
             body=body,
             attachments=attachments,
             imap_server=imap_server,
-            imap_port=imap_port
+            imap_port=imap_port,
+            execution_mode=execution_mode,
+            ctx=ctx
         )
     
     return email_processor

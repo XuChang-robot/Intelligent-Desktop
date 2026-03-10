@@ -93,3 +93,29 @@ behavior_tree:
     enabled: false  # 自动修复开关
     max_repair_attempts: 2  # 最大修复尝试次数
     repair_timeout: 30  # 修复超时时间（秒）
+
+# 执行智能配置
+execution_intelligence:
+  # 工具执行模式配置
+  tool_intelligent_mode:
+    file_operations: "direct"      # 直接执行
+    email_processor: "intelligent"    # 需要确认
+    weather_query: "infer"        # 自动推断
+    system_command: "confirm"     # 需要确认
+    text_processing: "direct"     # 直接执行
+    network_request: "direct"     # 直接执行
+    system_info: "direct"         # 直接执行
+    pdf_processor: "direct"       # 直接执行
+    document_converter: "direct"  # 直接执行
+  
+  # ToolLLMClient 配置
+  tool_llm:
+    base_url: "http://localhost:11434"  # ToolLLMClient 专用地址
+  
+  # 成本控制配置
+  cost_control:
+    enabled: true
+    model: "qwen3:4b" #"gemma3:1b"           # 工具专用模型
+    temperature: 0.3              # 低温度，更确定性
+    max_tokens: 200               # 限制生成长度
+    timeout_ms: 5000              # 超时时间（毫秒）

@@ -63,6 +63,66 @@
             padding: 0;
             color: #ecf0f1;
         }
+        /* 代码高亮行号样式 - 内联显示 */
+        .codehilite {
+            background-color: #2c3e50;
+            border-radius: 5px;
+            padding: 15px;
+            overflow-x: auto;
+        }
+        .codehilite pre {
+            margin: 0;
+            padding: 0;
+            background-color: transparent;
+        }
+        .codehilite table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: transparent;
+            margin: 0;
+        }
+        .codehilite td {
+            border: none;
+            padding: 0;
+            background-color: transparent;
+        }
+        .codehilite .linenos {
+            color: #7f8c8d;
+            text-align: right;
+            padding-right: 15px;
+            width: 40px;
+            user-select: none;
+            vertical-align: top;
+        }
+        .codehilite .code {
+            width: 100%;
+        }
+        .codehilite pre {
+            margin: 0;
+            line-height: 1.5;
+        }
+        /* 代码语法高亮颜色 */
+        .codehilite .k { color: #ff79c6; } /* Keyword */
+        .codehilite .n { color: #f8f8f2; } /* Name */
+        .codehilite .s { color: #f1fa8c; } /* String */
+        .codehilite .c { color: #6272a4; } /* Comment */
+        .codehilite .o { color: #ff79c6; } /* Operator */
+        .codehilite .p { color: #f8f8f2; } /* Punctuation */
+        .codehilite .mi { color: #bd93f9; } /* Number */
+        .codehilite .nb { color: #8be9fd; } /* Builtin */
+        .codehilite .nf { color: #50fa7b; } /* Function */
+        .codehilite .nc { color: #8be9fd; } /* Class */
+        .codehilite .nd { color: #50fa7b; } /* Decorator */
+        .codehilite .s1 { color: #f1fa8c; } /* String.Single */
+        .codehilite .s2 { color: #f1fa8c; } /* String.Double */
+        .codehilite .kn { color: #ff79c6; } /* Keyword.Namespace */
+        .codehilite .bp { color: #f8f8f2; } /* Name.Builtin.Pseudo */
+        .codehilite .fm { color: #50fa7b; } /* Name.Function.Magic */
+        .codehilite .sa { color: #f1fa8c; } /* String.Affix */
+        .codehilite .ow { color: #ff79c6; } /* Operator.Word */
+        .codehilite .ss { color: #f1fa8c; } /* String.Symbol */
+        .codehilite .vm { color: #8be9fd; } /* Name.Variable.Magic */
+        .codehilite .w { color: #f8f8f2; } /* Text.Whitespace */
         table {
             width: 100%;
             border-collapse: collapse;
@@ -131,6 +191,7 @@
 <li><a href="#扩展开发">扩展开发</a></li>
 <li><a href="#测试指南">测试指南</a></li>
 <li><a href="#部署指南">部署指南</a></li>
+<li><a href="#架构设计文档">架构设计文档</a></li>
 </ul>
 <h2 id="_2">系统概述</h2>
 <p>智能桌面系统是一个基于MCP（Model Context Protocol）架构的智能助手，采用模块化设计，支持多种桌面任务的自动化处理。</p>
@@ -147,7 +208,7 @@
 <li>智能意图识别</li>
 <li>自动任务规划</li>
 <li>高效缓存系统</li>
-<li>沙箱安全隔离</li>
+<li>文件系统安全沙箱</li>
 <li>模块化工具系统</li>
 </ul>
 <h2 id="_5">快速开始</h2>
@@ -158,22 +219,7 @@
 <li>必要的Python库（见requirements.txt）</li>
 </ul>
 <h3 id="_7">安装步骤</h3>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
-<span class="normal"> 2</span>
-<span class="normal"> 3</span>
-<span class="normal"> 4</span>
-<span class="normal"> 5</span>
-<span class="normal"> 6</span>
-<span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span>
-<span class="normal">14</span>
-<span class="normal">15</span>
-<span class="normal">16</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c1"># 1. 克隆仓库</span>
+<div class="codehilite"><pre><span></span><code><span class="c1"># 1. 克隆仓库</span>
 git<span class="w"> </span>clone<span class="w"> </span>https://github.com/XuChang-robot/Intelligent-Desktop.git
 <span class="nb">cd</span><span class="w"> </span>Intelligent-Desktop
 
@@ -189,27 +235,10 @@ ollama<span class="w"> </span>pull<span class="w"> </span>nomic-embed-text
 
 <span class="c1"># 5. 启动系统</span>
 python<span class="w"> </span>main.py
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <h3 id="_8">项目结构</h3>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
-<span class="normal"> 2</span>
-<span class="normal"> 3</span>
-<span class="normal"> 4</span>
-<span class="normal"> 5</span>
-<span class="normal"> 6</span>
-<span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span>
-<span class="normal">14</span>
-<span class="normal">15</span>
-<span class="normal">16</span>
-<span class="normal">17</span>
-<span class="normal">18</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">Intelligence_Desktop</span><span class="o">/</span>
+<div class="codehilite"><pre><span></span><code><span class="n">Intelligence_Desktop</span><span class="o">/</span>
 <span class="err">├──</span><span class="w"> </span><span class="n">mcp_client</span><span class="o">/</span><span class="w">              </span><span class="c1"># MCP客户端</span>
 <span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">intent_parser</span><span class="o">.</span><span class="n">py</span><span class="w">      </span><span class="c1"># 意图解析</span>
 <span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">task_planner</span><span class="o">.</span><span class="n">py</span><span class="w">      </span><span class="c1"># 任务规划</span>
@@ -227,34 +256,11 @@ python<span class="w"> </span>main.py
 <span class="err">├──</span><span class="w"> </span><span class="n">user_config</span><span class="o">/</span><span class="w">           </span><span class="c1"># 用户配置</span>
 <span class="err">├──</span><span class="w"> </span><span class="n">cache</span><span class="o">/</span><span class="w">                </span><span class="c1"># 缓存目录</span>
 <span class="err">└──</span><span class="w"> </span><span class="n">docs</span><span class="o">/</span><span class="w">                 </span><span class="c1"># 文档</span>
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <h2 id="_9">系统架构</h2>
 <h3 id="_10">整体架构</h3>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
-<span class="normal"> 2</span>
-<span class="normal"> 3</span>
-<span class="normal"> 4</span>
-<span class="normal"> 5</span>
-<span class="normal"> 6</span>
-<span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span>
-<span class="normal">14</span>
-<span class="normal">15</span>
-<span class="normal">16</span>
-<span class="normal">17</span>
-<span class="normal">18</span>
-<span class="normal">19</span>
-<span class="normal">20</span>
-<span class="normal">21</span>
-<span class="normal">22</span>
-<span class="normal">23</span>
-<span class="normal">24</span></pre></div></td><td class="code"><div><pre><span></span><code>┌─────────────────────────────────────────────────────────┐
+<div class="codehilite"><pre><span></span><code>┌─────────────────────────────────────────────────────────┐
 │                   用户界面（PyQt6）                   │
 └────────────────────┬────────────────────────────────────┘
                      │
@@ -278,31 +284,10 @@ python<span class="w"> </span>main.py
 │  │ 文本处理工具   │  邮件处理工具   │  网络请求工具  │   │
 │  └──────────────┴──────────────┴──────────────┘   │
 └───────────────────────────────────────────────────────┘
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <h3 id="_11">信息流</h3>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
-<span class="normal"> 2</span>
-<span class="normal"> 3</span>
-<span class="normal"> 4</span>
-<span class="normal"> 5</span>
-<span class="normal"> 6</span>
-<span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span>
-<span class="normal">14</span>
-<span class="normal">15</span>
-<span class="normal">16</span>
-<span class="normal">17</span>
-<span class="normal">18</span>
-<span class="normal">19</span>
-<span class="normal">20</span>
-<span class="normal">21</span>
-<span class="normal">22</span></pre></div></td><td class="code"><div><pre><span></span><code>用户输入
+<div class="codehilite"><pre><span></span><code>用户输入
     ↓
 [1] 意图解析（Intent Parser）
     <span class="k">-</span> 调用LLM识别意图
@@ -324,7 +309,7 @@ python<span class="w"> </span>main.py
 [4] 结果返回
     <span class="k">-</span> 格式化输出
     <span class="k">-</span> 显示给用户
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <h2 id="_12">核心模块</h2>
 <h3 id="1-intent-parser">1. 意图解析器（Intent Parser）</h3>
@@ -336,23 +321,7 @@ python<span class="w"> </span>main.py
 - 支持三种意图类型：task、chat、cannot_execute
 - 生成行为树配置（tree_config）</p>
 <p><strong>主要方法</strong>：</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
-<span class="normal"> 2</span>
-<span class="normal"> 3</span>
-<span class="normal"> 4</span>
-<span class="normal"> 5</span>
-<span class="normal"> 6</span>
-<span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span>
-<span class="normal">14</span>
-<span class="normal">15</span>
-<span class="normal">16</span>
-<span class="normal">17</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">parse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">user_input</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">tools</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<div class="codehilite"><pre><span></span><code><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">parse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">user_input</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">tools</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    解析用户意图（兼容旧接口）</span>
 
@@ -369,7 +338,7 @@ python<span class="w"> </span>main.py
 <span class="sd">        - reason: 无法执行的原因（仅cannot_execute类型）</span>
 <span class="sd">        - tree_config: 行为树配置（仅task类型）</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <p><strong>实现细节</strong>：
 - 使用LLM进行意图识别
@@ -407,28 +376,7 @@ python<span class="w"> </span>main.py
 - 智能缓存匹配
 - 缓存行为树配置（tree_config）</p>
 <p><strong>主要方法</strong>：</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
-<span class="normal"> 2</span>
-<span class="normal"> 3</span>
-<span class="normal"> 4</span>
-<span class="normal"> 5</span>
-<span class="normal"> 6</span>
-<span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span>
-<span class="normal">14</span>
-<span class="normal">15</span>
-<span class="normal">16</span>
-<span class="normal">17</span>
-<span class="normal">18</span>
-<span class="normal">19</span>
-<span class="normal">20</span>
-<span class="normal">21</span>
-<span class="normal">22</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">intent</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<div class="codehilite"><pre><span></span><code><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">intent</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    查询缓存</span>
 
@@ -450,42 +398,75 @@ python<span class="w"> </span>main.py
 <span class="sd">    Returns:</span>
 <span class="sd">        是否保存成功</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <p><strong>实现细节</strong>：
 - 使用FAISS进行向量搜索
 - 使用SQLite存储元数据
 - 支持关键参数验证
 - 自动清理过期缓存</p>
-<h3 id="4-llmllm-client">4. LLM客户端（LLM Client）</h3>
+<h3 id="4-security-sandbox">4. 安全沙箱系统（Security Sandbox）</h3>
+<p><strong>文件</strong>：<code>mcp_server/tools/security_sandbox.py</code></p>
+<p><strong>功能</strong>：
+- 文件系统操作安全边界
+- 路径限制和检查
+- 操作白名单管理
+- 危险操作确认</p>
+<p><strong>主要类</strong>：</p>
+<div class="codehilite"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">SecurityPolicy</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;安全策略配置&quot;&quot;&quot;</span>
+    <span class="n">allowed_root_dirs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>      <span class="c1"># 允许的根目录</span>
+    <span class="n">blocked_paths</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>          <span class="c1"># 禁止的路径模式</span>
+    <span class="n">allowed_operations</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>     <span class="c1"># 允许的操作类型</span>
+    <span class="n">dangerous_operations</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>   <span class="c1"># 危险操作类型</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">SecurityChecker</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;安全检查器&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">check_path</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;检查路径是否在允许范围内&quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">check_operation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">operation</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;检查操作是否允许&quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_dangerous_operation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">operation</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;检查是否为危险操作&quot;&quot;&quot;</span>
+</code></pre></div>
+
+<p><strong>安全策略级别</strong>：</p>
+<ol>
+<li><strong>默认策略</strong>：</li>
+<li>允许桌面、文档、下载等常用目录</li>
+<li>允许非系统盘操作</li>
+<li>
+<p>禁止系统目录访问</p>
+</li>
+<li>
+<p><strong>严格策略</strong>：</p>
+</li>
+<li>只允许桌面目录</li>
+<li>禁止系统盘操作</li>
+<li>
+<p>只允许基本操作</p>
+</li>
+<li>
+<p><strong>宽松策略</strong>：</p>
+</li>
+<li>允许所有非系统盘操作</li>
+<li>允许更多操作类型</li>
+</ol>
+<p><strong>实现细节</strong>：
+- 路径规范化处理
+- 路径遍历检测
+- 符号链接检查
+- 危险操作用户确认</p>
+<h3 id="5-llmllm-client">5. LLM客户端（LLM Client）</h3>
 <p><strong>文件</strong>：<code>mcp_client/llm.py</code></p>
 <p><strong>功能</strong>：
 - 与Ollama服务通信
 - 生成文本和向量
 - 管理API调用</p>
 <p><strong>主要方法</strong>：</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
-<span class="normal"> 2</span>
-<span class="normal"> 3</span>
-<span class="normal"> 4</span>
-<span class="normal"> 5</span>
-<span class="normal"> 6</span>
-<span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span>
-<span class="normal">14</span>
-<span class="normal">15</span>
-<span class="normal">16</span>
-<span class="normal">17</span>
-<span class="normal">18</span>
-<span class="normal">19</span>
-<span class="normal">20</span>
-<span class="normal">21</span>
-<span class="normal">22</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">generate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prompt</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<div class="codehilite"><pre><span></span><code><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">generate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prompt</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    生成文本</span>
 
@@ -507,7 +488,7 @@ python<span class="w"> </span>main.py
 <span class="sd">    Returns:</span>
 <span class="sd">        向量列表</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <p><strong>实现细节</strong>：
 - 异步API调用
@@ -530,21 +511,7 @@ python<span class="w"> </span>main.py
 <li><strong>TreeCache</strong>：行为树配置缓存</li>
 </ol>
 <p><strong>主要方法</strong>：</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
-<span class="normal"> 2</span>
-<span class="normal"> 3</span>
-<span class="normal"> 4</span>
-<span class="normal"> 5</span>
-<span class="normal"> 6</span>
-<span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span>
-<span class="normal">14</span>
-<span class="normal">15</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">BehaviorTree</span><span class="p">:</span>
+<div class="codehilite"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">BehaviorTree</span><span class="p">:</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;初始化行为树系统&quot;&quot;&quot;</span>
 
@@ -559,7 +526,7 @@ python<span class="w"> </span>main.py
 
     <span class="k">def</span><span class="w"> </span><span class="nf">visualize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">format</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;ascii&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;可视化行为树&quot;&quot;&quot;</span>
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <p><strong>实现细节</strong>：
 - 基于py_trees库构建
@@ -568,29 +535,7 @@ python<span class="w"> </span>main.py
 - 集成缓存机制</p>
 <h2 id="_13">运行逻辑</h2>
 <h3 id="1">1. 系统启动流程</h3>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
-<span class="normal"> 2</span>
-<span class="normal"> 3</span>
-<span class="normal"> 4</span>
-<span class="normal"> 5</span>
-<span class="normal"> 6</span>
-<span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span>
-<span class="normal">14</span>
-<span class="normal">15</span>
-<span class="normal">16</span>
-<span class="normal">17</span>
-<span class="normal">18</span>
-<span class="normal">19</span>
-<span class="normal">20</span>
-<span class="normal">21</span>
-<span class="normal">22</span>
-<span class="normal">23</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
+<div class="codehilite"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
     <span class="c1"># 1. 加载配置</span>
     <span class="n">config</span> <span class="o">=</span> <span class="n">load_config</span><span class="p">()</span>
 
@@ -613,41 +558,10 @@ python<span class="w"> </span>main.py
     <span class="c1"># 7. 启动UI</span>
     <span class="n">ui</span> <span class="o">=</span> <span class="n">DesktopUI</span><span class="p">(</span><span class="n">intent_parser</span><span class="p">,</span> <span class="n">behavior_tree</span><span class="p">,</span> <span class="n">cache</span><span class="p">,</span> <span class="n">mcp_server</span><span class="p">)</span>
     <span class="n">ui</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <h3 id="2">2. 请求处理流程</h3>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
-<span class="normal"> 2</span>
-<span class="normal"> 3</span>
-<span class="normal"> 4</span>
-<span class="normal"> 5</span>
-<span class="normal"> 6</span>
-<span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span>
-<span class="normal">14</span>
-<span class="normal">15</span>
-<span class="normal">16</span>
-<span class="normal">17</span>
-<span class="normal">18</span>
-<span class="normal">19</span>
-<span class="normal">20</span>
-<span class="normal">21</span>
-<span class="normal">22</span>
-<span class="normal">23</span>
-<span class="normal">24</span>
-<span class="normal">25</span>
-<span class="normal">26</span>
-<span class="normal">27</span>
-<span class="normal">28</span>
-<span class="normal">29</span>
-<span class="normal">30</span>
-<span class="normal">31</span>
-<span class="normal">32</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">handle_user_query</span><span class="p">(</span><span class="n">user_input</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<div class="codehilite"><pre><span></span><code><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">handle_user_query</span><span class="p">(</span><span class="n">user_input</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
     <span class="c1"># 1. 意图解析（判断意图类型）</span>
     <span class="n">intent</span> <span class="o">=</span> <span class="k">await</span> <span class="n">intent_parser</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">user_input</span><span class="p">,</span> <span class="n">tools</span><span class="p">)</span>
 
@@ -679,39 +593,10 @@ python<span class="w"> </span>main.py
     <span class="k">else</span><span class="p">:</span>
         <span class="c1"># 错误类型</span>
         <span class="k">return</span> <span class="n">intent</span><span class="p">[</span><span class="s1">&#39;error&#39;</span><span class="p">]</span>
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <h3 id="3">3. 意图识别流程</h3>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
-<span class="normal"> 2</span>
-<span class="normal"> 3</span>
-<span class="normal"> 4</span>
-<span class="normal"> 5</span>
-<span class="normal"> 6</span>
-<span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span>
-<span class="normal">14</span>
-<span class="normal">15</span>
-<span class="normal">16</span>
-<span class="normal">17</span>
-<span class="normal">18</span>
-<span class="normal">19</span>
-<span class="normal">20</span>
-<span class="normal">21</span>
-<span class="normal">22</span>
-<span class="normal">23</span>
-<span class="normal">24</span>
-<span class="normal">25</span>
-<span class="normal">26</span>
-<span class="normal">27</span>
-<span class="normal">28</span>
-<span class="normal">29</span>
-<span class="normal">30</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">parse_intent</span><span class="p">(</span><span class="n">user_input</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">tools</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="codehilite"><pre><span></span><code><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">parse_intent</span><span class="p">(</span><span class="n">user_input</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">tools</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
     <span class="c1"># 1. 调用LLM解析意图</span>
     <span class="n">intent_result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">llm_client</span><span class="o">.</span><span class="n">parse_intent</span><span class="p">(</span><span class="n">user_input</span><span class="p">,</span> <span class="n">tools</span><span class="p">)</span>
 
@@ -741,28 +626,10 @@ python<span class="w"> </span>main.py
             <span class="s1">&#39;confidence&#39;</span><span class="p">:</span> <span class="n">intent_result</span><span class="p">[</span><span class="s1">&#39;confidence&#39;</span><span class="p">],</span>
             <span class="s1">&#39;tree_config&#39;</span><span class="p">:</span> <span class="n">intent_result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;tree_config&#39;</span><span class="p">)</span>  <span class="c1"># LLM生成的行为树配置</span>
         <span class="p">}</span>
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <h3 id="4">4. 缓存匹配流程</h3>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
-<span class="normal"> 2</span>
-<span class="normal"> 3</span>
-<span class="normal"> 4</span>
-<span class="normal"> 5</span>
-<span class="normal"> 6</span>
-<span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span>
-<span class="normal">14</span>
-<span class="normal">15</span>
-<span class="normal">16</span>
-<span class="normal">17</span>
-<span class="normal">18</span>
-<span class="normal">19</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">get_cached_tree_config</span><span class="p">(</span><span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">tools</span><span class="p">):</span>
+<div class="codehilite"><pre><span></span><code><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">get_cached_tree_config</span><span class="p">(</span><span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">tools</span><span class="p">):</span>
     <span class="c1"># 1. 查询缓存（哈希精确匹配 + FAISS语义匹配）</span>
     <span class="n">cache_result</span> <span class="o">=</span> <span class="n">cache</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">tools</span><span class="p">)</span>
 
@@ -781,39 +648,10 @@ python<span class="w"> </span>main.py
 
     <span class="c1"># 3. 缓存未命中</span>
     <span class="k">return</span> <span class="kc">None</span>
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <h3 id="5">5. 行为树执行流程</h3>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
-<span class="normal"> 2</span>
-<span class="normal"> 3</span>
-<span class="normal"> 4</span>
-<span class="normal"> 5</span>
-<span class="normal"> 6</span>
-<span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span>
-<span class="normal">14</span>
-<span class="normal">15</span>
-<span class="normal">16</span>
-<span class="normal">17</span>
-<span class="normal">18</span>
-<span class="normal">19</span>
-<span class="normal">20</span>
-<span class="normal">21</span>
-<span class="normal">22</span>
-<span class="normal">23</span>
-<span class="normal">24</span>
-<span class="normal">25</span>
-<span class="normal">26</span>
-<span class="normal">27</span>
-<span class="normal">28</span>
-<span class="normal">29</span>
-<span class="normal">30</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">execute_behavior_tree</span><span class="p">(</span><span class="n">tree_config</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]):</span>
+<div class="codehilite"><pre><span></span><code><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">execute_behavior_tree</span><span class="p">(</span><span class="n">tree_config</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]):</span>
     <span class="c1"># 1. 设置工具执行回调</span>
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">tool_executor</span><span class="p">(</span><span class="n">tool_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">parameters</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;执行MCP工具的回调函数&quot;&quot;&quot;</span>
@@ -843,33 +681,12 @@ python<span class="w"> </span>main.py
             <span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="n">execution_result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;error&quot;</span><span class="p">,</span> <span class="s2">&quot;未知错误&quot;</span><span class="p">),</span>
             <span class="s1">&#39;should_cache&#39;</span><span class="p">:</span> <span class="kc">False</span>
         <span class="p">}</span>
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <h2 id="api">API参考</h2>
 <h3 id="mcpapi">MCP工具API</h3>
 <p>所有MCP工具都遵循以下接口：</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
-<span class="normal"> 2</span>
-<span class="normal"> 3</span>
-<span class="normal"> 4</span>
-<span class="normal"> 5</span>
-<span class="normal"> 6</span>
-<span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span>
-<span class="normal">14</span>
-<span class="normal">15</span>
-<span class="normal">16</span>
-<span class="normal">17</span>
-<span class="normal">18</span>
-<span class="normal">19</span>
-<span class="normal">20</span>
-<span class="normal">21</span>
-<span class="normal">22</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@mcp</span><span class="o">.</span><span class="n">tool</span><span class="p">()</span>
+<div class="codehilite"><pre><span></span><code><span class="nd">@mcp</span><span class="o">.</span><span class="n">tool</span><span class="p">()</span>
 <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">tool_name</span><span class="p">(</span>
     <span class="n">operation</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">param1</span><span class="p">:</span> <span class="nb">type</span><span class="p">,</span>
@@ -891,7 +708,7 @@ python<span class="w"> </span>main.py
 <span class="sd">            &quot;error&quot;: 错误信息（如果失败）</span>
 <span class="sd">        }</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <h3 id="_14">文档转换工具</h3>
 <p><strong>文件</strong>：<code>mcp_server/tools/document_converter.py</code></p>
@@ -903,16 +720,12 @@ python<span class="w"> </span>main.py
 - <code>input_path</code>: 输入文件路径
 - <code>output_path</code>: 输出文件路径</p>
 <p><strong>示例</strong>：</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span>
-<span class="normal">5</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">document_converter</span><span class="p">(</span>
+<div class="codehilite"><pre><span></span><code><span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">document_converter</span><span class="p">(</span>
     <span class="n">operation</span><span class="o">=</span><span class="s2">&quot;pdf_to_word&quot;</span><span class="p">,</span>
     <span class="n">input_path</span><span class="o">=</span><span class="s2">&quot;桌面/xxx.pdf&quot;</span><span class="p">,</span>
     <span class="n">output_path</span><span class="o">=</span><span class="s2">&quot;桌面/xxx.docx&quot;</span>
 <span class="p">)</span>
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <h3 id="_15">文件操作工具</h3>
 <p><strong>文件</strong>：<code>mcp_server/tools/file_operations.py</code></p>
@@ -931,16 +744,12 @@ python<span class="w"> </span>main.py
 - <code>content</code>: 文件内容（用于write操作）
 - <code>pattern</code>: 搜索模式（用于search操作）</p>
 <p><strong>示例</strong>：</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span>
-<span class="normal">5</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">file_operations</span><span class="p">(</span>
+<div class="codehilite"><pre><span></span><code><span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">file_operations</span><span class="p">(</span>
     <span class="n">operation</span><span class="o">=</span><span class="s2">&quot;create&quot;</span><span class="p">,</span>
     <span class="n">path</span><span class="o">=</span><span class="s2">&quot;桌面/test.txt&quot;</span><span class="p">,</span>
     <span class="n">content</span><span class="o">=</span><span class="s2">&quot;hello world&quot;</span>
 <span class="p">)</span>
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <h3 id="pdf">PDF处理工具</h3>
 <p><strong>文件</strong>：<code>mcp_server/tools/pdf_processor.py</code></p>
@@ -957,16 +766,12 @@ python<span class="w"> </span>main.py
 - <code>insert_position</code>: 插入位置（仅用于insert操作）
 - <code>pages</code>: 页面范围（仅用于extract和split操作）</p>
 <p><strong>示例</strong>：</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span>
-<span class="normal">5</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">pdf_processor</span><span class="p">(</span>
+<div class="codehilite"><pre><span></span><code><span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">pdf_processor</span><span class="p">(</span>
     <span class="n">operation</span><span class="o">=</span><span class="s2">&quot;merge&quot;</span><span class="p">,</span>
     <span class="n">input_path</span><span class="o">=</span><span class="s2">&quot;桌面/file1.pdf;桌面/file2.pdf&quot;</span><span class="p">,</span>
     <span class="n">output_path</span><span class="o">=</span><span class="s2">&quot;桌面/merged.pdf&quot;</span>
 <span class="p">)</span>
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <h3 id="_16">文本处理工具</h3>
 <p><strong>文件</strong>：<code>mcp_server/tools/text_processing.py</code></p>
@@ -983,16 +788,12 @@ python<span class="w"> </span>main.py
 - <code>format_type</code>: 格式化类型（用于format）
 - <code>output_path</code>: 输出文件路径（用于to_audio）</p>
 <p><strong>示例</strong>：</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span>
-<span class="normal">5</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">text_processing</span><span class="p">(</span>
+<div class="codehilite"><pre><span></span><code><span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">text_processing</span><span class="p">(</span>
     <span class="n">operation</span><span class="o">=</span><span class="s2">&quot;to_audio&quot;</span><span class="p">,</span>
     <span class="n">text</span><span class="o">=</span><span class="s2">&quot;hello world&quot;</span><span class="p">,</span>
     <span class="n">output_path</span><span class="o">=</span><span class="s2">&quot;桌面/audio.mp3&quot;</span>
 <span class="p">)</span>
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <h3 id="_17">邮件处理工具</h3>
 <p><strong>文件</strong>：<code>mcp_server/tools/email_processor.py</code></p>
@@ -1007,18 +808,13 @@ python<span class="w"> </span>main.py
 - <code>body</code>: 邮件正文（用于send）
 - <code>attachments</code>: 附件路径（用于send）</p>
 <p><strong>示例</strong>：</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span>
-<span class="normal">5</span>
-<span class="normal">6</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">email_processor</span><span class="p">(</span>
+<div class="codehilite"><pre><span></span><code><span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">email_processor</span><span class="p">(</span>
     <span class="n">operation</span><span class="o">=</span><span class="s2">&quot;send&quot;</span><span class="p">,</span>
     <span class="n">recipient</span><span class="o">=</span><span class="s2">&quot;test@example.com&quot;</span><span class="p">,</span>
     <span class="n">subject</span><span class="o">=</span><span class="s2">&quot;测试&quot;</span><span class="p">,</span>
     <span class="n">body</span><span class="o">=</span><span class="s2">&quot;hello&quot;</span>
 <span class="p">)</span>
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <h3 id="_18">网络请求工具</h3>
 <p><strong>文件</strong>：<code>mcp_server/tools/network_request.py</code></p>
@@ -1034,26 +830,15 @@ python<span class="w"> </span>main.py
 - <code>headers</code>: 请求头
 - <code>params</code>: URL参数</p>
 <p><strong>示例</strong>：</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">network_request</span><span class="p">(</span>
+<div class="codehilite"><pre><span></span><code><span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">network_request</span><span class="p">(</span>
     <span class="n">operation</span><span class="o">=</span><span class="s2">&quot;GET&quot;</span><span class="p">,</span>
     <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://api.example.com/data&quot;</span>
 <span class="p">)</span>
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <h2 id="_19">配置说明</h2>
 <h3 id="_20">配置文件结构</h3>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span>
-<span class="normal">5</span>
-<span class="normal">6</span>
-<span class="normal">7</span>
-<span class="normal">8</span>
-<span class="normal">9</span></pre></div></td><td class="code"><div><pre><span></span><code>Intelligence_Desktop/
+<div class="codehilite"><pre><span></span><code>Intelligence_Desktop/
 ├── system_config/           # 系统配置（用户不应该修改）
 │   ├── cache_config.json    # 缓存关键参数配置
 │   └── README.md          # 系统配置说明
@@ -1062,23 +847,11 @@ python<span class="w"> </span>main.py
 │   ├── config.py          # 配置加载器
 │   ├── README.md          # 用户配置说明
 │   └── CACHE_CONFIG_GUIDE.md  # 缓存配置指南
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <h3 id="_21">缓存配置</h3>
 <p><strong>文件</strong>：<code>system_config/cache_config.json</code></p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
-<span class="normal"> 2</span>
-<span class="normal"> 3</span>
-<span class="normal"> 4</span>
-<span class="normal"> 5</span>
-<span class="normal"> 6</span>
-<span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span>
+<div class="codehilite"><pre><span></span><code><span class="p">{</span>
 <span class="w">  </span><span class="nt">&quot;cache_key_params&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="nt">&quot;global&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;operation&quot;</span><span class="p">],</span>
 <span class="w">    </span><span class="nt">&quot;tools&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
@@ -1091,7 +864,7 @@ python<span class="w"> </span>main.py
 <span class="w">    </span><span class="p">}</span>
 <span class="w">  </span><span class="p">}</span>
 <span class="p">}</span>
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <p><strong>说明</strong>：
 - <code>global</code>: 全局关键参数列表
@@ -1109,46 +882,7 @@ python<span class="w"> </span>main.py
 <li><strong>创建工具文件</strong></li>
 </ol>
 <p>在<code>mcp_server/tools/</code>下创建新文件：</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
-<span class="normal"> 2</span>
-<span class="normal"> 3</span>
-<span class="normal"> 4</span>
-<span class="normal"> 5</span>
-<span class="normal"> 6</span>
-<span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span>
-<span class="normal">14</span>
-<span class="normal">15</span>
-<span class="normal">16</span>
-<span class="normal">17</span>
-<span class="normal">18</span>
-<span class="normal">19</span>
-<span class="normal">20</span>
-<span class="normal">21</span>
-<span class="normal">22</span>
-<span class="normal">23</span>
-<span class="normal">24</span>
-<span class="normal">25</span>
-<span class="normal">26</span>
-<span class="normal">27</span>
-<span class="normal">28</span>
-<span class="normal">29</span>
-<span class="normal">30</span>
-<span class="normal">31</span>
-<span class="normal">32</span>
-<span class="normal">33</span>
-<span class="normal">34</span>
-<span class="normal">35</span>
-<span class="normal">36</span>
-<span class="normal">37</span>
-<span class="normal">38</span>
-<span class="normal">39</span>
-<span class="normal">40</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c1"># my_tool.py</span>
+<div class="codehilite"><pre><span></span><code><span class="c1"># my_tool.py</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Any</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">mcp.server.fastmcp</span><span class="w"> </span><span class="kn">import</span> <span class="n">Context</span>
 
@@ -1188,21 +922,13 @@ python<span class="w"> </span>main.py
                 <span class="s2">&quot;success&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
                 <span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
             <span class="p">}</span>
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <ol>
 <li><strong>注册工具</strong></li>
 </ol>
 <p>在<code>mcp_server/server.py</code>中注册：</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span>
-<span class="normal">5</span>
-<span class="normal">6</span>
-<span class="normal">7</span>
-<span class="normal">8</span>
-<span class="normal">9</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">mcp_server.tools.my_tool</span><span class="w"> </span><span class="kn">import</span> <span class="n">register_my_tool</span>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">mcp_server.tools.my_tool</span><span class="w"> </span><span class="kn">import</span> <span class="n">register_my_tool</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">create_mcp_server</span><span class="p">():</span>
     <span class="n">mcp</span> <span class="o">=</span> <span class="n">FastMCP</span><span class="p">(</span><span class="s2">&quot;intelligent-desktop&quot;</span><span class="p">)</span>
@@ -1211,20 +937,13 @@ python<span class="w"> </span>main.py
     <span class="n">register_my_tool</span><span class="p">(</span><span class="n">mcp</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">mcp</span>
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <ol>
 <li><strong>更新配置</strong></li>
 </ol>
 <p>在<code>system_config/cache_config.json</code>中添加关键参数：</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span>
-<span class="normal">5</span>
-<span class="normal">6</span>
-<span class="normal">7</span>
-<span class="normal">8</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span>
+<div class="codehilite"><pre><span></span><code><span class="p">{</span>
 <span class="w">  </span><span class="nt">&quot;cache_key_params&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="nt">&quot;global&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;operation&quot;</span><span class="p">],</span>
 <span class="w">    </span><span class="nt">&quot;tools&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
@@ -1232,45 +951,27 @@ python<span class="w"> </span>main.py
 <span class="w">    </span><span class="p">}</span>
 <span class="w">  </span><span class="p">}</span>
 <span class="p">}</span>
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <ol>
 <li><strong>更新LLM提示词</strong></li>
 </ol>
 <p>在<code>mcp_client/llm.py</code>中更新工具描述：</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span>
-<span class="normal">5</span>
-<span class="normal">6</span>
-<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">tools_info</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<div class="codehilite"><pre><span></span><code><span class="n">tools_info</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
 <span class="s2">...</span>
 <span class="s2">my_tool:</span>
 <span class="s2">  operation: 操作类型</span>
 <span class="s2">  param1: 参数1描述</span>
 <span class="s2">...</span>
 <span class="s2">&quot;&quot;&quot;</span>
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <h3 id="_25">添加新操作类型</h3>
 <ol>
 <li><strong>定义操作类型</strong></li>
 </ol>
 <p>在工具文件中定义新的操作类型：</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
-<span class="normal"> 2</span>
-<span class="normal"> 3</span>
-<span class="normal"> 4</span>
-<span class="normal"> 5</span>
-<span class="normal"> 6</span>
-<span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@mcp</span><span class="o">.</span><span class="n">tool</span><span class="p">()</span>
+<div class="codehilite"><pre><span></span><code><span class="nd">@mcp</span><span class="o">.</span><span class="n">tool</span><span class="p">()</span>
 <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">my_tool</span><span class="p">(</span>
     <span class="n">operation</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="o">...</span>
@@ -1283,37 +984,24 @@ python<span class="w"> </span>main.py
 <span class="sd">            - &quot;op2&quot;: 操作2描述</span>
 <span class="sd">        ...</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <ol>
 <li><strong>更新配置</strong></li>
 </ol>
 <p>在<code>system_config/cache_config.json</code>中添加关键参数：</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span>
-<span class="normal">5</span>
-<span class="normal">6</span>
-<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span>
+<div class="codehilite"><pre><span></span><code><span class="p">{</span>
 <span class="w">  </span><span class="nt">&quot;cache_key_params&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="nt">&quot;tools&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
 <span class="w">      </span><span class="nt">&quot;my_tool&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;operation&quot;</span><span class="p">]</span>
 <span class="w">    </span><span class="p">}</span>
 <span class="w">  </span><span class="p">}</span>
 <span class="p">}</span>
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <h2 id="_26">测试指南</h2>
 <h3 id="_27">单元测试</h3>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span>
-<span class="normal">5</span>
-<span class="normal">6</span>
-<span class="normal">7</span>
-<span class="normal">8</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c1"># 运行所有测试</span>
+<div class="codehilite"><pre><span></span><code><span class="c1"># 运行所有测试</span>
 pytest<span class="w"> </span>tests/
 
 <span class="c1"># 运行特定测试</span>
@@ -1321,17 +1009,10 @@ pytest<span class="w"> </span>tests/test_intent_parser.py
 
 <span class="c1"># 查看测试覆盖率</span>
 pytest<span class="w"> </span>--cov<span class="o">=</span>mcp_client<span class="w"> </span>tests/
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <h3 id="_28">集成测试</h3>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span>
-<span class="normal">5</span>
-<span class="normal">6</span>
-<span class="normal">7</span>
-<span class="normal">8</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c1"># 测试缓存系统</span>
+<div class="codehilite"><pre><span></span><code><span class="c1"># 测试缓存系统</span>
 python<span class="w"> </span>test_cache_hit_complete.py
 
 <span class="c1"># 测试不同操作</span>
@@ -1339,42 +1020,19 @@ python<span class="w"> </span>test_different_operations.py
 
 <span class="c1"># 测试意图解析</span>
 python<span class="w"> </span>test_intent_parsing.py
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <h3 id="_29">性能测试</h3>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span>
-<span class="normal">5</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c1"># 测试缓存性能</span>
+<div class="codehilite"><pre><span></span><code><span class="c1"># 测试缓存性能</span>
 python<span class="w"> </span>test_cache_performance.py
 
 <span class="c1"># 测试LLM性能</span>
 python<span class="w"> </span>test_llm_performance.py
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <h2 id="_30">部署指南</h2>
 <h3 id="_31">本地部署</h3>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
-<span class="normal"> 2</span>
-<span class="normal"> 3</span>
-<span class="normal"> 4</span>
-<span class="normal"> 5</span>
-<span class="normal"> 6</span>
-<span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span>
-<span class="normal">14</span>
-<span class="normal">15</span>
-<span class="normal">16</span>
-<span class="normal">17</span>
-<span class="normal">18</span>
-<span class="normal">19</span>
-<span class="normal">20</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c1"># 1. 克隆仓库</span>
+<div class="codehilite"><pre><span></span><code><span class="c1"># 1. 克隆仓库</span>
 git<span class="w"> </span>clone<span class="w"> </span>https://github.com/XuChang-robot/Intelligent-Desktop.git
 <span class="nb">cd</span><span class="w"> </span>Intelligent-Desktop
 
@@ -1394,18 +1052,10 @@ ollama<span class="w"> </span>pull<span class="w"> </span>nomic-embed-text
 
 <span class="c1"># 6. 启动系统</span>
 python<span class="w"> </span>main.py
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <h3 id="docker">Docker部署</h3>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span>
-<span class="normal">5</span>
-<span class="normal">6</span>
-<span class="normal">7</span>
-<span class="normal">8</span>
-<span class="normal">9</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c1"># 1. 构建镜像</span>
+<div class="codehilite"><pre><span></span><code><span class="c1"># 1. 构建镜像</span>
 docker<span class="w"> </span>build<span class="w"> </span>-t<span class="w"> </span>intelligent-desktop<span class="w"> </span>.
 
 <span class="c1"># 2. 运行容器</span>
@@ -1414,7 +1064,7 @@ docker<span class="w"> </span>run<span class="w"> </span>-d<span class="w"> </sp
 <span class="w">  </span>-v<span class="w"> </span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span>/user_config:/app/user_config<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>-v<span class="w"> </span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span>/cache:/app/cache<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>intelligent-desktop
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <h3 id="_32">生产环境部署</h3>
 <ol>
@@ -1439,7 +1089,11 @@ docker<span class="w"> </span>run<span class="w"> </span>-d<span class="w"> </sp
 <li>定期备份缓存</li>
 <li>定期备份日志</li>
 </ol>
-<h2 id="_33">相关文档</h2>
+<h2 id="_33">架构设计文档</h2>
+<ul>
+<li><a href="./LLM生成行为树架构的优势.md">LLM生成行为树架构的优势</a> - 详细阐述系统核心架构的设计理念、优势分析、最佳实践和技术实现</li>
+</ul>
+<h2 id="_34">相关文档</h2>
 <ul>
 <li><a href="./USER_GUIDE.md">用户使用说明</a></li>
 <li><a href="../system_config/README.md">系统配置说明</a></li>

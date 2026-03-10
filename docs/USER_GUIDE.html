@@ -63,6 +63,66 @@
             padding: 0;
             color: #ecf0f1;
         }
+        /* 代码高亮行号样式 - 内联显示 */
+        .codehilite {
+            background-color: #2c3e50;
+            border-radius: 5px;
+            padding: 15px;
+            overflow-x: auto;
+        }
+        .codehilite pre {
+            margin: 0;
+            padding: 0;
+            background-color: transparent;
+        }
+        .codehilite table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: transparent;
+            margin: 0;
+        }
+        .codehilite td {
+            border: none;
+            padding: 0;
+            background-color: transparent;
+        }
+        .codehilite .linenos {
+            color: #7f8c8d;
+            text-align: right;
+            padding-right: 15px;
+            width: 40px;
+            user-select: none;
+            vertical-align: top;
+        }
+        .codehilite .code {
+            width: 100%;
+        }
+        .codehilite pre {
+            margin: 0;
+            line-height: 1.5;
+        }
+        /* 代码语法高亮颜色 */
+        .codehilite .k { color: #ff79c6; } /* Keyword */
+        .codehilite .n { color: #f8f8f2; } /* Name */
+        .codehilite .s { color: #f1fa8c; } /* String */
+        .codehilite .c { color: #6272a4; } /* Comment */
+        .codehilite .o { color: #ff79c6; } /* Operator */
+        .codehilite .p { color: #f8f8f2; } /* Punctuation */
+        .codehilite .mi { color: #bd93f9; } /* Number */
+        .codehilite .nb { color: #8be9fd; } /* Builtin */
+        .codehilite .nf { color: #50fa7b; } /* Function */
+        .codehilite .nc { color: #8be9fd; } /* Class */
+        .codehilite .nd { color: #50fa7b; } /* Decorator */
+        .codehilite .s1 { color: #f1fa8c; } /* String.Single */
+        .codehilite .s2 { color: #f1fa8c; } /* String.Double */
+        .codehilite .kn { color: #ff79c6; } /* Keyword.Namespace */
+        .codehilite .bp { color: #f8f8f2; } /* Name.Builtin.Pseudo */
+        .codehilite .fm { color: #50fa7b; } /* Name.Function.Magic */
+        .codehilite .sa { color: #f1fa8c; } /* String.Affix */
+        .codehilite .ow { color: #ff79c6; } /* Operator.Word */
+        .codehilite .ss { color: #f1fa8c; } /* String.Symbol */
+        .codehilite .vm { color: #8be9fd; } /* Name.Variable.Magic */
+        .codehilite .w { color: #f8f8f2; } /* Text.Whitespace */
         table {
             width: 100%;
             border-collapse: collapse;
@@ -136,31 +196,12 @@
 <li><strong>智能意图识别</strong>：自动理解用户需求</li>
 <li><strong>任务规划</strong>：基于行为树的智能任务规划系统</li>
 <li><strong>高效缓存</strong>：基于FAISS向量搜索的混合缓存系统</li>
-<li><strong>安全可靠</strong>：沙箱隔离、权限控制</li>
+<li><strong>安全沙箱</strong>：文件系统操作安全边界，路径限制、操作白名单、危险操作确认</li>
 <li><strong>易于扩展</strong>：模块化设计，支持自定义工具</li>
 <li><strong>行为树执行</strong>：支持复杂任务的灵活执行和条件分支</li>
 </ul>
 <h3 id="_4">系统架构</h3>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
-<span class="normal"> 2</span>
-<span class="normal"> 3</span>
-<span class="normal"> 4</span>
-<span class="normal"> 5</span>
-<span class="normal"> 6</span>
-<span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span>
-<span class="normal">14</span>
-<span class="normal">15</span>
-<span class="normal">16</span>
-<span class="normal">17</span>
-<span class="normal">18</span>
-<span class="normal">19</span>
-<span class="normal">20</span></pre></div></td><td class="code"><div><pre><span></span><code>用户输入
+<div class="codehilite"><pre><span></span><code>用户输入
     ↓
 意图解析（Intent Parser）
     ↓ 判断意图类型
@@ -180,7 +221,7 @@
                 └─ 条件节点（Condition）→ 基于结果分支
                 ↓
             返回结果
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <h3 id="_5">意图识别</h3>
 <p>系统支持三种意图类型：</p>
@@ -234,17 +275,17 @@
 </ol>
 <h2 id="_7">快速开始</h2>
 <h3 id="_8">安装依赖</h3>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
-</code></pre></div></td></tr></table></div>
+<div class="codehilite"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
+</code></pre></div>
 
 <h3 id="_9">启动系统</h3>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>python<span class="w"> </span>main.py
-</code></pre></div></td></tr></table></div>
+<div class="codehilite"><pre><span></span><code>python<span class="w"> </span>main.py
+</code></pre></div>
 
 <h3 id="_10">基本使用</h3>
 <p>在聊天界面输入自然语言指令，例如：</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>把桌面上的生成式对抗网络.pdf转为word，放入桌面上的cx文件夹内
-</code></pre></div></td></tr></table></div>
+<div class="codehilite"><pre><span></span><code>把桌面上的生成式对抗网络.pdf转为word，放入桌面上的cx文件夹内
+</code></pre></div>
 
 <p>系统会自动：
 1. 解析意图
@@ -256,110 +297,110 @@
 <h3 id="1">1. 文档转换</h3>
 <p>支持PDF与Word文档的互转。</p>
 <h4 id="pdfword">PDF转Word</h4>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>把桌面上的xxx.pdf转为word
-</code></pre></div></td></tr></table></div>
+<div class="codehilite"><pre><span></span><code>把桌面上的xxx.pdf转为word
+</code></pre></div>
 
 <h4 id="wordpdf">Word转PDF</h4>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>把桌面上的xxx.docx转为pdf
-</code></pre></div></td></tr></table></div>
+<div class="codehilite"><pre><span></span><code>把桌面上的xxx.docx转为pdf
+</code></pre></div>
 
 <h4 id="_12">指定输出路径</h4>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>把桌面上的xxx.pdf转为word，放入桌面上的cx文件夹内
-</code></pre></div></td></tr></table></div>
+<div class="codehilite"><pre><span></span><code>把桌面上的xxx.pdf转为word，放入桌面上的cx文件夹内
+</code></pre></div>
 
 <h3 id="2">2. 文件操作</h3>
 <p>支持创建、读取、写入、删除、移动、复制、列表、搜索等操作。</p>
 <h4 id="_13">创建文件</h4>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>在桌面上创建一个test.txt文件
-</code></pre></div></td></tr></table></div>
+<div class="codehilite"><pre><span></span><code>在桌面上创建一个test.txt文件
+</code></pre></div>
 
 <h4 id="_14">读取文件</h4>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>读取桌面上的test.txt文件内容
-</code></pre></div></td></tr></table></div>
+<div class="codehilite"><pre><span></span><code>读取桌面上的test.txt文件内容
+</code></pre></div>
 
 <h4 id="_15">写入文件</h4>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>向桌面上的test.txt文件写入&quot;hello world&quot;
-</code></pre></div></td></tr></table></div>
+<div class="codehilite"><pre><span></span><code>向桌面上的test.txt文件写入&quot;hello world&quot;
+</code></pre></div>
 
 <h4 id="_16">删除文件</h4>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>删除桌面上的test.txt文件
-</code></pre></div></td></tr></table></div>
+<div class="codehilite"><pre><span></span><code>删除桌面上的test.txt文件
+</code></pre></div>
 
 <h4 id="_17">移动文件</h4>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>把桌面上的test.txt移动到桌面上的cx文件夹内
-</code></pre></div></td></tr></table></div>
+<div class="codehilite"><pre><span></span><code>把桌面上的test.txt移动到桌面上的cx文件夹内
+</code></pre></div>
 
 <h4 id="_18">复制文件</h4>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>复制桌面上的test.txt到桌面上的cx文件夹内
-</code></pre></div></td></tr></table></div>
+<div class="codehilite"><pre><span></span><code>复制桌面上的test.txt到桌面上的cx文件夹内
+</code></pre></div>
 
 <h4 id="_19">列出目录</h4>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>列出桌面上的文件
-</code></pre></div></td></tr></table></div>
+<div class="codehilite"><pre><span></span><code>列出桌面上的文件
+</code></pre></div>
 
 <h4 id="_20">搜索文件</h4>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>在桌面上搜索test.txt文件
-</code></pre></div></td></tr></table></div>
+<div class="codehilite"><pre><span></span><code>在桌面上搜索test.txt文件
+</code></pre></div>
 
 <h3 id="3-pdf">3. PDF处理</h3>
 <p>支持PDF合并、插入页、打印、提取页、拆分等操作。</p>
 <h4 id="pdf">PDF合并</h4>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>合并桌面上的file1.pdf和file2.pdf
-</code></pre></div></td></tr></table></div>
+<div class="codehilite"><pre><span></span><code>合并桌面上的file1.pdf和file2.pdf
+</code></pre></div>
 
 <h4 id="pdf_1">PDF插入页</h4>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>在桌面上的file1.pdf的第2页插入桌面上的file2.pdf
-</code></pre></div></td></tr></table></div>
+<div class="codehilite"><pre><span></span><code>在桌面上的file1.pdf的第2页插入桌面上的file2.pdf
+</code></pre></div>
 
 <h4 id="pdf_2">PDF打印</h4>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>打印桌面上的file1.pdf
-</code></pre></div></td></tr></table></div>
+<div class="codehilite"><pre><span></span><code>打印桌面上的file1.pdf
+</code></pre></div>
 
 <h4 id="pdf_3">PDF提取页</h4>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>提取桌面上的file1.pdf的第1-3页
-</code></pre></div></td></tr></table></div>
+<div class="codehilite"><pre><span></span><code>提取桌面上的file1.pdf的第1-3页
+</code></pre></div>
 
 <h4 id="pdf_4">PDF拆分</h4>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>拆分桌面上的file1.pdf的第1-3页
-</code></pre></div></td></tr></table></div>
+<div class="codehilite"><pre><span></span><code>拆分桌面上的file1.pdf的第1-3页
+</code></pre></div>
 
 <h3 id="4">4. 文本处理</h3>
 <p>支持文字转语音、文本摘要、格式化、统计等操作。</p>
 <h4 id="_21">文字转语音</h4>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>把桌面上的test.txt转为语音
-</code></pre></div></td></tr></table></div>
+<div class="codehilite"><pre><span></span><code>把桌面上的test.txt转为语音
+</code></pre></div>
 
 <h4 id="_22">文本摘要</h4>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>对桌面上的test.txt进行摘要
-</code></pre></div></td></tr></table></div>
+<div class="codehilite"><pre><span></span><code>对桌面上的test.txt进行摘要
+</code></pre></div>
 
 <h4 id="_23">文本格式化</h4>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>格式化桌面上的test.txt为大写
-</code></pre></div></td></tr></table></div>
+<div class="codehilite"><pre><span></span><code>格式化桌面上的test.txt为大写
+</code></pre></div>
 
 <h4 id="_24">统计字符数</h4>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>统计桌面上的test.txt的字符数
-</code></pre></div></td></tr></table></div>
+<div class="codehilite"><pre><span></span><code>统计桌面上的test.txt的字符数
+</code></pre></div>
 
 <h3 id="5">5. 邮件处理</h3>
 <p>支持发送和接收邮件。</p>
 <h4 id="_25">发送邮件</h4>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">发送邮件到457911161</span><span class="nv">@qq</span><span class="p">.</span><span class="n">com</span><span class="err">，</span><span class="n">主题是</span><span class="ss">&quot;测试&quot;</span><span class="err">，</span><span class="n">内容是</span><span class="ss">&quot;hello&quot;</span>
-</code></pre></div></td></tr></table></div>
+<div class="codehilite"><pre><span></span><code><span class="n">发送邮件到457911161</span><span class="nv">@qq</span><span class="p">.</span><span class="n">com</span><span class="err">，</span><span class="n">主题是</span><span class="ss">&quot;测试&quot;</span><span class="err">，</span><span class="n">内容是</span><span class="ss">&quot;hello&quot;</span>
+</code></pre></div>
 
 <h4 id="_26">接收邮件</h4>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">接收457911161</span><span class="nv">@qq</span><span class="p">.</span><span class="n">com的邮件</span>
-</code></pre></div></td></tr></table></div>
+<div class="codehilite"><pre><span></span><code><span class="n">接收457911161</span><span class="nv">@qq</span><span class="p">.</span><span class="n">com的邮件</span>
+</code></pre></div>
 
 <h3 id="6">6. 网络请求</h3>
 <p>支持GET、POST、PUT、DELETE等HTTP请求。</p>
 <h4 id="get">GET请求</h4>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>发送GET请求到https://api.example.com/data
-</code></pre></div></td></tr></table></div>
+<div class="codehilite"><pre><span></span><code>发送GET请求到https://api.example.com/data
+</code></pre></div>
 
 <h4 id="post">POST请求</h4>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>发送POST请求到https://api.example.com/data，数据是{&quot;key&quot;: &quot;value&quot;}
-</code></pre></div></td></tr></table></div>
+<div class="codehilite"><pre><span></span><code>发送POST请求到https://api.example.com/data，数据是{&quot;key&quot;: &quot;value&quot;}
+</code></pre></div>
 
 <h2 id="_27">行为树系统</h2>
 <p>行为树是智能桌面系统的核心任务执行引擎，提供了灵活、强大的任务规划和执行能力。</p>
@@ -415,15 +456,7 @@
 </ul>
 <h2 id="_32">配置指南</h2>
 <h3 id="_33">配置文件结构</h3>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span>
-<span class="normal">5</span>
-<span class="normal">6</span>
-<span class="normal">7</span>
-<span class="normal">8</span>
-<span class="normal">9</span></pre></div></td><td class="code"><div><pre><span></span><code>Intelligence_Desktop/
+<div class="codehilite"><pre><span></span><code>Intelligence_Desktop/
 ├── system_config/           # 系统配置（用户不应该修改）
 │   ├── cache_config.json    # 缓存关键参数配置
 │   └── README.md          # 系统配置说明
@@ -432,79 +465,54 @@
 │   ├── config.py          # 配置加载器
 │   ├── README.md          # 用户配置说明
 │   └── CACHE_CONFIG_GUIDE.md  # 缓存配置指南
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <h3 id="mcp">MCP配置</h3>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span>
-<span class="normal">5</span>
-<span class="normal">6</span>
-<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nt">mcp</span><span class="p">:</span>
+<div class="codehilite"><pre><span></span><code><span class="nt">mcp</span><span class="p">:</span>
 <span class="w">  </span><span class="nt">server</span><span class="p">:</span>
 <span class="w">    </span><span class="nt">host</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;localhost&quot;</span><span class="w">           </span><span class="c1"># MCP服务器地址</span>
 <span class="w">    </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8001</span><span class="w">                   </span><span class="c1"># MCP服务器端口</span>
 <span class="w">    </span><span class="nt">max_connections</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10</span><span class="w">          </span><span class="c1"># 最大连接数</span>
 <span class="w">  </span><span class="nt">client</span><span class="p">:</span>
 <span class="w">    </span><span class="nt">retry_attempts</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3</span><span class="w">            </span><span class="c1"># 客户端重试次数</span>
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <h3 id="llm">LLM配置</h3>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span>
-<span class="normal">5</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nt">llm</span><span class="p">:</span>
+<div class="codehilite"><pre><span></span><code><span class="nt">llm</span><span class="p">:</span>
 <span class="w">  </span><span class="nt">model</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;qwen3:8b&quot;</span><span class="w">             </span><span class="c1"># LLM模型名称</span>
 <span class="w">  </span><span class="nt">base_url</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;http://localhost:11434&quot;</span><span class="w">  </span><span class="c1"># LLM服务地址</span>
 <span class="w">  </span><span class="nt">temperature</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.6</span><span class="w">              </span><span class="c1"># 温度参数（0-1，越高越随机）</span>
 <span class="w">  </span><span class="nt">max_tokens</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">4000</span><span class="w">              </span><span class="c1"># 最大生成token数</span>
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <h3 id="_34">安全配置</h3>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span>
-<span class="normal">5</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nt">security</span><span class="p">:</span>
+<div class="codehilite"><pre><span></span><code><span class="nt">security</span><span class="p">:</span>
 <span class="w">  </span><span class="nt">enable_sandbox</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">          </span><span class="c1"># 是否启用沙箱</span>
 <span class="w">  </span><span class="nt">dangerous_commands</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;rm</span><span class="nv"> </span><span class="s">-rf&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;format&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;shutdown&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;reboot&quot;</span><span class="p p-Indicator">]</span><span class="w">  </span><span class="c1"># 危险命令列表</span>
 <span class="w">  </span><span class="nt">allow_network</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">           </span><span class="c1"># 是否允许网络操作</span>
 <span class="w">  </span><span class="nt">allow_file_system</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">       </span><span class="c1"># 是否允许文件系统操作</span>
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
+<h4 id="_35">安全沙箱说明</h4>
+<p>安全沙箱系统为文件系统操作提供安全边界，防止意外操作对系统造成损害。</p>
+<p><strong>路径限制</strong>：
+- 允许路径：桌面、文档、下载、图片、音乐、视频、当前工作目录
+- 非系统盘支持：允许在 D、E 等非系统盘的任何路径操作
+- 禁止路径：Windows、Program Files、System32 等系统目录
+- 路径遍历检测：防止使用 <code>../</code> 等方式访问沙箱外路径</p>
+<p><strong>操作安全</strong>：
+- 操作白名单：只允许安全的操作类型（create、read、write、list、copy、check_permission、search、read_write）
+- 危险操作确认：delete、move 操作需要用户确认</p>
 <h3 id="ui">UI配置</h3>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span>
-<span class="normal">5</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nt">ui</span><span class="p">:</span>
+<div class="codehilite"><pre><span></span><code><span class="nt">ui</span><span class="p">:</span>
 <span class="w">  </span><span class="nt">title</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;智能桌面系统&quot;</span><span class="w">         </span><span class="c1"># 窗口标题</span>
 <span class="w">  </span><span class="nt">width</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">800</span><span class="w">                    </span><span class="c1"># 窗口宽度</span>
 <span class="w">  </span><span class="nt">height</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">600</span><span class="w">                   </span><span class="c1"># 窗口高度</span>
 <span class="w">  </span><span class="nt">theme</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;light&quot;</span><span class="w">                </span><span class="c1"># 主题（light/dark）</span>
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
-<h3 id="_35">缓存配置</h3>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
-<span class="normal"> 2</span>
-<span class="normal"> 3</span>
-<span class="normal"> 4</span>
-<span class="normal"> 5</span>
-<span class="normal"> 6</span>
-<span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span>
-<span class="normal">14</span>
-<span class="normal">15</span>
-<span class="normal">16</span>
-<span class="normal">17</span>
-<span class="normal">18</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nt">cache</span><span class="p">:</span>
+<h3 id="_36">缓存配置</h3>
+<div class="codehilite"><pre><span></span><code><span class="nt">cache</span><span class="p">:</span>
 <span class="w">  </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">                  </span><span class="c1"># 是否启用缓存（总开关）</span>
 <span class="w">  </span><span class="nt">enable_hash_match</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">         </span><span class="c1"># 哈希精确匹配开关</span>
 <span class="w">  </span><span class="nt">enable_faiss_match</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span><span class="w">       </span><span class="c1"># FAISS语义匹配开关</span>
@@ -522,9 +530,9 @@
 
 <span class="w">  </span><span class="nt">similarity_threshold</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.85</span><span class="w">    </span><span class="c1"># 相似度阈值（0-1）</span>
 <span class="w">  </span><span class="nt">embedding_model</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;nomic-embed-text&quot;</span><span class="w">  </span><span class="c1"># Embedding模型</span>
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
-<h4 id="_36">缓存配置说明</h4>
+<h4 id="_37">缓存配置说明</h4>
 <p><strong>总开关（enabled）</strong>：
 - <code>true</code>：启用缓存系统（推荐）
 - <code>false</code>：完全禁用缓存，每次请求都会重新生成计划</p>
@@ -534,7 +542,7 @@
 <p><strong>FAISS语义匹配（enable_faiss_match）</strong>：
 - <code>true</code>：启用FAISS语义匹配
 - <code>false</code>：禁用FAISS语义匹配（默认）</p>
-<h4 id="_37">缓存禁用场景说明</h4>
+<h4 id="_38">缓存禁用场景说明</h4>
 <h5 id="1-faissenable_faiss_match-false">1. 何时禁用FAISS语义匹配（enable_faiss_match: false）</h5>
 <p><strong>推荐禁用FAISS语义匹配的场景</strong>：</p>
 <ul>
@@ -576,7 +584,7 @@
 - 响应时间显著增加
 - LLM API调用次数大幅增加
 - 不占用磁盘空间</p>
-<h4 id="_38">缓存匹配策略</h4>
+<h4 id="_39">缓存匹配策略</h4>
 <p>系统采用两层匹配策略：</p>
 <ol>
 <li><strong>第一层：哈希精确匹配</strong></li>
@@ -606,56 +614,38 @@
 - <code>0.90</code>：高精度匹配，缓存命中率较低
 - <code>0.80</code>：宽松匹配，缓存命中率较高</p>
 <p>详细配置指南请参考：<a href="./user_config/CACHE_CONFIG_GUIDE.md">缓存配置指南</a></p>
-<h2 id="_39">使用示例</h2>
+<h2 id="_40">使用示例</h2>
 <h3 id="1_1">示例1：文档转换</h3>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span>
-<span class="normal">5</span>
-<span class="normal">6</span>
-<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code>用户：把桌面上的生成式对抗网络.pdf转为word，放入桌面上的cx文件夹内
+<div class="codehilite"><pre><span></span><code>用户：把桌面上的生成式对抗网络.pdf转为word，放入桌面上的cx文件夹内
 
 系统：
 1. 解析意图：pdf_to_word
 2. 生成计划：使用文档转换工具
 3. 执行计划：转换PDF到Word
 4. 返回结果：转换成功
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <h3 id="2_1">示例2：邮件发送</h3>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span>
-<span class="normal">5</span>
-<span class="normal">6</span>
-<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">用户</span><span class="err">：</span><span class="n">发送邮件到457911161</span><span class="nv">@qq</span><span class="p">.</span><span class="n">com</span><span class="err">，</span><span class="n">主题是</span><span class="ss">&quot;测试&quot;</span><span class="err">，</span><span class="n">内容是</span><span class="ss">&quot;hello&quot;</span>
+<div class="codehilite"><pre><span></span><code><span class="n">用户</span><span class="err">：</span><span class="n">发送邮件到457911161</span><span class="nv">@qq</span><span class="p">.</span><span class="n">com</span><span class="err">，</span><span class="n">主题是</span><span class="ss">&quot;测试&quot;</span><span class="err">，</span><span class="n">内容是</span><span class="ss">&quot;hello&quot;</span>
 
 <span class="n">系统</span><span class="err">：</span>
 <span class="mf">1.</span><span class="w"> </span><span class="n">解析意图</span><span class="err">：</span><span class="n">send_email</span>
 <span class="mf">2.</span><span class="w"> </span><span class="n">生成计划</span><span class="err">：</span><span class="n">使用邮件发送工具</span>
 <span class="mf">3.</span><span class="w"> </span><span class="n">执行计划</span><span class="err">：</span><span class="n">发送邮件</span>
 <span class="mf">4.</span><span class="w"> </span><span class="n">返回结果</span><span class="err">：</span><span class="n">邮件发送成功</span>
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <h3 id="3">示例3：文件操作</h3>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span>
-<span class="normal">5</span>
-<span class="normal">6</span>
-<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code>用户：在桌面上创建一个test.txt文件，写入&quot;hello world&quot;
+<div class="codehilite"><pre><span></span><code>用户：在桌面上创建一个test.txt文件，写入&quot;hello world&quot;
 
 系统：
 1. 解析意图：create_file
 2. 生成计划：使用文件操作工具
 3. 执行计划：创建文件并写入内容
 4. 返回结果：文件创建成功
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
-<h2 id="_40">常见问题</h2>
+<h2 id="_41">常见问题</h2>
 <h3 id="q1">Q1: 意图解析失败怎么办？</h3>
 <p><strong>A</strong>: 检查以下几点：
 1. 确保LLM服务正常运行
@@ -682,9 +672,9 @@
 - 文本：TXT
 - 音频：MP3、WAV（文字转语音）
 - 图片：PNG、JPG（OCR识别）</p>
-<h2 id="_41">最新更新</h2>
+<h2 id="_42">最新更新</h2>
 <h3 id="2026-02-18">2026-02-18</h3>
-<h4 id="_42">新增功能</h4>
+<h4 id="_43">新增功能</h4>
 <ol>
 <li><strong>缓存关键参数配置</strong></li>
 <li>新增<code>system_config/cache_config.json</code>配置文件</li>
@@ -716,7 +706,7 @@
 <li>统一工具参数命名规范</li>
 <li>更好的缓存匹配</li>
 </ol>
-<h4 id="_43">修复问题</h4>
+<h4 id="_44">修复问题</h4>
 <ol>
 <li><strong>意图解析失败</strong></li>
 <li>修复PDF转Word的意图解析问题</li>
@@ -739,7 +729,7 @@
 <li>确保不同操作类型不会被错误匹配</li>
 <li>提高缓存匹配精度</li>
 </ol>
-<h4 id="_44">文档更新</h4>
+<h4 id="_45">文档更新</h4>
 <ol>
 <li><strong>新增文档</strong></li>
 <li><code>system_config/README.md</code>：系统配置说明</li>
@@ -756,7 +746,7 @@
 <li>配置修改建议</li>
 <li>故障排除指南</li>
 </ol>
-<h2 id="_45">相关文档</h2>
+<h2 id="_46">相关文档</h2>
 <ul>
 <li><a href="./DEVELOPER_GUIDE.md">开发者文档</a></li>
 <li><a href="../system_config/README.md">系统配置说明</a></li>

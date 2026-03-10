@@ -1,0 +1,57 @@
+{
+  "type": "Sequence",
+  "name": "移动说明文件到D盘",
+  "id": "sequenceMoveFileToD",
+  "children": [
+    {
+      "type": "Action",
+      "name": "获取桌面路径",
+      "id": "actionGetDesktopPath",
+      "tool": "file_operations",
+      "parameters": {
+        "operation": "list",
+        "path": "桌面"
+      },
+      "intelligence_config": {
+        "enabled": false,
+        "strategy": "hybrid",
+        "auto_execute_threshold": 0.85,
+        "confirm_threshold": 0.6
+      }
+    },
+    {
+      "type": "Action",
+      "name": "查找说明文件",
+      "id": "actionFindDocFile",
+      "tool": "file_operations",
+      "parameters": {
+        "operation": "search",
+        "path": "桌面",
+        "content": "说明.docx"
+      },
+      "intelligence_config": {
+        "enabled": false,
+        "strategy": "hybrid",
+        "auto_execute_threshold": 0.85,
+        "confirm_threshold": 0.6
+      }
+    },
+    {
+      "type": "Action",
+      "name": "移动文件到D盘",
+      "id": "actionMoveFileToD",
+      "tool": "file_operations",
+      "parameters": {
+        "operation": "move",
+        "path": "{{actionFindDocFile.result}}",
+        "destination": "D:\\"
+      },
+      "intelligence_config": {
+        "enabled": false,
+        "strategy": "hybrid",
+        "auto_execute_threshold": 0.85,
+        "confirm_threshold": 0.6
+      }
+    }
+  ]
+}

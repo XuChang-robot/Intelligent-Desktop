@@ -63,6 +63,66 @@
             padding: 0;
             color: #ecf0f1;
         }
+        /* 代码高亮行号样式 - 内联显示 */
+        .codehilite {
+            background-color: #2c3e50;
+            border-radius: 5px;
+            padding: 15px;
+            overflow-x: auto;
+        }
+        .codehilite pre {
+            margin: 0;
+            padding: 0;
+            background-color: transparent;
+        }
+        .codehilite table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: transparent;
+            margin: 0;
+        }
+        .codehilite td {
+            border: none;
+            padding: 0;
+            background-color: transparent;
+        }
+        .codehilite .linenos {
+            color: #7f8c8d;
+            text-align: right;
+            padding-right: 15px;
+            width: 40px;
+            user-select: none;
+            vertical-align: top;
+        }
+        .codehilite .code {
+            width: 100%;
+        }
+        .codehilite pre {
+            margin: 0;
+            line-height: 1.5;
+        }
+        /* 代码语法高亮颜色 */
+        .codehilite .k { color: #ff79c6; } /* Keyword */
+        .codehilite .n { color: #f8f8f2; } /* Name */
+        .codehilite .s { color: #f1fa8c; } /* String */
+        .codehilite .c { color: #6272a4; } /* Comment */
+        .codehilite .o { color: #ff79c6; } /* Operator */
+        .codehilite .p { color: #f8f8f2; } /* Punctuation */
+        .codehilite .mi { color: #bd93f9; } /* Number */
+        .codehilite .nb { color: #8be9fd; } /* Builtin */
+        .codehilite .nf { color: #50fa7b; } /* Function */
+        .codehilite .nc { color: #8be9fd; } /* Class */
+        .codehilite .nd { color: #50fa7b; } /* Decorator */
+        .codehilite .s1 { color: #f1fa8c; } /* String.Single */
+        .codehilite .s2 { color: #f1fa8c; } /* String.Double */
+        .codehilite .kn { color: #ff79c6; } /* Keyword.Namespace */
+        .codehilite .bp { color: #f8f8f2; } /* Name.Builtin.Pseudo */
+        .codehilite .fm { color: #50fa7b; } /* Name.Function.Magic */
+        .codehilite .sa { color: #f1fa8c; } /* String.Affix */
+        .codehilite .ow { color: #ff79c6; } /* Operator.Word */
+        .codehilite .ss { color: #f1fa8c; } /* String.Symbol */
+        .codehilite .vm { color: #8be9fd; } /* Name.Variable.Magic */
+        .codehilite .w { color: #f8f8f2; } /* Text.Whitespace */
         table {
             width: 100%;
             border-collapse: collapse;
@@ -125,7 +185,7 @@
 <li>🧠 <strong>智能意图识别</strong>：自动理解用户需求，支持三种意图类型（task/chat/cannot_execute）</li>
 <li>📋 <strong>任务规划</strong>：基于行为树的任务规划系统，支持复杂任务的自动分解和执行</li>
 <li>🚀 <strong>高效缓存</strong>：基于FAISS向量搜索的混合缓存系统，支持哈希精确匹配和语义匹配</li>
-<li>🔒 <strong>安全可靠</strong>：沙箱隔离、权限控制</li>
+<li>🔒 <strong>安全沙箱</strong>：文件系统操作安全边界，路径限制、操作白名单、危险操作确认</li>
 <li>🧩 <strong>易于扩展</strong>：模块化设计，支持自定义工具</li>
 <li>☁️ <strong>天气查询</strong>：实时天气信息查询和预警通知</li>
 <li>📄 <strong>批量文档处理</strong>：支持批量文件转换和通配符匹配</li>
@@ -139,22 +199,7 @@
 <li>必要的Python库（见requirements.txt）</li>
 </ul>
 <h3 id="_5">安装步骤</h3>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
-<span class="normal"> 2</span>
-<span class="normal"> 3</span>
-<span class="normal"> 4</span>
-<span class="normal"> 5</span>
-<span class="normal"> 6</span>
-<span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span>
-<span class="normal">14</span>
-<span class="normal">15</span>
-<span class="normal">16</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c1"># 1. 克隆仓库</span>
+<div class="codehilite"><pre><span></span><code><span class="c1"># 1. 克隆仓库</span>
 git<span class="w"> </span>clone<span class="w"> </span>https://github.com/XuChang-robot/Intelligent-Desktop.git
 <span class="nb">cd</span><span class="w"> </span>Intelligent-Desktop
 
@@ -170,7 +215,7 @@ ollama<span class="w"> </span>pull<span class="w"> </span>nomic-embed-text
 
 <span class="c1"># 5. 启动系统</span>
 python<span class="w"> </span>main.py
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <h2 id="_6">📚 文档</h2>
 <p>完整的文档请查看 <a href="docs/README.md">docs/README.md</a></p>
@@ -183,6 +228,7 @@ python<span class="w"> </span>main.py
 <h3 id="_8">开发者文档</h3>
 <ul>
 <li>🛠️ <a href="docs/DEVELOPER_GUIDE.md">开发者文档</a> - 系统架构、API参考、扩展开发</li>
+<li>🏗️ <a href="docs/LLM生成行为树架构的优势.md">LLM生成行为树架构的优势</a> - 核心架构设计理念与优势分析</li>
 <li>⚙️ <a href="system_config/README.md">系统配置说明</a> - 系统配置文件说明</li>
 <li>🚀 <a href="docs/cache_system.md">混合缓存系统说明</a> - 缓存系统工作原理</li>
 </ul>
@@ -199,6 +245,7 @@ python<span class="w"> </span>main.py
 <li>创建、读取、写入、删除文件</li>
 <li>移动、复制文件</li>
 <li>列出目录、搜索文件</li>
+<li><strong>安全沙箱</strong>：路径限制、操作白名单、危险操作确认</li>
 </ul>
 <h3 id="pdf">PDF处理</h3>
 <ul>
@@ -283,28 +330,56 @@ python<span class="w"> </span>main.py
 <li><strong>保证一致性</strong>：相同或相似的任务使用相同的执行计划，提高系统稳定性</li>
 <li><strong>支持离线模式</strong>：缓存命中时可以在不连接LLM服务的情况下执行任务</li>
 </ul>
-<h2 id="_21">📁 项目结构</h2>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
-<span class="normal"> 2</span>
-<span class="normal"> 3</span>
-<span class="normal"> 4</span>
-<span class="normal"> 5</span>
-<span class="normal"> 6</span>
-<span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span>
-<span class="normal">14</span>
-<span class="normal">15</span>
-<span class="normal">16</span>
-<span class="normal">17</span>
-<span class="normal">18</span>
-<span class="normal">19</span>
-<span class="normal">20</span>
-<span class="normal">21</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">Intelligence_Desktop</span><span class="o">/</span>
+<h4 id="_21">安全沙箱系统</h4>
+<p>安全沙箱系统为文件系统操作提供安全边界，防止意外操作对系统造成损害。</p>
+<h5 id="_22">安全策略</h5>
+<ul>
+<li><strong>路径限制</strong>：</li>
+<li>允许路径：桌面、文档、下载、图片、音乐、视频、当前工作目录</li>
+<li>非系统盘支持：允许在 D、E 等非系统盘的任何路径操作</li>
+<li>禁止路径：Windows、Program Files、System32 等系统目录</li>
+<li>路径遍历检测：防止使用 <code>../</code> 等方式访问沙箱外路径</li>
+<li>
+<p>符号链接检查：防止通过符号链接绕过沙箱限制</p>
+</li>
+<li>
+<p><strong>操作安全</strong>：</p>
+</li>
+<li>操作白名单：只允许安全的操作类型（create、read、write、list、copy、check_permission、search、read_write）</li>
+<li>危险操作确认：delete、move 操作需要用户确认</li>
+</ul>
+<h5 id="_23">安全策略级别</h5>
+<p>系统提供三种安全策略级别：</p>
+<ol>
+<li><strong>默认策略</strong>：</li>
+<li>适合大多数使用场景</li>
+<li>
+<p>平衡安全性和易用性</p>
+</li>
+<li>
+<p><strong>严格策略</strong>：</p>
+</li>
+<li>只允许桌面目录操作</li>
+<li>禁止所有系统盘操作</li>
+<li>
+<p>只允许基本操作（create、read、write、list）</p>
+</li>
+<li>
+<p><strong>宽松策略</strong>：</p>
+</li>
+<li>允许所有非系统盘操作</li>
+<li>允许更多操作类型</li>
+<li>适合高级用户</li>
+</ol>
+<h5 id="_24">安全沙箱的好处</h5>
+<ul>
+<li><strong>防止系统损坏</strong>：限制对系统目录的访问，防止意外删除或修改系统文件</li>
+<li><strong>数据保护</strong>：通过路径限制和操作白名单，保护用户数据安全</li>
+<li><strong>用户确认</strong>：危险操作需要用户确认，防止误操作</li>
+<li><strong>灵活配置</strong>：支持多种安全策略级别，满足不同用户需求</li>
+</ul>
+<h2 id="_25">📁 项目结构</h2>
+<div class="codehilite"><pre><span></span><code><span class="n">Intelligence_Desktop</span><span class="o">/</span>
 <span class="err">├──</span><span class="w"> </span><span class="n">mcp_client</span><span class="o">/</span><span class="w">              </span><span class="c1"># MCP客户端</span>
 <span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">intent_parser</span><span class="o">.</span><span class="n">py</span><span class="w">      </span><span class="c1"># 意图解析</span>
 <span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">task_planner</span><span class="o">.</span><span class="n">py</span><span class="w">      </span><span class="c1"># 任务规划</span>
@@ -318,6 +393,7 @@ python<span class="w"> </span>main.py
 <span class="err">│</span><span class="w">       </span><span class="err">├──</span><span class="w"> </span><span class="n">text_processing</span><span class="o">.</span><span class="n">py</span>
 <span class="err">│</span><span class="w">       </span><span class="err">├──</span><span class="w"> </span><span class="n">email_processor</span><span class="o">.</span><span class="n">py</span>
 <span class="err">│</span><span class="w">       </span><span class="err">├──</span><span class="w"> </span><span class="n">network_request</span><span class="o">.</span><span class="n">py</span>
+<span class="err">│</span><span class="w">       </span><span class="err">├──</span><span class="w"> </span><span class="n">security_sandbox</span><span class="o">.</span><span class="n">py</span><span class="w">  </span><span class="c1"># 安全沙箱</span>
 <span class="err">│</span><span class="w">       </span><span class="err">└──</span><span class="w"> </span><span class="n">query</span><span class="o">/</span><span class="w">          </span><span class="c1"># 查询工具</span>
 <span class="err">│</span><span class="w">           </span><span class="err">└──</span><span class="w"> </span><span class="n">weather_query</span><span class="o">.</span><span class="n">py</span><span class="w">  </span><span class="c1"># 天气查询工具</span>
 <span class="err">├──</span><span class="w"> </span><span class="n">system_config</span><span class="o">/</span><span class="w">         </span><span class="c1"># 系统配置（用户不应该修改）</span>
@@ -325,10 +401,10 @@ python<span class="w"> </span>main.py
 <span class="err">├──</span><span class="w"> </span><span class="n">cache</span><span class="o">/</span><span class="w">                </span><span class="c1"># 缓存目录</span>
 <span class="err">├──</span><span class="w"> </span><span class="n">docs</span><span class="o">/</span><span class="w">                 </span><span class="c1"># 文档</span>
 <span class="err">└──</span><span class="w"> </span><span class="n">main</span><span class="o">.</span><span class="n">py</span><span class="w">              </span><span class="c1"># 主程序</span>
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
-<h2 id="_22">⚙️ 配置</h2>
-<h3 id="_23">用户配置</h3>
+<h2 id="_26">⚙️ 配置</h2>
+<h3 id="_27">用户配置</h3>
 <p>用户配置文件位于 <code>user_config/config.yaml</code>，包含以下配置项：</p>
 <ul>
 <li><strong>MCP配置</strong>：服务器地址、端口、连接数</li>
@@ -340,12 +416,12 @@ python<span class="w"> </span>main.py
 <li><strong>缓存配置</strong>：启用状态、大小限制、相似度阈值</li>
 </ul>
 <p>详细配置说明请参考：<a href="user_config/README.md">用户配置说明</a></p>
-<h3 id="_24">系统配置</h3>
+<h3 id="_28">系统配置</h3>
 <p>系统配置文件位于 <code>system_config/cache_config.json</code>，包含缓存关键参数配置。</p>
 <p><strong>注意</strong>：系统配置由系统维护，用户不应该修改。</p>
 <p>详细配置说明请参考：<a href="system_config/README.md">系统配置说明</a></p>
-<h2 id="_25">🔧 开发</h2>
-<h3 id="_26">添加新工具</h3>
+<h2 id="_29">🔧 开发</h2>
+<h3 id="_30">添加新工具</h3>
 <ol>
 <li>在 <code>mcp_server/tools/</code> 下创建新工具文件</li>
 <li>实现工具接口</li>
@@ -354,15 +430,8 @@ python<span class="w"> </span>main.py
 <li>更新LLM提示词</li>
 </ol>
 <p>详细开发指南请参考：<a href="docs/DEVELOPER_GUIDE.md">开发者文档</a></p>
-<h3 id="_27">测试</h3>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span>
-<span class="normal">5</span>
-<span class="normal">6</span>
-<span class="normal">7</span>
-<span class="normal">8</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c1"># 运行所有测试</span>
+<h3 id="_31">测试</h3>
+<div class="codehilite"><pre><span></span><code><span class="c1"># 运行所有测试</span>
 pytest<span class="w"> </span>tests/
 
 <span class="c1"># 测试缓存系统</span>
@@ -370,9 +439,9 @@ python<span class="w"> </span>test_cache_hit_complete.py
 
 <span class="c1"># 测试不同操作</span>
 python<span class="w"> </span>test_different_operations.py
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
-<h2 id="_28">📊 性能</h2>
+<h2 id="_32">📊 性能</h2>
 <p>混合缓存系统提供了显著的性能提升：</p>
 <table>
 <thead>
@@ -399,7 +468,7 @@ python<span class="w"> </span>test_different_operations.py
 </tbody>
 </table>
 <p>详细性能分析请参考：<a href="docs/cache_system.md">混合缓存系统说明</a></p>
-<h2 id="_29">🤝 贡献</h2>
+<h2 id="_33">🤝 贡献</h2>
 <p>欢迎贡献代码、报告问题或提出建议！</p>
 <ol>
 <li>Fork 本仓库</li>
@@ -408,35 +477,35 @@ python<span class="w"> </span>test_different_operations.py
 <li>推送到分支 (<code>git push origin feature/AmazingFeature</code>)</li>
 <li>开启 Pull Request</li>
 </ol>
-<h2 id="_30">📄 许可证</h2>
+<h2 id="_34">📄 许可证</h2>
 <p>本项目采用 MIT 许可证 - 详见 <a href="LICENSE">LICENSE</a> 文件</p>
-<h2 id="_31">📞 联系方式</h2>
+<h2 id="_35">📞 联系方式</h2>
 <ul>
 <li>项目主页：<a href="https://github.com/XuChang-robot/Intelligent-Desktop">https://github.com/XuChang-robot/Intelligent-Desktop</a></li>
 <li>问题反馈：<a href="https://github.com/XuChang-robot/Intelligent-Desktop/issues">https://github.com/XuChang-robot/Intelligent-Desktop/issues</a></li>
 </ul>
-<h2 id="_32">📝 更新日志</h2>
+<h2 id="_36">📝 更新日志</h2>
 <h3 id="2026-02-24">2026-02-24</h3>
-<h4 id="_33">修复问题</h4>
+<h4 id="_37">修复问题</h4>
 <ul>
 <li>🐛 修复天气查询逻辑中的TypeError错误</li>
 <li>🐛 修复天气查询结果中的日期显示问题</li>
 <li>🐛 修复国外天气查询的风向风力信息显示问题</li>
 <li>🐛 修复任务规划函数调用时的参数顺序问题</li>
 </ul>
-<h4 id="_34">系统优化</h4>
+<h4 id="_38">系统优化</h4>
 <ul>
 <li>⚡ 优化天气查询逻辑，支持国内外城市的不同API响应格式</li>
 <li>⚡ 优化缓存系统，提高缓存命中率</li>
 </ul>
-<h4 id="_35">文档更新</h4>
+<h4 id="_39">文档更新</h4>
 <ul>
 <li>📚 更新用户使用说明，添加行为树任务规划的概念说明</li>
 <li>📚 更新开发者文档，添加行为树系统的架构说明</li>
 <li>📚 更新配置指南，添加缓存系统的详细说明</li>
 </ul>
 <h3 id="2026-02-21">2026-02-21</h3>
-<h4 id="_36">新增功能</h4>
+<h4 id="_40">新增功能</h4>
 <ul>
 <li>✨ 意图识别优化：支持三种意图类型（task/chat/cannot_execute）</li>
 <li>✨ 任务规划优化：采用两层缓存匹配（哈希精确匹配 + FAISS语义匹配）</li>
@@ -446,14 +515,14 @@ python<span class="w"> </span>test_different_operations.py
 <li>✨ 批量文档处理：支持通配符匹配和批量文件转换</li>
 <li>✨ LLM思考过程显示：可折叠的思考过程</li>
 </ul>
-<h4 id="_37">修复问题</h4>
+<h4 id="_41">修复问题</h4>
 <ul>
 <li>🐛 修复天气查询结果中的日期显示问题</li>
 <li>🐛 修复混合缓存系统中的实体模板提取和操作类型不匹配问题</li>
 <li>🐛 修复聊天窗口步骤间缺少换行的问题</li>
 <li>🐛 集成fast-json-repair库修复malformed JSON问题</li>
 </ul>
-<h4 id="_38">系统优化</h4>
+<h4 id="_42">系统优化</h4>
 <ul>
 <li>⚡ 重构意图解析系统，支持三种意图类型判断</li>
 <li>⚡ 优化任务规划逻辑，支持缓存模板和完整计划生成</li>
@@ -462,7 +531,7 @@ python<span class="w"> </span>test_different_operations.py
 <li>⚡ 支持entities为字典或列表格式</li>
 <li>⚡ 支持批量操作（num_inputs数组）</li>
 </ul>
-<h4 id="_39">文档更新</h4>
+<h4 id="_43">文档更新</h4>
 <ul>
 <li>📚 更新用户使用说明，添加意图识别和任务规划详细说明</li>
 <li>📚 更新开发者文档，添加系统架构和API参考</li>
@@ -471,7 +540,7 @@ python<span class="w"> </span>test_different_operations.py
 <li>📚 更新缓存系统文档，添加故障排除指南</li>
 </ul>
 <h3 id="2026-02-18">2026-02-18</h3>
-<h4 id="_40">新增功能</h4>
+<h4 id="_44">新增功能</h4>
 <ul>
 <li>✨ 缓存关键参数配置</li>
 <li>✨ 配置文件分离（system_config/user_config）</li>
@@ -479,13 +548,13 @@ python<span class="w"> </span>test_different_operations.py
 <li>✨ 网络请求工具优化（operation参数）</li>
 <li>✨ 完整文档系统（用户文档、开发者文档、配置指南）</li>
 </ul>
-<h4 id="_41">修复问题</h4>
+<h4 id="_45">修复问题</h4>
 <ul>
 <li>🐛 修复意图解析失败问题</li>
 <li>🐛 修复缓存未命中问题</li>
 <li>🐛 修复模板匹配过于宽松问题</li>
 </ul>
-<h4 id="_42">文档更新</h4>
+<h4 id="_46">文档更新</h4>
 <ul>
 <li>📚 新增用户使用说明</li>
 <li>📚 新增开发者文档</li>

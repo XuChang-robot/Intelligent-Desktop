@@ -63,6 +63,66 @@
             padding: 0;
             color: #ecf0f1;
         }
+        /* 代码高亮行号样式 - 内联显示 */
+        .codehilite {
+            background-color: #2c3e50;
+            border-radius: 5px;
+            padding: 15px;
+            overflow-x: auto;
+        }
+        .codehilite pre {
+            margin: 0;
+            padding: 0;
+            background-color: transparent;
+        }
+        .codehilite table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: transparent;
+            margin: 0;
+        }
+        .codehilite td {
+            border: none;
+            padding: 0;
+            background-color: transparent;
+        }
+        .codehilite .linenos {
+            color: #7f8c8d;
+            text-align: right;
+            padding-right: 15px;
+            width: 40px;
+            user-select: none;
+            vertical-align: top;
+        }
+        .codehilite .code {
+            width: 100%;
+        }
+        .codehilite pre {
+            margin: 0;
+            line-height: 1.5;
+        }
+        /* 代码语法高亮颜色 */
+        .codehilite .k { color: #ff79c6; } /* Keyword */
+        .codehilite .n { color: #f8f8f2; } /* Name */
+        .codehilite .s { color: #f1fa8c; } /* String */
+        .codehilite .c { color: #6272a4; } /* Comment */
+        .codehilite .o { color: #ff79c6; } /* Operator */
+        .codehilite .p { color: #f8f8f2; } /* Punctuation */
+        .codehilite .mi { color: #bd93f9; } /* Number */
+        .codehilite .nb { color: #8be9fd; } /* Builtin */
+        .codehilite .nf { color: #50fa7b; } /* Function */
+        .codehilite .nc { color: #8be9fd; } /* Class */
+        .codehilite .nd { color: #50fa7b; } /* Decorator */
+        .codehilite .s1 { color: #f1fa8c; } /* String.Single */
+        .codehilite .s2 { color: #f1fa8c; } /* String.Double */
+        .codehilite .kn { color: #ff79c6; } /* Keyword.Namespace */
+        .codehilite .bp { color: #f8f8f2; } /* Name.Builtin.Pseudo */
+        .codehilite .fm { color: #50fa7b; } /* Name.Function.Magic */
+        .codehilite .sa { color: #f1fa8c; } /* String.Affix */
+        .codehilite .ow { color: #ff79c6; } /* Operator.Word */
+        .codehilite .ss { color: #f1fa8c; } /* String.Symbol */
+        .codehilite .vm { color: #8be9fd; } /* Name.Variable.Magic */
+        .codehilite .w { color: #f8f8f2; } /* Text.Whitespace */
         table {
             width: 100%;
             border-collapse: collapse;
@@ -127,48 +187,34 @@
 <p>本指南将帮助您根据实际使用场景配置缓存系统。</p>
 <h2 id="_3">缓存配置项</h2>
 <h3 id="_4">基本配置</h3>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span>
-<span class="normal">5</span>
-<span class="normal">6</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nt">cache</span><span class="p">:</span>
+<div class="codehilite"><pre><span></span><code><span class="nt">cache</span><span class="p">:</span>
 <span class="w">  </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">                  </span><span class="c1"># 是否启用缓存（总开关）</span>
 <span class="w">  </span><span class="nt">enable_hash_match</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">         </span><span class="c1"># 哈希精确匹配开关</span>
 <span class="w">  </span><span class="nt">enable_faiss_match</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span><span class="w">       </span><span class="c1"># FAISS语义匹配开关</span>
 <span class="w">  </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;faiss&quot;</span><span class="w">                 </span><span class="c1"># 缓存类型</span>
 <span class="w">  </span><span class="nt">cache_dir</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;cache&quot;</span><span class="w">            </span><span class="c1"># 缓存目录</span>
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <h3 id="_5">时间和大小配置</h3>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span>
-<span class="normal">5</span>
-<span class="normal">6</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nt">cache</span><span class="p">:</span>
+<div class="codehilite"><pre><span></span><code><span class="nt">cache</span><span class="p">:</span>
 <span class="w">  </span><span class="nt">ttl</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">604800</span><span class="w">                   </span><span class="c1"># 缓存过期时间（秒），默认一周</span>
 <span class="w">  </span><span class="nt">max_total_size_mb</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1024</span><span class="w">       </span><span class="c1"># 总大小限制（1GB）</span>
 <span class="w">  </span><span class="nt">max_db_size_mb</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">768</span><span class="w">           </span><span class="c1"># SQLite数据库最大768MB</span>
 <span class="w">  </span><span class="nt">max_faiss_size_mb</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">392</span><span class="w">       </span><span class="c1"># FAISS索引最大392MB</span>
 <span class="w">  </span><span class="nt">max_records</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">100000</span><span class="w">           </span><span class="c1"># 最多100000条记录</span>
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <h3 id="_6">清理策略配置</h3>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nt">cache</span><span class="p">:</span>
+<div class="codehilite"><pre><span></span><code><span class="nt">cache</span><span class="p">:</span>
 <span class="w">  </span><span class="nt">cleanup_interval</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3600</span><span class="w">        </span><span class="c1"># 清理间隔（秒），默认1小时</span>
 <span class="w">  </span><span class="nt">cleanup_on_startup</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">     </span><span class="c1"># 启动时清理过期缓存</span>
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <h3 id="_7">匹配参数配置</h3>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nt">cache</span><span class="p">:</span>
+<div class="codehilite"><pre><span></span><code><span class="nt">cache</span><span class="p">:</span>
 <span class="w">  </span><span class="nt">similarity_threshold</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.85</span><span class="w">    </span><span class="c1"># 相似度阈值（0-1）</span>
 <span class="w">  </span><span class="nt">embedding_model</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;nomic-embed-text&quot;</span><span class="w">  </span><span class="c1"># Embedding模型</span>
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <h2 id="_8">缓存禁用场景说明</h2>
 <h3 id="1-faissenable_faiss_match-false">1. 何时禁用FAISS语义匹配（enable_faiss_match: false）</h3>
@@ -186,14 +232,11 @@
 - 缓存命中率降低，但精确性提高
 - 减少内存和CPU消耗</p>
 <p><strong>配置示例</strong>：</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nt">cache</span><span class="p">:</span>
+<div class="codehilite"><pre><span></span><code><span class="nt">cache</span><span class="p">:</span>
 <span class="w">  </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
 <span class="w">  </span><span class="nt">enable_hash_match</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
 <span class="w">  </span><span class="nt">enable_faiss_match</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span><span class="w">  </span><span class="c1"># 禁用FAISS语义匹配</span>
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <h3 id="2-enable_hash_match-false">2. 何时禁用哈希精确匹配（enable_hash_match: false）</h3>
 <p><strong>推荐禁用哈希精确匹配的场景</strong>：</p>
@@ -208,14 +251,11 @@
 - 缓存命中率大幅降低
 - 通常不建议单独禁用</p>
 <p><strong>配置示例</strong>：</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nt">cache</span><span class="p">:</span>
+<div class="codehilite"><pre><span></span><code><span class="nt">cache</span><span class="p">:</span>
 <span class="w">  </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
 <span class="w">  </span><span class="nt">enable_hash_match</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span><span class="w">  </span><span class="c1"># 禁用哈希精确匹配</span>
 <span class="w">  </span><span class="nt">enable_faiss_match</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <h3 id="3-enabled-false">3. 何时全局禁用缓存（enabled: false）</h3>
 <p><strong>推荐全局禁用缓存的场景</strong>：</p>
@@ -233,10 +273,9 @@
 - LLM API调用次数大幅增加
 - 不占用磁盘空间</p>
 <p><strong>配置示例</strong>：</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nt">cache</span><span class="p">:</span>
+<div class="codehilite"><pre><span></span><code><span class="nt">cache</span><span class="p">:</span>
 <span class="w">  </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span><span class="w">  </span><span class="c1"># 全局禁用缓存</span>
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <h2 id="_9">缓存匹配策略</h2>
 <p>系统采用两层匹配策略：</p>
@@ -270,23 +309,7 @@
 </ul>
 <h2 id="_13">推荐配置</h2>
 <h3 id="1">方案1：保守配置（推荐）</h3>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
-<span class="normal"> 2</span>
-<span class="normal"> 3</span>
-<span class="normal"> 4</span>
-<span class="normal"> 5</span>
-<span class="normal"> 6</span>
-<span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span>
-<span class="normal">14</span>
-<span class="normal">15</span>
-<span class="normal">16</span>
-<span class="normal">17</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nt">cache</span><span class="p">:</span>
+<div class="codehilite"><pre><span></span><code><span class="nt">cache</span><span class="p">:</span>
 <span class="w">  </span><span class="c1"># 总大小限制</span>
 <span class="w">  </span><span class="nt">max_total_size_mb</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1024</span><span class="w">  </span><span class="c1"># 1GB</span>
 
@@ -303,30 +326,14 @@
 <span class="w">  </span><span class="c1"># 清理策略</span>
 <span class="w">  </span><span class="nt">cleanup_interval</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3600</span><span class="w">   </span><span class="c1"># 清理间隔（秒），默认1小时</span>
 <span class="w">  </span><span class="nt">cleanup_on_startup</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w"> </span><span class="c1"># 启动时清理过期缓存</span>
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <p><strong>适用场景</strong>：
 - 系统资源充足
 - 需要高缓存命中率
 - SQLite查询频繁</p>
 <h3 id="2">方案2：平衡配置</h3>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
-<span class="normal"> 2</span>
-<span class="normal"> 3</span>
-<span class="normal"> 4</span>
-<span class="normal"> 5</span>
-<span class="normal"> 6</span>
-<span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span>
-<span class="normal">14</span>
-<span class="normal">15</span>
-<span class="normal">16</span>
-<span class="normal">17</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nt">cache</span><span class="p">:</span>
+<div class="codehilite"><pre><span></span><code><span class="nt">cache</span><span class="p">:</span>
 <span class="w">  </span><span class="c1"># 总大小限制</span>
 <span class="w">  </span><span class="nt">max_total_size_mb</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1024</span><span class="w">  </span><span class="c1"># 1GB</span>
 
@@ -343,30 +350,14 @@
 <span class="w">  </span><span class="c1"># 清理策略</span>
 <span class="w">  </span><span class="nt">cleanup_interval</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3600</span><span class="w">   </span><span class="c1"># 清理间隔（秒），默认1小时</span>
 <span class="w">  </span><span class="nt">cleanup_on_startup</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w"> </span><span class="c1"># 启动时清理过期缓存</span>
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <p><strong>适用场景</strong>：
 - 系统资源适中
 - 平衡缓存命中率和存储效率
 - 一般使用场景</p>
 <h3 id="3">方案3：激进配置</h3>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
-<span class="normal"> 2</span>
-<span class="normal"> 3</span>
-<span class="normal"> 4</span>
-<span class="normal"> 5</span>
-<span class="normal"> 6</span>
-<span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span>
-<span class="normal">14</span>
-<span class="normal">15</span>
-<span class="normal">16</span>
-<span class="normal">17</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nt">cache</span><span class="p">:</span>
+<div class="codehilite"><pre><span></span><code><span class="nt">cache</span><span class="p">:</span>
 <span class="w">  </span><span class="c1"># 总大小限制</span>
 <span class="w">  </span><span class="nt">max_total_size_mb</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1024</span><span class="w">  </span><span class="c1"># 1GB</span>
 
@@ -383,7 +374,7 @@
 <span class="w">  </span><span class="c1"># 清理策略</span>
 <span class="w">  </span><span class="nt">cleanup_interval</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3600</span><span class="w">   </span><span class="c1"># 清理间隔（秒），默认1小时</span>
 <span class="w">  </span><span class="nt">cleanup_on_startup</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w"> </span><span class="c1"># 启动时清理过期缓存</span>
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <p><strong>适用场景</strong>：
 - SQLite查询非常频繁

@@ -7,6 +7,9 @@ from enum import Enum
 from pydantic import BaseModel
 from mcp.server.fastmcp import Context
 import logging
+import json
+
+from .tool_llm_client import ToolLLMClient
 
 
 class ToolResult:
@@ -189,26 +192,301 @@ class ToolBase(ABC):
         pass
     
     async def safe_execute(self, ctx: Optional[Context] = None, **kwargs) -> Dict[str, Any]:
-        """安全执行工具操作，包含参数验证和异常处理
+        """安全执行工具操作，包含参数验证、推理修正和异常处理
         
         Args:
             ctx: FastMCP上下文
-            **kwargs: 参数字典
+            **kwargs: 参数字典（包含 execution_mode 字段）
             
         Returns:
             执行结果
         """
         try:
-            params, config_error = self.validate_parameters(**kwargs)
+            from user_config.config import get_config
+            max_inference_attempts = get_config('execution_intelligence.inference.max_attempts', 2)
             
-            if config_error:
+            for attempt in range(max_inference_attempts + 1):
+                # 1. 验证参数
+                params, config_error = self.validate_parameters(**kwargs)
+                
+                # 2. 验证通过，执行工具
+                if not config_error:
+                    return await self.execute(ctx=ctx, **params)
+                
+                # 3. 验证失败，尝试推理（如果还有尝试次数）
+                if attempt < max_inference_attempts and self.has_infer_permission(**kwargs):
+                    inference_result = await self._infer_and_fix_parameters(config_error, kwargs)
+                    
+                    if inference_result['success']:
+                        # 推理成功，更新参数，继续验证
+                        kwargs = inference_result['params']
+                        self.logger.info(f"参数推理修正成功（第 {attempt + 1} 次）")
+                        continue
+                
+                # 4. 推理失败或无推理权限，尝试确认
+                if self.has_confirm_permission(**kwargs):
+                    return await self._confirm_with_errors(ctx, config_error, kwargs)
+                
+                # 5. 无任何权限，返回错误
                 return ToolResult.config_error(config_error).build()
             
-            return await self.execute(ctx=ctx, **params)
+            # 6. 达到最大尝试次数仍未成功
+            return ToolResult.config_error("参数验证失败，已达最大推理次数").build()
             
         except Exception as e:
             self.logger.error(f"工具执行异常: {e}", exc_info=True)
             return ToolResult.error(str(e)).build()
+    
+    def get_execution_mode(self, **kwargs) -> str:
+        """获取执行模式
+        
+        Args:
+            **kwargs: 参数字典
+            
+        Returns:
+            执行模式字符串
+        """
+        return kwargs.get('execution_mode', 'direct')
+    
+    def has_confirm_permission(self, **kwargs) -> bool:
+        """检查是否有确认权限
+        
+        Args:
+            **kwargs: 参数字典
+            
+        Returns:
+            是否有确认权限
+        """
+        mode = self.get_execution_mode(**kwargs)
+        return mode in ['confirm', 'intelligent']
+    
+    def has_infer_permission(self, **kwargs) -> bool:
+        """检查是否有推断权限
+        
+        Args:
+            **kwargs: 参数字典
+            
+        Returns:
+            是否有推断权限
+        """
+        mode = self.get_execution_mode(**kwargs)
+        return mode in ['infer', 'intelligent']
+    
+    def _get_confirm_model(self):
+        """获取确认模型，用于elicitation"""
+        return self._ConfirmModel()
+    
+    async def _trigger_elicitation(self, ctx, message: str) -> bool:
+        """触发确认
+        
+        Args:
+            ctx: FastMCP上下文
+            message: 确认消息
+            
+        Returns:
+            用户是否确认
+        """
+        result = await ctx.elicit(
+            message=message,
+            schema=self._get_confirm_model()
+        )
+        return result.action == "accept" and getattr(result.data, "confirmed", False)
+    
+    async def _confirm_with_permission(self, ctx: Optional[Context], message: str, **kwargs) -> bool:
+        """根据权限触发确认
+        
+        Args:
+            ctx: FastMCP上下文
+            message: 确认消息
+            **kwargs: 参数字典（包含 execution_mode）
+            
+        Returns:
+            是否继续执行（True=继续，False=取消）
+        """
+        if not self.has_confirm_permission(**kwargs) or not ctx:
+            return True
+        return await self._trigger_elicitation(ctx, message)
+    
+    async def _infer_and_fix_parameters(self, error: str, params: Dict[str, Any]) -> Dict[str, Any]:
+        """推理修正参数
+        
+        Args:
+            error: 参数错误信息
+            params: 当前参数字典
+            
+        Returns:
+            推理结果，包含 success 和 params 字段
+        """
+        try:
+            tool_llm_client = ToolLLMClient()
+            
+            # 获取工具支持的操作和参数信息
+            operation = params.get('operation', 'unknown')
+            op_config = self.OPERATION_CONFIG.get(operation, None)
+            
+            # 构建参数说明
+            param_info = ""
+            if op_config:
+                param_info = f"""必需参数: {', '.join(op_config.required_params) if op_config.required_params else '无'}
+                                 可选参数: {', '.join(op_config.optional_params) if op_config.optional_params else '无'}
+                                 操作说明: {op_config.description}"""
+            else:
+                # 如果没有操作配置，显示所有支持的操作
+                supported_ops = list(self.OPERATION_CONFIG.keys())
+                param_info = f"""支持的操作: {', '.join(supported_ops) if supported_ops else '未配置'}
+                                 注意: 当前操作 '{operation}' 不在支持列表中"""
+            
+            prompt = f"""你是一个参数校正大师，请根据已知信息和错误信息分析原因，仅修正引发错误问题的参数并按格式输出。
+
+                        【工具信息】
+                        工具名称: {self.TOOL_NAME}
+                        操作类型: {operation}
+
+                        【当前参数】
+                        {json.dumps(params, ensure_ascii=False, indent=2)}
+
+                        【错误信息】
+                        {error}
+                        
+                        【输出格式】
+                        返回 JSON 对象，包含：
+                        - success: 是否成功修正引发错误的全部参数（必需）
+                        - fixed_params: 修正后的参数对象（必需）
+                        - reason: 修正原因说明（可选）
+
+                        ## 示例：
+                        如果某工具缺失参数1和参数2，可以合理推断两者值为值1和值2，返回：
+                        {{
+                        "success": true,
+                        "fixed_params": {{"参数1": "值1", "参数2": "值2"}},
+                        "reason": "xxx"
+                        }}
+
+                        如果无法修正引发错误的全部参数，返回：
+                        {{
+                        "success": false,
+                        "fixed_params": {{}},
+                        "reason": "无法推断合理的参数值"
+                        }}
+
+                        如果仅能修正引发错误的部分参数，例如参数1可以推断为值1，但是参数2无法推断，返回：
+                        {{
+                        "success": false,
+                        "fixed_params": {{"参数1": "值1" }},
+                        "reason": "无法推断全部参数值"
+                        }}
+
+                        ## 示例结束
+
+                        注意：只返回JSON，不要包含任何解释、注释或其他文字。
+                        """
+            
+            # 记录提示词
+            self.logger.info(f"执行智能参数推理，提示词: {prompt}")
+
+            # 使用结构化输出
+            result = await tool_llm_client.generate_structured(prompt)
+            
+            success = result.get('success', False)
+            fixed_params = result.get('fixed_params', {})
+            reason = result.get('reason', '')
+            
+            if not success:
+                self.logger.warning(f"参数推理失败: {reason}")
+                return {'success': False, 'params': params}
+            
+            # 合并修正后的参数
+            merged_params = {**params, **fixed_params}
+            self.logger.info(f"参数推理成功: {reason}。修正前: {json.dumps(params, ensure_ascii=False)}，修正后: {json.dumps(merged_params, ensure_ascii=False)}")
+            return {'success': True, 'params': merged_params}
+            
+        except Exception as e:
+            self.logger.error(f"参数推理失败: {e}")
+            return {'success': False, 'params': params}
+    
+    def _create_parameter_fix_model(self, params: Dict[str, Any]) -> Type[BaseModel]:
+        """创建参数修正模型
+        
+        Args:
+            params: 当前参数字典
+            
+        Returns:
+            动态创建的参数修正模型
+        """
+        # 创建注解字典
+        annotations = {}
+        # 创建字段字典
+        fields = {}
+        
+        for key, value in params.items():
+            # 为每个参数添加类型注解
+            annotations[key] = str
+            # 设置默认值
+            fields[key] = value
+        
+        # 创建并返回动态模型
+        return type('ParameterFixModel', (BaseModel,), {
+            '__annotations__': annotations,
+            **fields
+        })
+    
+    async def _confirm_with_errors(self, ctx: Optional[Context], error: str, params: Dict[str, Any]) -> Dict[str, Any]:
+        """参数错误时触发用户修正
+        
+        Args:
+            ctx: FastMCP上下文
+            error: 错误信息
+            params: 当前参数
+            
+        Returns:
+            执行结果
+        """
+        if not ctx:
+            return ToolResult.config_error(error).build()
+        
+        # 创建参数修正模型
+        fix_model = self._create_parameter_fix_model(params)
+        
+        # 构建修正消息
+        message = f"""参数验证失败: {error}
+
+请修正以下参数："""
+        
+        # 触发参数修正界面
+        result = await ctx.elicit(
+            message=message,
+            schema=fix_model
+        )
+        
+        if result.action != "accept":
+            return ToolResult.error("用户取消执行").build()
+        
+        # 获取修正后的参数
+        # AcceptedElicitation 包含 data 字段，DeclinedElicitation/CancelledElicitation 没有 data
+        if hasattr(result, 'data'):
+            corrected_params = result.data.model_dump() if hasattr(result.data, 'model_dump') else dict(result.data)
+        else:
+            return ToolResult.error("用户取消执行").build()
+        
+        # 验证修正后的参数
+        validated_params, validation_error = self.validate_parameters(**corrected_params)
+        
+        if validation_error:
+            # 参数仍有问题，再次触发修正
+            return await self._confirm_with_errors(ctx, validation_error, corrected_params)
+        
+        # 参数验证通过，执行工具
+        return await self.execute(ctx=ctx, **validated_params)
+
+    
+    def _format_params(self, params: Dict[str, Any]) -> str:
+        """格式化参数显示"""
+        import json
+        return json.dumps(params, ensure_ascii=False, indent=2)
+    
+    class _ConfirmModel(BaseModel):
+        """确认模型，用于elicitation"""
+        confirmed: bool = True
 
 
 class ToolRegistry:
@@ -260,7 +538,7 @@ def register_tool(tool_name: str):
 
 class ConfirmModel(BaseModel):
     """确认模型，用于elicitation"""
-    confirmed: bool
+    confirmed: bool = True
 
 
 class ToolParameters(BaseModel):

@@ -106,15 +106,19 @@ class SessionManager:
         """
         logging.info("服务器需要更多信息...")
         logging.info(f"消息: {params.message}")
+        logging.info(f"Schema: {params.requestedSchema}")
         
         if self.elicitation_callback:
             try:
-                # 调用UI回调获取用户确认
-                user_approved = await self.elicitation_callback(params.message)
-                logging.info(f"用户确认结果: {user_approved}")
-                if user_approved:
-                    # 使用content而不是data来返回用户输入的数据
-                    result = ElicitResult(action="accept", content={"confirmed": True})
+                # 调用UI回调获取用户确认，传递schema
+                user_response = await self.elicitation_callback(params.message, params.requestedSchema)
+                logging.info(f"用户响应结果: {user_response}")
+                
+                action = user_response.get("action", "decline")
+                if action == "accept":
+                    # 使用content返回用户输入的数据
+                    content = user_response.get("content", {"confirmed": True})
+                    result = ElicitResult(action="accept", content=content)
                     logging.info(f"返回accept结果: {result}")
                     return result
                 else:
@@ -588,9 +592,6 @@ class MCPClient:
                 tree_config = intent["tree_config"]
                 self.logger.debug(f"使用行为树配置: {tree_config}")
                 
-                # 自动保存行为树配置到日志目录
-                self._save_tree_config(tree_config, query)
-                
                 if self.ui_callback:
                     self.ui_callback("task_update", {"description": f"行为树配置生成完成"})
                     self.ui_callback("loading", True, "行为树配置生成完成...")
@@ -607,8 +608,12 @@ class MCPClient:
                 
                 # 执行行为树
                 try:
-                    # 从行为树配置构建树
+                    # 从行为树配置构建树（build_from_config 会对配置进行预处理）
                     self.behavior_tree.build_from_config(tree_config)
+                    
+                    # 保存处理后的行为树配置（包含 intelligence_config 等）
+                    processed_config = self.behavior_tree.get_config()
+                    self._save_tree_config(processed_config, query)
                     
                     # 执行行为树（同步方式）
                     execution_result = await self.behavior_tree.execute()

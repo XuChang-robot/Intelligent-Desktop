@@ -94,3 +94,25 @@ class BehaviorTreeBlackboard:
         self.entities.clear()
         py_trees.blackboard.Blackboard.storage.clear()
         self.logger.debug("黑板已清空")
+    
+    def get_user_input(self) -> str:
+        """获取用户原始输入"""
+        return py_trees.blackboard.Blackboard.storage.get('user_input', '')
+    
+    def set_user_input(self, user_input: str):
+        """设置用户原始输入"""
+        py_trees.blackboard.Blackboard.storage['user_input'] = user_input
+    
+    def get_all_node_results(self) -> Dict[str, Any]:
+        """获取所有节点结果"""
+        results = {}
+        for key, value in py_trees.blackboard.Blackboard.storage.items():
+            if key not in ['user_input', 'entities']:
+                results[key] = value
+        return results
+    
+    def set_inference_result(self, node_id: str, inference_data: Dict[str, Any]):
+        """存储推断结果"""
+        key = f"{node_id}_inference"
+        py_trees.blackboard.Blackboard.storage[key] = inference_data
+        self.logger.debug(f"存储推断结果: {key} = {inference_data}")

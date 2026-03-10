@@ -1,0 +1,422 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>执行智能模式实现指南</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+            margin-top: 30px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 30px;
+            border-bottom: 2px solid #ecf0f1;
+            padding-bottom: 5px;
+        }
+        h3 {
+            color: #7f8c8d;
+            margin-top: 25px;
+        }
+        h4 {
+            color: #95a5a6;
+            margin-top: 20px;
+        }
+        a {
+            color: #3498db;
+            text-decoration: none;
+        }
+        a:hover {
+            color: #2980b9;
+            text-decoration: underline;
+        }
+        code {
+            background-color: #f8f9fa;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        pre {
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+        pre code {
+            background-color: transparent;
+            padding: 0;
+            color: #ecf0f1;
+        }
+        /* 代码高亮行号样式 - 内联显示 */
+        .codehilite {
+            background-color: #2c3e50;
+            border-radius: 5px;
+            padding: 15px;
+            overflow-x: auto;
+        }
+        .codehilite pre {
+            margin: 0;
+            padding: 0;
+            background-color: transparent;
+        }
+        .codehilite table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: transparent;
+            margin: 0;
+        }
+        .codehilite td {
+            border: none;
+            padding: 0;
+            background-color: transparent;
+        }
+        .codehilite .linenos {
+            color: #7f8c8d;
+            text-align: right;
+            padding-right: 15px;
+            width: 40px;
+            user-select: none;
+            vertical-align: top;
+        }
+        .codehilite .code {
+            width: 100%;
+        }
+        .codehilite pre {
+            margin: 0;
+            line-height: 1.5;
+        }
+        /* 代码语法高亮颜色 */
+        .codehilite .k { color: #ff79c6; } /* Keyword */
+        .codehilite .n { color: #f8f8f2; } /* Name */
+        .codehilite .s { color: #f1fa8c; } /* String */
+        .codehilite .c { color: #6272a4; } /* Comment */
+        .codehilite .o { color: #ff79c6; } /* Operator */
+        .codehilite .p { color: #f8f8f2; } /* Punctuation */
+        .codehilite .mi { color: #bd93f9; } /* Number */
+        .codehilite .nb { color: #8be9fd; } /* Builtin */
+        .codehilite .nf { color: #50fa7b; } /* Function */
+        .codehilite .nc { color: #8be9fd; } /* Class */
+        .codehilite .nd { color: #50fa7b; } /* Decorator */
+        .codehilite .s1 { color: #f1fa8c; } /* String.Single */
+        .codehilite .s2 { color: #f1fa8c; } /* String.Double */
+        .codehilite .kn { color: #ff79c6; } /* Keyword.Namespace */
+        .codehilite .bp { color: #f8f8f2; } /* Name.Builtin.Pseudo */
+        .codehilite .fm { color: #50fa7b; } /* Name.Function.Magic */
+        .codehilite .sa { color: #f1fa8c; } /* String.Affix */
+        .codehilite .ow { color: #ff79c6; } /* Operator.Word */
+        .codehilite .ss { color: #f1fa8c; } /* String.Symbol */
+        .codehilite .vm { color: #8be9fd; } /* Name.Variable.Magic */
+        .codehilite .w { color: #f8f8f2; } /* Text.Whitespace */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background-color: white;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        ul, ol {
+            background-color: white;
+            padding: 15px 30px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .toc {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .toc ul {
+            background-color: transparent;
+            padding: 0;
+            margin: 0;
+        }
+        .toc li {
+            margin-bottom: 8px;
+        }
+        .section {
+            background-color: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .update {
+            background-color: #ecf0f1;
+            padding: 15px;
+            border-left: 4px solid #3498db;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1 id="_1">执行智能模式实现指南</h1>
+<h2 id="_2">概述</h2>
+<p>执行智能模式是行为树系统中的高级功能，允许工具根据用户配置和上下文智能地决定执行策略。系统通过权限管理和确认机制，为用户提供灵活、安全的工具执行体验。</p>
+<h2 id="_3">架构设计</h2>
+<h3 id="_4">权限层级</h3>
+<p>执行智能采用分层权限设计，从最低权限到最高权限：</p>
+<table>
+<thead>
+<tr>
+<th>模式</th>
+<th>权限</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>direct</strong></td>
+<td>🚫 禁止</td>
+<td>完全禁用执行智能，直接执行工具</td>
+</tr>
+<tr>
+<td><strong>infer</strong></td>
+<td>🔵 仅推断</td>
+<td>只允许 LLM 推断缺失参数，不触发用户确认</td>
+</tr>
+<tr>
+<td><strong>confirm</strong></td>
+<td>🟡 仅确认</td>
+<td>只允许触发用户确认，不进行 LLM 推断</td>
+</tr>
+<tr>
+<td><strong>intelligent</strong></td>
+<td>🟢 全开</td>
+<td>同时允许 LLM 推断和用户确认，智能决策</td>
+</tr>
+</tbody>
+</table>
+<h3 id="_5">配置流程</h3>
+<div class="codehilite"><pre><span></span><code><span class="err">用户配置</span><span class="w"> </span><span class="p">(</span><span class="n">user_config</span><span class="o">/</span><span class="n">config</span><span class="o">.</span><span class="n">yaml</span><span class="p">)</span>
+<span class="w">  </span><span class="err">↓</span>
+<span class="w">  </span><span class="s1">&#39;confirm&#39;</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="s1">&#39;infer&#39;</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="s1">&#39;intelligent&#39;</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="s1">&#39;direct&#39;</span>
+<span class="w">  </span><span class="err">↓</span>
+<span class="n">behavior_tree</span><span class="o">.</span><span class="n">py</span><span class="w"> </span><span class="err">直接使用用户配置作为</span><span class="w"> </span><span class="n">strategy</span>
+<span class="w">  </span><span class="err">↓</span>
+<span class="n">nodes</span><span class="o">.</span><span class="n">py</span><span class="w"> </span><span class="err">直接将</span><span class="w"> </span><span class="n">strategy</span><span class="w"> </span><span class="err">作为</span><span class="w"> </span><span class="n">execution_mode</span><span class="w"> </span><span class="err">传递</span>
+<span class="w">  </span><span class="err">↓</span>
+<span class="n">tool_base</span><span class="o">.</span><span class="n">py</span><span class="w"> </span><span class="err">处理权限</span>
+<span class="w">  </span><span class="err">↓</span>
+<span class="err">工具根据</span><span class="w"> </span><span class="n">execution_mode</span><span class="w"> </span><span class="err">决定行为</span>
+</code></pre></div>
+
+<h2 id="_6">工具支持智能模式</h2>
+<h3 id="_7">必需步骤</h3>
+<h4 id="1-execution_mode">步骤1：在工具注册函数中添加 execution_mode 参数</h4>
+<p>在 MCP 工具注册函数中，需要添加 <code>execution_mode</code> 和 <code>ctx</code> 两个参数：</p>
+<ul>
+<li><code>execution_mode</code>：执行模式参数，接收用户配置的执行策略</li>
+<li><code>ctx</code>：FastMCP 上下文参数，用于触发用户确认</li>
+</ul>
+<p>这两个参数都应该设置为可选参数（<code>Optional</code>），默认值为 <code>None</code>。</p>
+<h4 id="2-execute-execution_mode">步骤2：在 execute 方法中处理 execution_mode</h4>
+<p>在工具的 <code>execute</code> 方法中，根据 <code>execution_mode</code> 的值决定是否需要用户确认：</p>
+<ul>
+<li>如果 <code>execution_mode</code> 为 <code>confirm</code> 或 <code>intelligent</code>，则检查确认权限</li>
+<li>如果有确认权限，则构建确认消息并触发用户确认</li>
+<li>如果用户取消，则返回错误结果；否则继续执行</li>
+</ul>
+<h4 id="3">步骤3：调用基类的确认方法</h4>
+<p>使用基类提供的 <code>_confirm_with_permission</code> 方法来触发用户确认：</p>
+<ul>
+<li>该方法会自动检查权限，只有在有确认权限时才会触发</li>
+<li>如果权限不足或上下文不存在，则直接返回 <code>True</code>（继续执行）</li>
+<li>如果有权限，则调用 <code>_trigger_elicitation</code> 触发用户确认</li>
+</ul>
+<h3 id="_8">基类提供的接口</h3>
+<h4 id="_9">权限检查方法</h4>
+<p>基类提供了以下权限检查方法：</p>
+<ul>
+<li><code>get_execution_mode(**kwargs)</code>：获取执行模式，默认值为 <code>direct</code></li>
+<li><code>has_confirm_permission(**kwargs)</code>：检查是否有确认权限，返回 <code>True</code> 或 <code>False</code></li>
+<li><code>has_infer_permission(**kwargs)</code>：检查是否有推断权限，返回 <code>True</code> 或 <code>False</code></li>
+</ul>
+<p>这些方法会从 <code>kwargs</code> 中提取 <code>execution_mode</code> 参数，并根据其值返回相应的权限状态。</p>
+<h4 id="_10">确认方法</h4>
+<p>基类提供了 <code>_confirm_with_permission(ctx, message, **kwargs)</code> 方法：</p>
+<ul>
+<li>该方法会自动检查确认权限</li>
+<li>如果有权限，则触发用户确认</li>
+<li>返回 <code>True</code> 表示继续执行，返回 <code>False</code> 表示用户取消</li>
+</ul>
+<h3 id="_11">配置文件</h3>
+<p>在 <code>user_config/config.yaml</code> 中配置工具的默认执行模式：</p>
+<div class="codehilite"><pre><span></span><code><span class="nt">execution_intelligence</span><span class="p">:</span>
+<span class="w">  </span><span class="c1"># 工具执行模式配置</span>
+<span class="w">  </span><span class="nt">tool_intelligent_mode</span><span class="p">:</span>
+<span class="w">    </span><span class="c1"># 不支持智能模式的工具</span>
+<span class="w">    </span><span class="nt">simple_tool</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;direct&quot;</span>
+
+<span class="w">    </span><span class="c1"># 只需要推断的工具</span>
+<span class="w">    </span><span class="nt">data_processor</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;infer&quot;</span>
+
+<span class="w">    </span><span class="c1"># 只需要确认的工具</span>
+<span class="w">    </span><span class="nt">email_processor</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;confirm&quot;</span>
+<span class="w">    </span><span class="nt">file_operations</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;confirm&quot;</span>
+
+<span class="w">    </span><span class="c1"># 需要智能决策的工具</span>
+<span class="w">    </span><span class="nt">system_command</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;intelligent&quot;</span>
+<span class="w">    </span><span class="nt">network_request</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;intelligent&quot;</span>
+</code></pre></div>
+
+<h2 id="_12">实现示例</h2>
+<h3 id="1">示例1：简单的数据处理工具（不需要智能模式）</h3>
+<p><strong>特点</strong>：
+- 工具执行低风险操作，不需要用户确认
+- 在注册函数中添加 <code>execution_mode</code> 参数，但不使用
+- 直接执行工具逻辑，不检查权限</p>
+<p><strong>适用场景</strong>：
+- 数据格式转换
+- 文本处理
+- 信息查询</p>
+<h3 id="2">示例2：邮件发送工具（需要确认）</h3>
+<p><strong>特点</strong>：
+- 工具执行高风险操作，需要用户确认
+- 在 <code>execute</code> 方法中检查确认权限
+- 构建详细的确认消息，包含收件人、主题、附件等信息
+- 如果用户取消，返回错误结果</p>
+<p><strong>适用场景</strong>：
+- 发送邮件
+- 发送消息
+- 提交表单</p>
+<h3 id="3_1">示例3：文件操作工具（部分操作需要确认）</h3>
+<p><strong>特点</strong>：
+- 工具执行多种操作，部分需要确认
+- 根据操作类型决定是否需要确认
+- 删除、移动等破坏性操作需要确认
+- 读取、写入等非破坏性操作不需要确认</p>
+<p><strong>适用场景</strong>：
+- 文件系统操作
+- 数据库操作
+- 系统配置修改</p>
+<h2 id="_13">最佳实践</h2>
+<h3 id="1_1">1. 何时需要确认</h3>
+<p><strong>需要确认的操作</strong>：
+- 删除文件/文件夹
+- 移动文件/文件夹
+- 发送邮件
+- 执行系统命令
+- 修改系统配置
+- 网络请求（POST/PUT/DELETE）</p>
+<p><strong>不需要确认的操作</strong>：
+- 读取文件
+- 写入文件（非覆盖）
+- 列出目录
+- 搜索文件
+- 接收邮件
+- GET 请求</p>
+<h3 id="2_1">2. 确认消息格式</h3>
+<p><strong>好的确认消息</strong>应该包含：
+- 操作类型（如"发送邮件"、"删除文件"）
+- 关键参数（如收件人、文件路径）
+- 附加信息（如附件数量、文件大小）
+- 服务器信息（如 SMTP 服务器）</p>
+<p><strong>不好的确认消息</strong>：
+- 信息太少，用户无法了解操作详情
+- 信息太多，用户难以快速理解
+- 格式混乱，难以阅读</p>
+<h3 id="3_2">3. 错误处理</h3>
+<p><strong>建议的错误处理模式</strong>：
+1. 使用 try-except 捕获异常
+2. 记录错误日志，包含异常堆栈
+3. 返回友好的错误消息
+4. 确保资源正确释放</p>
+<h3 id="4">4. 配置建议</h3>
+<p><strong>默认模式选择</strong>：
+- 高风险操作：使用 <code>confirm</code> 模式
+- 中等风险操作：使用 <code>intelligent</code> 模式
+- 低风险操作：使用 <code>direct</code> 模式
+- 需要智能推断的操作：使用 <code>infer</code> 模式</p>
+<h2 id="_14">调试</h2>
+<h3 id="_15">启用调试日志</h3>
+<p>在 <code>user_config/config.yaml</code> 中启用开发者模式：</p>
+<div class="codehilite"><pre><span></span><code><span class="nt">dev_mode</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">  </span><span class="nt">enable_thinking</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">  </span><span class="c1"># 显示 LLM 思考过程</span>
+</code></pre></div>
+
+<h3 id="_16">查看调试日志</h3>
+<p><strong>查看行为树执行日志</strong>：</p>
+<div class="codehilite"><pre><span></span><code>tail<span class="w"> </span>-f<span class="w"> </span>logs/app.log<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span><span class="s2">&quot;execution_mode&quot;</span>
+</code></pre></div>
+
+<p><strong>查看工具调用日志</strong>：</p>
+<div class="codehilite"><pre><span></span><code>tail<span class="w"> </span>-f<span class="w"> </span>logs/app.log<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span><span class="s2">&quot;工具:&quot;</span>
+</code></pre></div>
+
+<p><strong>查看执行智能日志</strong>：</p>
+<div class="codehilite"><pre><span></span><code>tail<span class="w"> </span>-f<span class="w"> </span>logs/app.log<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span><span class="s2">&quot;执行智能&quot;</span>
+</code></pre></div>
+
+<h3 id="_17">常见问题</h3>
+<p><strong>问题1：execution_mode 没有传递到工具</strong></p>
+<p><strong>可能原因</strong>：
+- 工具注册函数中没有添加 <code>execution_mode</code> 参数
+- <code>safe_execute</code> 调用中没有传递 <code>execution_mode</code></p>
+<p><strong>解决方法</strong>：
+- 检查工具注册函数的参数列表
+- 检查 <code>safe_execute</code> 调用的参数传递</p>
+<p><strong>问题2：确认没有触发</strong></p>
+<p><strong>可能原因</strong>：
+- <code>execution_mode</code> 不是 <code>confirm</code> 或 <code>intelligent</code>
+- 工具中没有正确调用 <code>_confirm_with_permission</code>
+- <code>ctx</code> 参数没有正确传递</p>
+<p><strong>解决方法</strong>：
+- 检查 <code>execution_mode</code> 的值
+- 检查工具中的确认逻辑
+- 检查 <code>ctx</code> 参数的传递</p>
+<p><strong>问题3：LLM 推断失败</strong></p>
+<p><strong>可能原因</strong>：
+- LLM 服务没有正常运行
+- 推断服务配置不正确
+- 网络连接问题</p>
+<p><strong>解决方法</strong>：
+- 检查 LLM 服务状态
+- 检查推断服务配置
+- 查看推断服务日志</p>
+<h2 id="_18">总结</h2>
+<p>执行智能模式为行为树系统提供了灵活、安全的工具执行机制。工具开发者可以通过以下步骤支持智能模式：</p>
+<ol>
+<li>在工具注册函数中添加 <code>execution_mode</code> 参数</li>
+<li>在 <code>execute</code> 方法中检查权限并触发确认</li>
+<li>在配置文件中设置工具的默认执行模式</li>
+<li>根据操作风险级别决定是否需要确认</li>
+</ol>
+<p>通过合理使用执行智能模式，可以提升用户体验，同时确保系统安全性。</p>
+<h2 id="_19">相关文档</h2>
+<ul>
+<li><a href="./执行智能的三种策略.html">执行智能的三种策略</a></li>
+<li><a href="./LLM生成行为树架构的优势.html">LLM生成行为树架构的优势</a></li>
+<li><a href="./DEVELOPER_GUIDE.html">开发者文档</a></li>
+</ul>
+</body>
+</html>

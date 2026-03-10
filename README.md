@@ -55,6 +55,7 @@ python main.py
 ### 开发者文档
 
 - 🛠️ [开发者文档](docs/DEVELOPER_GUIDE.md) - 系统架构、API参考、扩展开发
+- 🏗️ [LLM生成行为树架构的优势](docs/LLM生成行为树架构的优势.md) - 核心架构设计理念与优势分析
 - ⚙️ [系统配置说明](system_config/README.md) - 系统配置文件说明
 - 🚀 [混合缓存系统说明](docs/cache_system.md) - 缓存系统工作原理
 

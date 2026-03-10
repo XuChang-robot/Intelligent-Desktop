@@ -1,16 +1,19 @@
 # 主窗口界面 (PyQt6版本)
 
+from typing import Dict, Any, Optional, Callable
 from PyQt6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
                                QLabel, QTextEdit, QLineEdit, QPushButton, 
                                QComboBox, QFrame, QSplitter, QScrollArea,
-                               QSizePolicy, QMessageBox, QProgressBar, QStatusBar)
-from PyQt6.QtCore import Qt, QThread, pyqtSignal, QTimer, QUrl, QSize, QBuffer, QIODevice
+                               QSizePolicy, QMessageBox, QProgressBar, QStatusBar, QDialog)
+from PyQt6.QtCore import Qt, QThread, pyqtSignal, QTimer, QUrl, QSize, QBuffer, QIODevice, QObject, pyqtSlot
 from PyQt6.QtGui import QFont, QColor, QPalette, QTextCursor, QTextDocument, QIcon, QPixmap, QImage, QTextImageFormat, QPen
 from PyQt6.QtNetwork import QNetworkAccessManager, QNetworkRequest, QNetworkReply
-from typing import Dict, Any, Optional, Callable
+from PyQt6.QtWebEngineWidgets import QWebEngineView
+from PyQt6.QtWebChannel import QWebChannel
 import logging
 import re
 import base64
+from ui.components.parameter_fix import ParameterFixComponent
 
 class ChatTextEdit(QTextEdit):
     """自定义文本编辑框，处理链接点击"""
@@ -170,6 +173,24 @@ class ModernStyle:
         """
         app.setStyleSheet(stylesheet)
 
+class ParameterFixHandler(QObject):
+    """参数修正处理器"""
+    
+    def __init__(self, main_window):
+        super().__init__()
+        self.main_window = main_window
+    
+    @pyqtSlot(str)
+    def sendResponse(self, response_json):
+        """接收JavaScript发送的响应"""
+        import json
+        try:
+            response = json.loads(response_json)
+            self.main_window.handle_elicitation_response(response)
+        except Exception as e:
+            logging.error(f"处理JavaScript响应失败: {e}")
+
+
 class MainWindow(QMainWindow):
     """主窗口"""
     
@@ -183,6 +204,10 @@ class MainWindow(QMainWindow):
         self.task_history = []  # 任务历史记录
         self.elicitation_callback = None  # 当前elicitation回调
         self.elicitation_handled = False  # 是否已处理elicitation响应
+        
+        # 参数修正相关
+        self.current_schema = None
+        self.original_params = None
         
         # 流式消息管理
         self.stream_message_id = None  # 当前流式消息的ID
@@ -226,6 +251,9 @@ class MainWindow(QMainWindow):
         
         # 聊天区域
         self.create_chat_area(splitter)
+        
+        # 初始化参数修正组件
+        self.parameter_fix_component = ParameterFixComponent(self.chat_area)
         
         # 任务显示区域
         self.create_task_area(splitter)
@@ -349,7 +377,8 @@ class MainWindow(QMainWindow):
             char_format = cursor.charFormat()
             if char_format.isAnchor():
                 href = char_format.anchorHref()
-                if href and (href == "confirm:yes" or href == "confirm:no"):
+                if href and (href == "confirm:yes" or href == "confirm:no" or 
+                            href == "param:confirm" or href == "param:reset" or href == "param:cancel"):
                     # 设置为手形光标
                     obj.setCursor(Qt.CursorShape.PointingHandCursor)
                     return True
@@ -361,9 +390,42 @@ class MainWindow(QMainWindow):
     def handle_chat_link_clicked(self, href: str):
         """处理聊天区域链接点击"""
         if href == "confirm:yes":
-            self.handle_elicitation_response(True)
+            self.handle_elicitation_response({"action": "accept", "content": {"confirmed": True}})
         elif href == "confirm:no":
-            self.handle_elicitation_response(False)
+            self.handle_elicitation_response({"action": "decline"})
+        elif href == "param:confirm":
+            # 确认参数修改
+            # 这里需要收集表单中的参数值
+            # 由于HTML表单在QTextEdit中，无法直接获取值
+            # 暂时使用原始参数作为默认值
+            if hasattr(self, 'original_params') and self.original_params is not None:
+                params = {}
+                try:
+                    for param_name, param_info in self.original_params.items():
+                        # 确保提供有效的默认值，而不是None
+                        if isinstance(param_info, dict):
+                            # 如果param_info是字典，获取default值
+                            default_value = param_info.get('default', '')
+                            if default_value is None:
+                                default_value = ''
+                        else:
+                            # 如果param_info不是字典，直接使用它作为默认值
+                            default_value = param_info if param_info is not None else ''
+                        params[param_name] = default_value
+                    self.handle_elicitation_response({"action": "accept", "content": params})
+                except (AttributeError, TypeError):
+                    # 如果original_params不是可迭代对象，使用空字典
+                    self.handle_elicitation_response({"action": "accept", "content": {}})
+            else:
+                self.handle_elicitation_response({"action": "accept", "content": {}})
+        elif href == "param:reset":
+            # 重置参数到默认值
+            if hasattr(self, 'current_schema'):
+                # 重新显示参数修正对话框
+                self.show_parameter_fix_dialog("请修正参数:", self.current_schema)
+        elif href == "param:cancel":
+            # 取消参数修改
+            self.handle_elicitation_response({"action": "decline"})
         
     def create_task_area(self, parent_splitter):
         """创建任务显示区域"""
@@ -805,7 +867,67 @@ class MainWindow(QMainWindow):
         # 确保滚动到底部
         self.chat_area.moveCursor(QTextCursor.MoveOperation.End)
     
-    def handle_elicitation_response(self, confirmed: bool):
+    def on_elicitation_request(self, message: str, schema: Optional[Dict[str, Any]] = None):
+        """处理elicitation请求，支持schema"""
+        if schema:
+            # 显示参数修正对话框
+            self.show_parameter_fix_dialog(message, schema)
+        else:
+            # 显示简单确认对话框
+            self.show_confirm_dialog(message)
+    
+    def show_confirm_dialog(self, message: str):
+        """显示确认对话框"""
+        # 清空现有内容，重新构建HTML
+        current_html = self.chat_area.toHtml()
+        
+        # 确保HTML结构正确
+        if "</body>" not in current_html:
+            current_html = "<html><body style='font-family: Arial, sans-serif; font-size: 14px;'></body></html>"
+        
+        # 创建交互式确认消息的HTML
+        message_html = f"<div style='margin: 5px 0;'>"
+        message_html += f"<div style='color: #FF9800; font-weight: bold; text-align: left; margin-bottom: 3px;'>⚠️ 系统确认:</div>"
+        message_html += f"<div style='text-align: left; padding: 12px; background-color: #FFF3E0; border-radius: 10px; max-width: 80%; margin-right: auto; border-left: 4px solid #FF9800; white-space: pre-wrap;'>"
+        message_html += f"<div style='margin-bottom: 8px;'>{message}</div>"
+        message_html += f"<div style='margin-top: 8px;'>"
+        message_html += f"<a href='confirm:yes' style='display: inline-block; padding: 8px 16px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 6px; margin-right: 8px; border: 2px solid #388E3C; font-weight: bold; cursor: pointer;'>✅ 确认执行</a>"
+        message_html += f"<a href='confirm:no' style='display: inline-block; padding: 8px 16px; background-color: #F44336; color: white; text-decoration: none; border-radius: 6px; border: 2px solid #D32F2F; font-weight: bold; cursor: pointer;'>❌ 取消执行</a>"
+        message_html += f"</div>"
+        message_html += f"</div>"
+        message_html += "</div>"
+        
+        # 将新消息插入到HTML中
+        new_html = current_html.replace("</body>", message_html + "</body>")
+        
+        # 设置新的HTML内容
+        self.chat_area.setHtml(new_html)
+        
+        # 确保滚动到底部
+        self.chat_area.moveCursor(QTextCursor.MoveOperation.End)
+        
+        # 标记为未处理
+        self.elicitation_handled = False
+    
+
+    
+    def show_parameter_fix_dialog(self, message: str, schema: Dict[str, Any]):
+        """显示参数修正对话框（嵌入到聊天记录）"""
+        # 使用新的ParameterFixComponent
+        self.parameter_fix_component.show_parameter_fix_dialog(message, schema)
+        
+        # 保存参数信息用于后续处理
+        self.original_params = schema
+        self.elicitation_handled = False
+    
+
+    
+    def _refresh_chat_area(self):
+        """刷新聊天区域，移除已处理的交互元素"""
+        # 使用新的ParameterFixComponent
+        self.parameter_fix_component.refresh_chat_area()
+    
+    def handle_elicitation_response(self, response: Dict[str, Any]):
         """处理elicitation响应"""
         # 检查是否已经处理过
         if self.elicitation_handled:
@@ -820,10 +942,14 @@ class MainWindow(QMainWindow):
         
         # 调用回调函数
         if callback:
-            callback(confirmed)
+            callback(response)
+        
+        # 刷新聊天区域，移除已处理的交互元素
+        self._refresh_chat_area()
         
         # 在聊天区域显示用户选择
-        if confirmed:
+        action = response.get("action", "decline")
+        if action == "accept":
             self.add_message("系统", "✅ 用户确认：允许执行")
         else:
             self.add_message("系统", "❌ 用户取消：拒绝执行")

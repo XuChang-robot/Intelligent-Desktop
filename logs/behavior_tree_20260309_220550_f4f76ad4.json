@@ -1,0 +1,25 @@
+{
+  "type": "Sequence",
+  "name": "Root",
+  "children": [
+    {
+      "type": "Action",
+      "name": "发送邮件",
+      "id": "actionSendEmail",
+      "tool": "email_processor",
+      "parameters": {
+        "operation": "send",
+        "recipient": "用户指定的邮箱地址",
+        "subject": "用户指定的主题",
+        "body": "用户指定的邮件正文",
+        "attachments": "用户指定的附件路径"
+      },
+      "intelligence_config": {
+        "enabled": true,
+        "strategy": "elicitation",
+        "auto_execute_threshold": 0.85,
+        "confirm_threshold": 0.6
+      }
+    }
+  ]
+}

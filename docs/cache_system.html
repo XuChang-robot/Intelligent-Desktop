@@ -63,6 +63,66 @@
             padding: 0;
             color: #ecf0f1;
         }
+        /* 代码高亮行号样式 - 内联显示 */
+        .codehilite {
+            background-color: #2c3e50;
+            border-radius: 5px;
+            padding: 15px;
+            overflow-x: auto;
+        }
+        .codehilite pre {
+            margin: 0;
+            padding: 0;
+            background-color: transparent;
+        }
+        .codehilite table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: transparent;
+            margin: 0;
+        }
+        .codehilite td {
+            border: none;
+            padding: 0;
+            background-color: transparent;
+        }
+        .codehilite .linenos {
+            color: #7f8c8d;
+            text-align: right;
+            padding-right: 15px;
+            width: 40px;
+            user-select: none;
+            vertical-align: top;
+        }
+        .codehilite .code {
+            width: 100%;
+        }
+        .codehilite pre {
+            margin: 0;
+            line-height: 1.5;
+        }
+        /* 代码语法高亮颜色 */
+        .codehilite .k { color: #ff79c6; } /* Keyword */
+        .codehilite .n { color: #f8f8f2; } /* Name */
+        .codehilite .s { color: #f1fa8c; } /* String */
+        .codehilite .c { color: #6272a4; } /* Comment */
+        .codehilite .o { color: #ff79c6; } /* Operator */
+        .codehilite .p { color: #f8f8f2; } /* Punctuation */
+        .codehilite .mi { color: #bd93f9; } /* Number */
+        .codehilite .nb { color: #8be9fd; } /* Builtin */
+        .codehilite .nf { color: #50fa7b; } /* Function */
+        .codehilite .nc { color: #8be9fd; } /* Class */
+        .codehilite .nd { color: #50fa7b; } /* Decorator */
+        .codehilite .s1 { color: #f1fa8c; } /* String.Single */
+        .codehilite .s2 { color: #f1fa8c; } /* String.Double */
+        .codehilite .kn { color: #ff79c6; } /* Keyword.Namespace */
+        .codehilite .bp { color: #f8f8f2; } /* Name.Builtin.Pseudo */
+        .codehilite .fm { color: #50fa7b; } /* Name.Function.Magic */
+        .codehilite .sa { color: #f1fa8c; } /* String.Affix */
+        .codehilite .ow { color: #ff79c6; } /* Operator.Word */
+        .codehilite .ss { color: #f1fa8c; } /* String.Symbol */
+        .codehilite .vm { color: #8be9fd; } /* Name.Variable.Magic */
+        .codehilite .w { color: #f8f8f2; } /* Text.Whitespace */
         table {
             width: 100%;
             border-collapse: collapse;
@@ -122,17 +182,7 @@
 <h2 id="_2">概述</h2>
 <p>混合缓存系统结合了GPTCache的语义匹配能力和文件持久化存储的优势，为智能桌面系统提供高效的任务计划缓存功能。</p>
 <h2 id="_3">架构设计</h2>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
-<span class="normal"> 2</span>
-<span class="normal"> 3</span>
-<span class="normal"> 4</span>
-<span class="normal"> 5</span>
-<span class="normal"> 6</span>
-<span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span></pre></div></td><td class="code"><div><pre><span></span><code>用户请求
+<div class="codehilite"><pre><span></span><code>用户请求
     ↓
 GPTCache (语义匹配)
     ↓ 缓存命中
@@ -143,7 +193,7 @@ GPTCache (语义匹配)
 GPTCache + 文件持久化 (双重存储)
     ↓
 返回结果
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <h2 id="_4">核心特性</h2>
 <h3 id="1">1. 三层缓存机制</h3>
@@ -166,27 +216,7 @@ GPTCache + 文件持久化 (双重存储)
 </ul>
 <h2 id="_5">配置说明</h2>
 <p>在<code>config/config.yaml</code>中配置缓存系统：</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
-<span class="normal"> 2</span>
-<span class="normal"> 3</span>
-<span class="normal"> 4</span>
-<span class="normal"> 5</span>
-<span class="normal"> 6</span>
-<span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span>
-<span class="normal">14</span>
-<span class="normal">15</span>
-<span class="normal">16</span>
-<span class="normal">17</span>
-<span class="normal">18</span>
-<span class="normal">19</span>
-<span class="normal">20</span>
-<span class="normal">21</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c1"># 缓存配置</span>
+<div class="codehilite"><pre><span></span><code><span class="c1"># 缓存配置</span>
 <span class="nt">cache</span><span class="p">:</span>
 <span class="w">  </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">                  </span><span class="c1"># 是否启用缓存（总开关）</span>
 <span class="w">  </span><span class="nt">enable_hash_match</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">         </span><span class="c1"># 哈希精确匹配开关</span>
@@ -207,7 +237,7 @@ GPTCache + 文件持久化 (双重存储)
 <span class="w">    </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
 <span class="w">    </span><span class="nt">auto_cleanup</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">  </span><span class="c1"># 自动清理过期缓存</span>
 <span class="w">    </span><span class="nt">cleanup_interval</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3600</span><span class="w">  </span><span class="c1"># 清理间隔（秒）</span>
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <h3 id="_6">缓存配置项说明</h3>
 <p><strong>总开关（enabled）</strong>：
@@ -280,24 +310,7 @@ GPTCache + 文件持久化 (双重存储)
 </ol>
 <h2 id="_9">使用方法</h2>
 <h3 id="1-taskplanner">1. 初始化TaskPlanner</h3>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
-<span class="normal"> 2</span>
-<span class="normal"> 3</span>
-<span class="normal"> 4</span>
-<span class="normal"> 5</span>
-<span class="normal"> 6</span>
-<span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span>
-<span class="normal">14</span>
-<span class="normal">15</span>
-<span class="normal">16</span>
-<span class="normal">17</span>
-<span class="normal">18</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">mcp_client.task_planner</span><span class="w"> </span><span class="kn">import</span> <span class="n">TaskPlanner</span>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">mcp_client.task_planner</span><span class="w"> </span><span class="kn">import</span> <span class="n">TaskPlanner</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">mcp_client.llm</span><span class="w"> </span><span class="kn">import</span> <span class="n">LLMClient</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">config.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_config</span>
 
@@ -315,21 +328,10 @@ GPTCache + 文件持久化 (双重存储)
     <span class="n">cache_ttl</span><span class="o">=</span><span class="n">cache_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;ttl&#39;</span><span class="p">,</span> <span class="mi">3600</span><span class="p">),</span>
     <span class="n">similarity_threshold</span><span class="o">=</span><span class="n">cache_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;similarity_threshold&#39;</span><span class="p">,</span> <span class="mf">0.85</span><span class="p">)</span>
 <span class="p">)</span>
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <h3 id="2_1">2. 使用缓存的任务规划</h3>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
-<span class="normal"> 2</span>
-<span class="normal"> 3</span>
-<span class="normal"> 4</span>
-<span class="normal"> 5</span>
-<span class="normal"> 6</span>
-<span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c1"># 规划任务（自动使用缓存）</span>
+<div class="codehilite"><pre><span></span><code><span class="c1"># 规划任务（自动使用缓存）</span>
 <span class="n">intent</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s2">&quot;intent&quot;</span><span class="p">:</span> <span class="s2">&quot;task&quot;</span><span class="p">,</span>
     <span class="s2">&quot;entities&quot;</span><span class="p">:</span> <span class="p">{</span>
@@ -341,22 +343,10 @@ GPTCache + 文件持久化 (双重存储)
 <span class="p">}</span>
 
 <span class="n">plan</span> <span class="o">=</span> <span class="k">await</span> <span class="n">task_planner</span><span class="o">.</span><span class="n">plan_task</span><span class="p">(</span><span class="n">intent</span><span class="p">)</span>
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <h3 id="3_1">3. 缓存管理</h3>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
-<span class="normal"> 2</span>
-<span class="normal"> 3</span>
-<span class="normal"> 4</span>
-<span class="normal"> 5</span>
-<span class="normal"> 6</span>
-<span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c1"># 获取缓存统计信息</span>
+<div class="codehilite"><pre><span></span><code><span class="c1"># 获取缓存统计信息</span>
 <span class="n">stats</span> <span class="o">=</span> <span class="n">task_planner</span><span class="o">.</span><span class="n">get_cache_stats</span><span class="p">()</span>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;总文件数: </span><span class="si">{</span><span class="n">stats</span><span class="p">[</span><span class="s1">&#39;total_files&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;有效文件数: </span><span class="si">{</span><span class="n">stats</span><span class="p">[</span><span class="s1">&#39;valid_files&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
@@ -369,7 +359,7 @@ GPTCache + 文件持久化 (双重存储)
 
 <span class="c1"># 清空所有缓存</span>
 <span class="n">task_planner</span><span class="o">.</span><span class="n">clear_cache</span><span class="p">()</span>
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <h2 id="_10">性能对比</h2>
 <h3 id="_11">测试场景：用户多次发送相同内容的邮件</h3>
@@ -410,8 +400,8 @@ GPTCache + 文件持久化 (双重存储)
 </tbody>
 </table>
 <h2 id="_12">安装依赖</h2>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
-</code></pre></div></td></tr></table></div>
+<div class="codehilite"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
+</code></pre></div>
 
 <p>主要依赖：
 - <code>gptcache</code>：语义缓存库
@@ -419,8 +409,8 @@ GPTCache + 文件持久化 (双重存储)
 - <code>scipy</code>：向量相似度计算</p>
 <h2 id="_13">测试</h2>
 <p>运行测试脚本：</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>python<span class="w"> </span>test_hybrid_cache.py
-</code></pre></div></td></tr></table></div>
+<div class="codehilite"><pre><span></span><code>python<span class="w"> </span>test_hybrid_cache.py
+</code></pre></div>
 
 <p>测试内容包括：
 1. 精确匹配测试
@@ -430,20 +420,7 @@ GPTCache + 文件持久化 (双重存储)
 5. 过期缓存清理</p>
 <h2 id="_14">缓存文件格式</h2>
 <p>缓存文件存储在<code>cache/</code>目录下，文件名格式为<code>{md5_hash}.json</code>：</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
-<span class="normal"> 2</span>
-<span class="normal"> 3</span>
-<span class="normal"> 4</span>
-<span class="normal"> 5</span>
-<span class="normal"> 6</span>
-<span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span>
-<span class="normal">14</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span>
+<div class="codehilite"><pre><span></span><code><span class="p">{</span>
 <span class="w">  </span><span class="nt">&quot;plan&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="nt">&quot;plan&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;发送包含特定内容和合并PDF附件的邮件&quot;</span><span class="p">,</span>
 <span class="w">    </span><span class="nt">&quot;steps&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="err">...</span><span class="p">]</span>
@@ -457,14 +434,13 @@ GPTCache + 文件持久化 (双重存储)
 <span class="w">  </span><span class="nt">&quot;intent_str&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;intent:task entities:收件人邮箱:457911161@qq.com ...&quot;</span><span class="p">,</span>
 <span class="w">  </span><span class="nt">&quot;tools&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;none&quot;</span>
 <span class="p">}</span>
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <h2 id="_15">高级配置</h2>
 <h3 id="_16">调整相似度阈值</h3>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nt">cache</span><span class="p">:</span>
+<div class="codehilite"><pre><span></span><code><span class="nt">cache</span><span class="p">:</span>
 <span class="w">  </span><span class="nt">similarity_threshold</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.90</span><span class="w">  </span><span class="c1"># 更严格的匹配</span>
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <ul>
 <li><strong>0.80-0.85</strong>：宽松匹配，更多缓存命中</li>
@@ -472,10 +448,9 @@ GPTCache + 文件持久化 (双重存储)
 <li><strong>0.90-0.95</strong>：严格匹配，更少误匹配</li>
 </ul>
 <h3 id="_17">调整缓存过期时间</h3>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nt">cache</span><span class="p">:</span>
+<div class="codehilite"><pre><span></span><code><span class="nt">cache</span><span class="p">:</span>
 <span class="w">  </span><span class="nt">ttl</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">7200</span><span class="w">  </span><span class="c1"># 2小时</span>
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <ul>
 <li><strong>1800</strong>：30分钟（适合频繁更新的内容）</li>
@@ -485,20 +460,16 @@ GPTCache + 文件持久化 (双重存储)
 </ul>
 <h3 id="_18">禁用缓存</h3>
 <p>如果需要禁用缓存，可以设置：</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nt">cache</span><span class="p">:</span>
+<div class="codehilite"><pre><span></span><code><span class="nt">cache</span><span class="p">:</span>
 <span class="w">  </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span><span class="w">  </span><span class="c1"># 全局禁用缓存</span>
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <p>或者只禁用特定匹配方式：</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nt">cache</span><span class="p">:</span>
+<div class="codehilite"><pre><span></span><code><span class="nt">cache</span><span class="p">:</span>
 <span class="w">  </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
 <span class="w">  </span><span class="nt">enable_hash_match</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">   </span><span class="c1"># 启用哈希精确匹配</span>
 <span class="w">  </span><span class="nt">enable_faiss_match</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span><span class="w">  </span><span class="c1"># 禁用FAISS语义匹配</span>
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 
 <p>详细配置指南请参考：<a href="../user_config/CACHE_CONFIG_GUIDE.md">缓存配置指南</a></p>
 <h2 id="_19">故障排除</h2>

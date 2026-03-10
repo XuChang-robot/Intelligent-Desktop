@@ -242,7 +242,9 @@ class FileOperationsTool(ToolBase):
         
         processed_path = self._process_path(path)
         
+        # 强制安全检查，不受确认权限影响
         is_safe, error_result = await self._check_security(processed_path, operation, destination, ctx)
+        
         if not is_safe:
             return error_result
         
@@ -253,8 +255,23 @@ class FileOperationsTool(ToolBase):
         elif operation == "read":
             return self._read(processed_path)
         elif operation == "delete":
+            if not await self._confirm_with_permission(
+                ctx,
+                f"确认删除文件/文件夹\n📄 文件: {os.path.basename(processed_path)}\n📍 路径: {processed_path}",
+                **kwargs
+            ):
+                return ToolResult.error("用户取消删除").build()
+            
             return self._delete(processed_path)
         elif operation == "move":
+            processed_destination = self._process_path(destination)
+            if not await self._confirm_with_permission(
+                ctx,
+                f"确认移动文件/文件夹\n📄 源文件: {os.path.basename(processed_path)}\n📍 源路径: {processed_path}\n📄 目标文件: {os.path.basename(processed_destination)}\n📍 目标路径: {processed_destination}",
+                **kwargs
+            ):
+                return ToolResult.error("用户取消移动").build()
+            
             return self._move(processed_path, destination)
         elif operation == "copy":
             return self._copy(processed_path, destination)
@@ -703,6 +720,7 @@ def register_file_operations_tools(mcp, security_checker=None, output_callback=N
         destination: Optional[str] = None,
         overwrite: bool = True,
         mode: Optional[ReadWriteMode] = None,
+        execution_mode: Optional[str] = None,
         ctx: Optional[Context] = None
     ) -> Dict[str, Any]:
         """文件系统操作工具
@@ -740,7 +758,8 @@ def register_file_operations_tools(mcp, security_checker=None, output_callback=N
             content=content,
             destination=destination,
             overwrite=overwrite,
-            mode=mode
+            mode=mode,
+            execution_mode=execution_mode
         )
     
     return file_operations

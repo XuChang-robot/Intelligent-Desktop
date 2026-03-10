@@ -33,7 +33,7 @@ def markdown_to_html(md_file, html_file=None):
         extensions=['fenced_code', 'codehilite', 'tables', 'toc'],
         extension_configs={
             'codehilite': {
-                'linenums': True,
+                'linenums': False,
                 'css_class': 'codehilite'
             },
             'toc': {
@@ -108,6 +108,66 @@ def markdown_to_html(md_file, html_file=None):
             padding: 0;
             color: #ecf0f1;
         }}
+        /* 代码高亮行号样式 - 内联显示 */
+        .codehilite {{
+            background-color: #2c3e50;
+            border-radius: 5px;
+            padding: 15px;
+            overflow-x: auto;
+        }}
+        .codehilite pre {{
+            margin: 0;
+            padding: 0;
+            background-color: transparent;
+        }}
+        .codehilite table {{
+            width: 100%;
+            border-collapse: collapse;
+            background-color: transparent;
+            margin: 0;
+        }}
+        .codehilite td {{
+            border: none;
+            padding: 0;
+            background-color: transparent;
+        }}
+        .codehilite .linenos {{
+            color: #7f8c8d;
+            text-align: right;
+            padding-right: 15px;
+            width: 40px;
+            user-select: none;
+            vertical-align: top;
+        }}
+        .codehilite .code {{
+            width: 100%;
+        }}
+        .codehilite pre {{
+            margin: 0;
+            line-height: 1.5;
+        }}
+        /* 代码语法高亮颜色 */
+        .codehilite .k {{ color: #ff79c6; }} /* Keyword */
+        .codehilite .n {{ color: #f8f8f2; }} /* Name */
+        .codehilite .s {{ color: #f1fa8c; }} /* String */
+        .codehilite .c {{ color: #6272a4; }} /* Comment */
+        .codehilite .o {{ color: #ff79c6; }} /* Operator */
+        .codehilite .p {{ color: #f8f8f2; }} /* Punctuation */
+        .codehilite .mi {{ color: #bd93f9; }} /* Number */
+        .codehilite .nb {{ color: #8be9fd; }} /* Builtin */
+        .codehilite .nf {{ color: #50fa7b; }} /* Function */
+        .codehilite .nc {{ color: #8be9fd; }} /* Class */
+        .codehilite .nd {{ color: #50fa7b; }} /* Decorator */
+        .codehilite .s1 {{ color: #f1fa8c; }} /* String.Single */
+        .codehilite .s2 {{ color: #f1fa8c; }} /* String.Double */
+        .codehilite .kn {{ color: #ff79c6; }} /* Keyword.Namespace */
+        .codehilite .bp {{ color: #f8f8f2; }} /* Name.Builtin.Pseudo */
+        .codehilite .fm {{ color: #50fa7b; }} /* Name.Function.Magic */
+        .codehilite .sa {{ color: #f1fa8c; }} /* String.Affix */
+        .codehilite .ow {{ color: #ff79c6; }} /* Operator.Word */
+        .codehilite .ss {{ color: #f1fa8c; }} /* String.Symbol */
+        .codehilite .vm {{ color: #8be9fd; }} /* Name.Variable.Magic */
+        .codehilite .w {{ color: #f8f8f2; }} /* Text.Whitespace */
         table {{
             width: 100%;
             border-collapse: collapse;

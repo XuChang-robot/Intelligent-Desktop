@@ -1,0 +1,1806 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>执行智能的三种策略</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+            margin-top: 30px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 30px;
+            border-bottom: 2px solid #ecf0f1;
+            padding-bottom: 5px;
+        }
+        h3 {
+            color: #7f8c8d;
+            margin-top: 25px;
+        }
+        h4 {
+            color: #95a5a6;
+            margin-top: 20px;
+        }
+        a {
+            color: #3498db;
+            text-decoration: none;
+        }
+        a:hover {
+            color: #2980b9;
+            text-decoration: underline;
+        }
+        code {
+            background-color: #f8f9fa;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        pre {
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+        pre code {
+            background-color: transparent;
+            padding: 0;
+            color: #ecf0f1;
+        }
+        /* 代码高亮行号样式 - 内联显示 */
+        .codehilite {
+            background-color: #2c3e50;
+            border-radius: 5px;
+            padding: 15px;
+            overflow-x: auto;
+        }
+        .codehilite pre {
+            margin: 0;
+            padding: 0;
+            background-color: transparent;
+        }
+        .codehilite table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: transparent;
+            margin: 0;
+        }
+        .codehilite td {
+            border: none;
+            padding: 0;
+            background-color: transparent;
+        }
+        .codehilite .linenos {
+            color: #7f8c8d;
+            text-align: right;
+            padding-right: 15px;
+            width: 40px;
+            user-select: none;
+            vertical-align: top;
+        }
+        .codehilite .code {
+            width: 100%;
+        }
+        .codehilite pre {
+            margin: 0;
+            line-height: 1.5;
+        }
+        /* 代码语法高亮颜色 */
+        .codehilite .k { color: #ff79c6; } /* Keyword */
+        .codehilite .n { color: #f8f8f2; } /* Name */
+        .codehilite .s { color: #f1fa8c; } /* String */
+        .codehilite .c { color: #6272a4; } /* Comment */
+        .codehilite .o { color: #ff79c6; } /* Operator */
+        .codehilite .p { color: #f8f8f2; } /* Punctuation */
+        .codehilite .mi { color: #bd93f9; } /* Number */
+        .codehilite .nb { color: #8be9fd; } /* Builtin */
+        .codehilite .nf { color: #50fa7b; } /* Function */
+        .codehilite .nc { color: #8be9fd; } /* Class */
+        .codehilite .nd { color: #50fa7b; } /* Decorator */
+        .codehilite .s1 { color: #f1fa8c; } /* String.Single */
+        .codehilite .s2 { color: #f1fa8c; } /* String.Double */
+        .codehilite .kn { color: #ff79c6; } /* Keyword.Namespace */
+        .codehilite .bp { color: #f8f8f2; } /* Name.Builtin.Pseudo */
+        .codehilite .fm { color: #50fa7b; } /* Name.Function.Magic */
+        .codehilite .sa { color: #f1fa8c; } /* String.Affix */
+        .codehilite .ow { color: #ff79c6; } /* Operator.Word */
+        .codehilite .ss { color: #f1fa8c; } /* String.Symbol */
+        .codehilite .vm { color: #8be9fd; } /* Name.Variable.Magic */
+        .codehilite .w { color: #f8f8f2; } /* Text.Whitespace */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background-color: white;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        ul, ol {
+            background-color: white;
+            padding: 15px 30px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .toc {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .toc ul {
+            background-color: transparent;
+            padding: 0;
+            margin: 0;
+        }
+        .toc li {
+            margin-bottom: 8px;
+        }
+        .section {
+            background-color: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .update {
+            background-color: #ecf0f1;
+            padding: 15px;
+            border-left: 4px solid #3498db;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1 id="_1">执行智能的三种策略</h1>
+<h2 id="_2">概述</h2>
+<p>在 LLM 与行为树混合架构中，执行阶段的智能分布是一个核心设计问题。当行为树节点面临参数缺失、执行异常或信息不全时，系统需要决定如何引入智能能力来解决问题。本文档详细阐述三种执行智能策略：LLM 推断、Elicitation 用户补全、以及混合模式，并分析其适用场景、实现方式和权衡取舍。</p>
+<hr />
+<h2 id="llm">一、策略一：LLM 推断</h2>
+<h3 id="11">1.1 核心思想</h3>
+<p>利用 LLM 的上下文理解能力，基于已有信息自动推断缺失的参数值或决策路径。整个过程对用户透明，不打断执行流程。</p>
+<h3 id="12">1.2 工作流程</h3>
+<div class="codehilite"><pre><span></span><code>节点执行前检查参数
+    ↓
+发现参数缺失
+    ↓
+收集相关上下文（黑板数据、用户原始输入、节点定义）
+    ↓
+调用轻量级 LLM 进行推断
+    ↓
+解析结构化输出
+    ↓
+填充缺失参数
+    ↓
+继续执行节点
+</code></pre></div>
+
+<h3 id="13">1.3 典型应用场景</h3>
+<table>
+<thead>
+<tr>
+<th>场景</th>
+<th>示例</th>
+<th>推断依据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>输出路径推断</td>
+<td>用户说"转换文件"，推断输出到同目录</td>
+<td>输入文件路径、操作习惯</td>
+</tr>
+<tr>
+<td>格式选择</td>
+<td>根据文件内容推断合适的输出格式</td>
+<td>文件扩展名、内容特征</td>
+</tr>
+<tr>
+<td>默认值填充</td>
+<td>邮件主题默认为"无主题"</td>
+<td>参数可选性定义</td>
+</tr>
+<tr>
+<td>参数映射</td>
+<td>"发给老板"映射到具体邮箱</td>
+<td>联系人信息、用户习惯</td>
+</tr>
+</tbody>
+</table>
+<h3 id="14">1.4 实现示例</h3>
+<div class="codehilite"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">LLMInferenceNode</span><span class="p">(</span><span class="n">ActionNode</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    LLM 推断节点</span>
+<span class="sd">    基于上下文自动推断缺失参数</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inference_config</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">missing_params</span> <span class="o">=</span> <span class="n">inference_config</span><span class="p">[</span><span class="s1">&#39;missing_params&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">context_keys</span> <span class="o">=</span> <span class="n">inference_config</span><span class="p">[</span><span class="s1">&#39;context_keys&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_schema</span> <span class="o">=</span> <span class="n">inference_config</span><span class="p">[</span><span class="s1">&#39;output_schema&#39;</span><span class="p">]</span>
+
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+        <span class="c1"># 1. 收集上下文</span>
+        <span class="n">local_context</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">context_keys</span><span class="p">:</span>
+            <span class="n">local_context</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="n">blackboard</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
+        <span class="c1"># 2. 构建提示词</span>
+        <span class="n">prompt</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">        基于以下上下文，推断缺失的参数值：</span>
+
+<span class="s2">        用户原始输入：</span><span class="si">{</span><span class="n">local_context</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;user_input&#39;</span><span class="p">)</span><span class="si">}</span>
+<span class="s2">        可用信息：</span><span class="si">{</span><span class="n">local_context</span><span class="si">}</span>
+
+<span class="s2">        需要推断的参数：</span>
+<span class="s2">        </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">format_missing_params</span><span class="p">()</span><span class="si">}</span>
+
+<span class="s2">        请输出 JSON 格式：</span>
+<span class="s2">        </span><span class="se">{{</span>
+<span class="s2">            &quot;inferred_params&quot;: </span><span class="se">{{</span>
+<span class="s2">                &quot;param_name&quot;: &quot;inferred_value&quot;</span>
+<span class="s2">            </span><span class="se">}}</span><span class="s2">,</span>
+<span class="s2">            &quot;confidence&quot;: 0.0-1.0,</span>
+<span class="s2">            &quot;reasoning&quot;: &quot;简要说明推断依据&quot;</span>
+<span class="s2">        </span><span class="se">}}</span>
+<span class="s2">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># 3. 调用轻量级 LLM</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">llm</span><span class="o">.</span><span class="n">call</span><span class="p">(</span>
+            <span class="n">prompt</span><span class="o">=</span><span class="n">prompt</span><span class="p">,</span>
+            <span class="n">max_tokens</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span>
+            <span class="n">temperature</span><span class="o">=</span><span class="mf">0.1</span>
+        <span class="p">)</span>
+
+        <span class="c1"># 4. 解析并验证</span>
+        <span class="n">inference_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_json</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">inference_result</span><span class="p">[</span><span class="s1">&#39;confidence&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mf">0.7</span><span class="p">:</span>
+            <span class="c1"># 置信度低，需要其他策略补充</span>
+            <span class="k">return</span> <span class="n">Status</span><span class="o">.</span><span class="n">NEED_CONFIRMATION</span>
+
+        <span class="c1"># 5. 填充参数</span>
+        <span class="k">for</span> <span class="n">param</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">inference_result</span><span class="p">[</span><span class="s1">&#39;inferred_params&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">context</span><span class="o">.</span><span class="n">blackboard</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;inferred.</span><span class="si">{</span><span class="n">param</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">Status</span><span class="o">.</span><span class="n">SUCCESS</span>
+</code></pre></div>
+
+<h3 id="15">1.5 优势与局限</h3>
+<p><strong>优势</strong>：
+- ✅ <strong>执行流畅</strong>：无感知，不打断用户
+- ✅ <strong>响应快速</strong>：无需等待用户输入
+- ✅ <strong>体验一致</strong>：保持自动化执行的流畅感
+- ✅ <strong>成本可控</strong>：单次轻量 LLM 调用</p>
+<p><strong>局限</strong>：
+- ❌ <strong>准确性风险</strong>：可能推断错误
+- ❌ <strong>意图误解</strong>：可能偏离用户真实意图
+- ❌ <strong>责任模糊</strong>：错误时难以定位责任
+- ❌ <strong>适用受限</strong>：仅适合有上下文的场景</p>
+<h3 id="16">1.6 适用条件</h3>
+<div class="codehilite"><pre><span></span><code>推荐使用 LLM 推断的条件：
+
+1. 上下文充分性
+   - 有足够的信息线索
+   - 缺失参数与已知信息有关联
+
+2. 错误成本可控
+   - 推断错误不会导致严重后果
+   - 可以事后纠正或撤销
+
+3. 用户期望
+   - 用户期望快速执行
+   - 用户信任系统判断
+
+4. 置信度阈值
+   - LLM 对推断结果有较高置信度（&gt;0.7）
+</code></pre></div>
+
+<hr />
+<h2 id="elicitation">二、策略二：Elicitation 用户补全</h2>
+<h3 id="21">2.1 核心思想</h3>
+<p>当关键信息缺失且无法可靠推断时，主动暂停执行流程，通过交互方式引导用户补充所需信息。</p>
+<h3 id="22">2.2 工作流程</h3>
+<div class="codehilite"><pre><span></span><code>节点执行前检查参数
+    ↓
+发现关键参数缺失
+    ↓
+判断不可推断（无上下文或后果严重）
+    ↓
+构建 Elicitation 请求
+    ↓
+暂停行为树执行
+    ↓
+向用户展示信息收集界面
+    ↓
+等待用户响应
+    ↓
+接收用户输入
+    ↓
+验证输入有效性
+    ↓
+恢复执行
+</code></pre></div>
+
+<h3 id="23">2.3 典型应用场景</h3>
+<table>
+<thead>
+<tr>
+<th>场景</th>
+<th>示例</th>
+<th>原因</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>身份确认</td>
+<td>邮件收件人、联系人选择</td>
+<td>无法从上下文推断</td>
+</tr>
+<tr>
+<td>关键决策</td>
+<td>是否覆盖现有文件</td>
+<td>涉及用户意图</td>
+</tr>
+<tr>
+<td>内容创作</td>
+<td>邮件正文、文档内容</td>
+<td>需要用户表达</td>
+</tr>
+<tr>
+<td>安全确认</td>
+<td>删除操作确认</td>
+<td>后果不可逆</td>
+</tr>
+<tr>
+<td>歧义消解</td>
+<td>多个匹配项选择</td>
+<td>需要用户指定</td>
+</tr>
+</tbody>
+</table>
+<h3 id="24">2.4 实现示例</h3>
+<div class="codehilite"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">ElicitationNode</span><span class="p">(</span><span class="n">ActionNode</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Elicitation 节点</span>
+<span class="sd">    引导用户补充关键信息</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">elicitation_config</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">required_params</span> <span class="o">=</span> <span class="n">elicitation_config</span><span class="p">[</span><span class="s1">&#39;required_params&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prompt_template</span> <span class="o">=</span> <span class="n">elicitation_config</span><span class="p">[</span><span class="s1">&#39;prompt&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">validation_rules</span> <span class="o">=</span> <span class="n">elicitation_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;validation&#39;</span><span class="p">,</span> <span class="p">{})</span>
+
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+        <span class="c1"># 1. 检查缺失的关键参数</span>
+        <span class="n">missing</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_missing_params</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">missing</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">Status</span><span class="o">.</span><span class="n">SUCCESS</span>
+
+        <span class="c1"># 2. 构建 Elicitation 请求</span>
+        <span class="n">elicitation_request</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;parameter_elicitation&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;node_id&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+            <span class="s1">&#39;node_name&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+            <span class="s1">&#39;missing_params&#39;</span><span class="p">:</span> <span class="p">[</span>
+                <span class="p">{</span>
+                    <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="n">param</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">],</span>
+                    <span class="s1">&#39;description&#39;</span><span class="p">:</span> <span class="n">param</span><span class="p">[</span><span class="s1">&#39;description&#39;</span><span class="p">],</span>
+                    <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="n">param</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">],</span>
+                    <span class="s1">&#39;required&#39;</span><span class="p">:</span> <span class="n">param</span><span class="p">[</span><span class="s1">&#39;required&#39;</span><span class="p">],</span>
+                    <span class="s1">&#39;examples&#39;</span><span class="p">:</span> <span class="n">param</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;examples&#39;</span><span class="p">,</span> <span class="p">[])</span>
+                <span class="p">}</span>
+                <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">missing</span>
+            <span class="p">],</span>
+            <span class="s1">&#39;prompt&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">prompt_template</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">node_name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                <span class="n">param_list</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">format_param_list</span><span class="p">(</span><span class="n">missing</span><span class="p">)</span>
+            <span class="p">),</span>
+            <span class="s1">&#39;context&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_relevant_context</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
+        <span class="p">}</span>
+
+        <span class="c1"># 3. 暂停执行，请求用户输入</span>
+        <span class="n">context</span><span class="o">.</span><span class="n">suspend_execution</span><span class="p">(</span><span class="n">elicitation_request</span><span class="p">)</span>
+
+        <span class="c1"># 4. 等待用户响应（异步）</span>
+        <span class="n">user_response</span> <span class="o">=</span> <span class="k">await</span> <span class="n">context</span><span class="o">.</span><span class="n">wait_for_user_input</span><span class="p">(</span>
+            <span class="n">timeout</span><span class="o">=</span><span class="mi">300</span><span class="p">,</span>  <span class="c1"># 5分钟超时</span>
+            <span class="n">on_timeout</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">handle_timeout</span>
+        <span class="p">)</span>
+
+        <span class="c1"># 5. 验证用户输入</span>
+        <span class="n">validation_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">validate_input</span><span class="p">(</span>
+            <span class="n">user_response</span><span class="p">,</span> 
+            <span class="bp">self</span><span class="o">.</span><span class="n">validation_rules</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">validation_result</span><span class="o">.</span><span class="n">valid</span><span class="p">:</span>
+            <span class="c1"># 验证失败，重新请求</span>
+            <span class="k">return</span> <span class="n">Status</span><span class="o">.</span><span class="n">RETRY_WITH_FEEDBACK</span><span class="p">(</span>
+                <span class="n">feedback</span><span class="o">=</span><span class="n">validation_result</span><span class="o">.</span><span class="n">errors</span>
+            <span class="p">)</span>
+
+        <span class="c1"># 6. 填充参数并恢复</span>
+        <span class="k">for</span> <span class="n">param_name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">user_response</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">context</span><span class="o">.</span><span class="n">blackboard</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">param_name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">Status</span><span class="o">.</span><span class="n">SUCCESS</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">check_missing_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;检查缺失的参数&quot;&quot;&quot;</span>
+        <span class="n">missing</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">required_params</span><span class="p">:</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="n">blackboard</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">param</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">value</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
+                <span class="n">missing</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">param</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">missing</span>
+</code></pre></div>
+
+<h3 id="25-elicitation">2.5 Elicitation 的形式</h3>
+<h4 id="_3">形式一：阻塞式询问</h4>
+<div class="codehilite"><pre><span></span><code><span class="k">[系统暂停]</span>
+
+<span class="na">需要您提供以下信息：</span>
+
+<span class="na">📧 收件人邮箱：__________</span>
+<span class="na">📝 邮件主题：__________（可选，默认&quot;无主题&quot;）</span>
+
+<span class="k">[确认] [取消]</span>
+
+<span class="na">等待用户输入...</span>
+</code></pre></div>
+
+<p><strong>特点</strong>：
+- 执行完全暂停
+- 必须等待用户响应
+- 适合关键参数</p>
+<h4 id="_4">形式二：非阻塞式提示</h4>
+<div class="codehilite"><pre><span></span><code><span class="k">[系统继续准备其他步骤]</span>
+
+<span class="na">💡 提示：检测到以下信息缺失，将在需要时询问：</span>
+<span class="w">   </span><span class="na">- 收件人邮箱（将在发送前确认）</span>
+
+<span class="k">[立即填写] [稍后处理]</span>
+</code></pre></div>
+
+<p><strong>特点</strong>：
+- 不立即阻塞
+- 延迟到真正需要时
+- 用户体验更流畅</p>
+<h4 id="_5">形式三：渐进式收集</h4>
+<div class="codehilite"><pre><span></span><code>步骤 1/3：基本信息
+📧 收件人：__________
+
+[下一步]
+
+步骤 2/3：邮件内容
+📝 正文：__________
+
+[下一步] [上一步]
+
+步骤 3/3：确认发送
+预览邮件内容...
+
+[发送] [修改] [取消]
+</code></pre></div>
+
+<p><strong>特点</strong>：
+- 分步骤收集
+- 每步验证
+- 适合复杂信息</p>
+<h3 id="26">2.6 优势与局限</h3>
+<p><strong>优势</strong>：
+- ✅ <strong>信息准确</strong>：直接来自用户
+- ✅ <strong>用户控制</strong>：用户掌握决策权
+- ✅ <strong>意图明确</strong>：避免误解
+- ✅ <strong>责任清晰</strong>：用户对自己的输入负责</p>
+<p><strong>局限</strong>：
+- ❌ <strong>打断体验</strong>：破坏自动化流程
+- ❌ <strong>等待成本</strong>：需要用户响应时间
+- ❌ <strong>流程复杂</strong>：需要处理超时、取消等
+- ❌ <strong>不适合批处理</strong>：无法自动化执行</p>
+<h3 id="27">2.7 适用条件</h3>
+<div class="codehilite"><pre><span></span><code>推荐使用 Elicitation 的条件：
+
+1. 关键性
+   - 参数对任务成功至关重要
+   - 缺失会导致任务失败
+
+2. 不可推断性
+   - 无法从上下文推断
+   - 推断可靠性低
+
+3. 后果严重性
+   - 错误代价高
+   - 难以撤销或纠正
+
+4. 用户意图核心
+   - 涉及用户的主观意愿
+   - 需要用户表达偏好
+
+5. 歧义性
+   - 存在多个可能选项
+   - 需要用户明确指定
+</code></pre></div>
+
+<hr />
+<h2 id="_6">三、策略三：混合模式（推断+确认）</h2>
+<h3 id="31">3.1 核心思想</h3>
+<p>结合 LLM 推断的效率和 Elicitation 的准确性：先由 LLM 推断缺失参数，再向用户展示推断结果请求确认，在效率和准确性之间取得平衡。</p>
+<h3 id="32">3.2 工作流程</h3>
+<div class="codehilite"><pre><span></span><code>节点执行前检查参数
+    ↓
+发现参数缺失
+    ↓
+收集上下文
+    ↓
+LLM 推断缺失参数
+    ↓
+评估推断置信度
+    ↓
+高置信度 ──→ 自动执行（可配置）
+    ↓
+中置信度 ──→ 展示确认
+    ↓
+低置信度 ──→ 触发 Elicitation
+    ↓
+用户确认/修改
+    ↓
+继续执行
+</code></pre></div>
+
+<h3 id="33">3.3 典型应用场景</h3>
+<table>
+<thead>
+<tr>
+<th>场景</th>
+<th>推断内容</th>
+<th>确认方式</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>文件转换</td>
+<td>输出格式、路径</td>
+<td>展示推断结果，5秒倒计时</td>
+</tr>
+<tr>
+<td>邮件发送</td>
+<td>主题、收件人</td>
+<td>展示完整邮件预览</td>
+</tr>
+<tr>
+<td>数据导出</td>
+<td>导出范围、格式</td>
+<td>展示参数摘要</td>
+</tr>
+<tr>
+<td>批量操作</td>
+<td>操作范围</td>
+<td>展示影响文件列表</td>
+</tr>
+</tbody>
+</table>
+<h3 id="34">3.4 实现示例</h3>
+<div class="codehilite"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">HybridIntelligenceNode</span><span class="p">(</span><span class="n">ActionNode</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    混合智能节点</span>
+<span class="sd">    推断 + 确认</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inference_config</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;inference&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">confirmation_config</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;confirmation&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">elicitation_config</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;elicitation&#39;</span><span class="p">]</span>
+
+        <span class="c1"># 置信度阈值</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">auto_execute_threshold</span> <span class="o">=</span> <span class="mf">0.85</span>  <span class="c1"># 自动执行</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">confirm_threshold</span> <span class="o">=</span> <span class="mf">0.60</span>       <span class="c1"># 需要确认</span>
+        <span class="c1"># &lt; 0.60 触发 Elicitation</span>
+
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+        <span class="c1"># 1. 检查缺失参数</span>
+        <span class="n">missing</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_missing_params</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">missing</span><span class="p">:</span>
+            <span class="k">return</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">execute_action</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
+
+        <span class="c1"># 2. LLM 推断</span>
+        <span class="n">inference_result</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">infer_missing_params</span><span class="p">(</span>
+            <span class="n">missing</span><span class="p">,</span> <span class="n">context</span>
+        <span class="p">)</span>
+
+        <span class="n">confidence</span> <span class="o">=</span> <span class="n">inference_result</span><span class="p">[</span><span class="s1">&#39;confidence&#39;</span><span class="p">]</span>
+        <span class="n">inferred_params</span> <span class="o">=</span> <span class="n">inference_result</span><span class="p">[</span><span class="s1">&#39;inferred_params&#39;</span><span class="p">]</span>
+
+        <span class="c1"># 3. 根据置信度选择策略</span>
+        <span class="k">if</span> <span class="n">confidence</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">auto_execute_threshold</span><span class="p">:</span>
+            <span class="c1"># 高置信度：自动执行（可配置）</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">confirmation_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;silent_auto_execute&#39;</span><span class="p">):</span>
+                <span class="k">return</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">execute_with_inferred</span><span class="p">(</span>
+                    <span class="n">inferred_params</span><span class="p">,</span> <span class="n">context</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># 即使高置信度也简要通知</span>
+                <span class="k">return</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">execute_with_notification</span><span class="p">(</span>
+                    <span class="n">inferred_params</span><span class="p">,</span> <span class="n">context</span>
+                <span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">confidence</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">confirm_threshold</span><span class="p">:</span>
+            <span class="c1"># 中置信度：请求确认</span>
+            <span class="k">return</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">request_confirmation</span><span class="p">(</span>
+                <span class="n">inferred_params</span><span class="p">,</span> 
+                <span class="n">inference_result</span><span class="p">[</span><span class="s1">&#39;reasoning&#39;</span><span class="p">],</span>
+                <span class="n">context</span>
+            <span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># 低置信度：触发 Elicitation</span>
+            <span class="k">return</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">trigger_elicitation</span><span class="p">(</span>
+                <span class="n">missing</span><span class="p">,</span> 
+                <span class="n">inferred_params</span><span class="p">,</span>  <span class="c1"># 作为默认值</span>
+                <span class="n">context</span>
+            <span class="p">)</span>
+
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">request_confirmation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inferred_params</span><span class="p">,</span> <span class="n">reasoning</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;请求用户确认推断结果&quot;&quot;&quot;</span>
+
+        <span class="n">confirmation_request</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;confirmation&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="s1">&#39;请确认以下操作&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;content&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">format_confirmation_content</span><span class="p">(</span>
+                <span class="n">inferred_params</span><span class="p">,</span> <span class="n">reasoning</span>
+            <span class="p">),</span>
+            <span class="s1">&#39;options&#39;</span><span class="p">:</span> <span class="p">[</span>
+                <span class="p">{</span><span class="s1">&#39;label&#39;</span><span class="p">:</span> <span class="s1">&#39;确认执行&#39;</span><span class="p">,</span> <span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="s1">&#39;confirm&#39;</span><span class="p">,</span> <span class="s1">&#39;primary&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+                <span class="p">{</span><span class="s1">&#39;label&#39;</span><span class="p">:</span> <span class="s1">&#39;修改参数&#39;</span><span class="p">,</span> <span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="s1">&#39;modify&#39;</span><span class="p">},</span>
+                <span class="p">{</span><span class="s1">&#39;label&#39;</span><span class="p">:</span> <span class="s1">&#39;取消&#39;</span><span class="p">,</span> <span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="s1">&#39;cancel&#39;</span><span class="p">}</span>
+            <span class="p">],</span>
+            <span class="s1">&#39;countdown&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">confirmation_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;countdown_seconds&#39;</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span>
+            <span class="s1">&#39;default_action&#39;</span><span class="p">:</span> <span class="s1">&#39;confirm&#39;</span>  <span class="c1"># 倒计时结束后默认执行</span>
+        <span class="p">}</span>
+
+        <span class="c1"># 暂停执行，等待确认</span>
+        <span class="n">context</span><span class="o">.</span><span class="n">suspend_execution</span><span class="p">(</span><span class="n">confirmation_request</span><span class="p">)</span>
+
+        <span class="n">user_choice</span> <span class="o">=</span> <span class="k">await</span> <span class="n">context</span><span class="o">.</span><span class="n">wait_for_user_choice</span><span class="p">(</span>
+            <span class="n">timeout</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">confirmation_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;timeout&#39;</span><span class="p">,</span> <span class="mi">30</span><span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">user_choice</span> <span class="o">==</span> <span class="s1">&#39;confirm&#39;</span> <span class="ow">or</span> <span class="n">user_choice</span> <span class="o">==</span> <span class="s1">&#39;timeout&#39;</span><span class="p">:</span>
+            <span class="c1"># 确认或超时（默认确认）</span>
+            <span class="k">return</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">execute_with_inferred</span><span class="p">(</span>
+                <span class="n">inferred_params</span><span class="p">,</span> <span class="n">context</span>
+            <span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">user_choice</span> <span class="o">==</span> <span class="s1">&#39;modify&#39;</span><span class="p">:</span>
+            <span class="c1"># 用户要修改，触发带默认值的 Elicitation</span>
+            <span class="k">return</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">trigger_elicitation_with_defaults</span><span class="p">(</span>
+                <span class="n">inferred_params</span><span class="p">,</span> <span class="n">context</span>
+            <span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>  <span class="c1"># cancel</span>
+            <span class="k">return</span> <span class="n">Status</span><span class="o">.</span><span class="n">CANCELLED</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">format_confirmation_content</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">reasoning</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;格式化确认内容&quot;&quot;&quot;</span>
+        <span class="n">content</span> <span class="o">=</span> <span class="s2">&quot;系统将基于以下推断执行操作：</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+
+        <span class="k">for</span> <span class="n">param_name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">params</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">content</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;• </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">get_param_label</span><span class="p">(</span><span class="n">param_name</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+
+        <span class="n">content</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">推断依据：</span><span class="si">{</span><span class="n">reasoning</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="n">content</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">confirmation_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;countdown_seconds&#39;</span><span class="p">,</span><span class="w"> </span><span class="mi">5</span><span class="p">)</span><span class="si">}</span><span class="s2">秒后自动执行...&quot;</span>
+
+        <span class="k">return</span> <span class="n">content</span>
+</code></pre></div>
+
+<h3 id="35">3.5 确认界面示例</h3>
+<div class="codehilite"><pre><span></span><code>┌─────────────────────────────────────┐
+│  请确认以下操作                      │
+├─────────────────────────────────────┤
+│                                     │
+│  系统将执行以下操作：                │
+│                                     │
+│  📄 转换文件                         │
+│     输入：桌面/说明.docx             │
+│     输出：桌面/说明.pdf  ← 推断      │
+│     格式：PDF  ← 推断                │
+│                                     │
+│  推断依据：                          │
+│  基于输入文件路径，推断输出到同目录  │
+│  根据文件类型，推断转换为PDF格式     │
+│                                     │
+│  置信度：82%                         │
+│                                     │
+│  [5]秒后自动确认...                  │
+│                                     │
+│  [✓ 确认执行]  [修改]  [取消]       │
+│                                     │
+└─────────────────────────────────────┘
+</code></pre></div>
+
+<h3 id="36">3.6 优势与局限</h3>
+<p><strong>优势</strong>：
+- ✅ <strong>平衡效率与准确</strong>：高置信度自动执行，低置信度请求确认
+- ✅ <strong>用户可控</strong>：关键决策由用户把关
+- ✅ <strong>渐进式信任</strong>：随着系统了解用户习惯，自动执行比例提升
+- ✅ <strong>容错性强</strong>：多种降级路径</p>
+<p><strong>局限</strong>：
+- ❌ <strong>实现复杂</strong>：需要处理多种分支
+- ❌ <strong>配置繁琐</strong>：需要设定多个阈值和策略
+- ❌ <strong>用户学习成本</strong>：需要理解系统的确认机制</p>
+<h3 id="37">3.7 适用条件</h3>
+<div class="codehilite"><pre><span></span><code>推荐使用混合模式的条件：
+
+1. 参数重要性中等
+   - 不是关键参数，但也不是完全可选
+   - 错误有一定影响，但可接受
+
+2. 可推断但有不确定性
+   - 有上下文线索，但不够充分
+   - 推断置信度中等（60%-85%）
+
+3. 用户期望平衡
+   - 既希望自动化，又希望保持控制
+   - 愿意在关键决策上花时间确认
+
+4. 场景多样性
+   - 不同场景需要不同策略
+   - 无法单一策略覆盖
+</code></pre></div>
+
+<hr />
+<h2 id="_7">四、三种策略对比</h2>
+<h3 id="41">4.1 综合对比表</h3>
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>LLM 推断</th>
+<th>Elicitation</th>
+<th>混合模式</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>执行效率</strong></td>
+<td>⭐⭐⭐⭐⭐</td>
+<td>⭐⭐</td>
+<td>⭐⭐⭐⭐</td>
+</tr>
+<tr>
+<td><strong>信息准确性</strong></td>
+<td>⭐⭐⭐</td>
+<td>⭐⭐⭐⭐⭐</td>
+<td>⭐⭐⭐⭐</td>
+</tr>
+<tr>
+<td><strong>用户体验</strong></td>
+<td>流畅</td>
+<td>交互式</td>
+<td>平衡</td>
+</tr>
+<tr>
+<td><strong>实现复杂度</strong></td>
+<td>低</td>
+<td>中</td>
+<td>高</td>
+</tr>
+<tr>
+<td><strong>成本可控性</strong></td>
+<td>高</td>
+<td>中</td>
+<td>中</td>
+</tr>
+<tr>
+<td><strong>适用场景广度</strong></td>
+<td>窄</td>
+<td>中</td>
+<td>广</td>
+</tr>
+</tbody>
+</table>
+<h3 id="42">4.2 决策矩阵</h3>
+<div class="codehilite"><pre><span></span><code>参数缺失时的策略选择：
+
+                    推断可靠性
+                 高          低
+           ┌──────────┬──────────┐
+    高     │  LLM推断 │ Elicitation│
+重要性     │ (自动)   │ (必须询问) │
+           ├──────────┼──────────┤
+    低     │  LLM推断 │  混合模式  │
+           │ (自动)   │ (确认/询问)│
+           └──────────┴──────────┘
+</code></pre></div>
+
+<h3 id="43">4.3 选择指南</h3>
+<p><strong>选择 LLM 推断</strong>：
+- 参数重要性低
+- 上下文充分
+- 推断可靠性高
+- 用户期望快速执行</p>
+<p><strong>选择 Elicitation</strong>：
+- 参数重要性高
+- 无法推断或推断不可靠
+- 涉及用户主观意图
+- 后果严重</p>
+<p><strong>选择混合模式</strong>：
+- 参数重要性中等
+- 推断有一定可靠性但不完全确定
+- 需要平衡效率和控制
+- 场景多样</p>
+<hr />
+<h2 id="_8">五、实施建议</h2>
+<h3 id="51">5.1 渐进式实施路径</h3>
+<div class="codehilite"><pre><span></span><code>阶段 1：基础推断（1-2周）
+├── 实现 LLM 推断节点
+├── 选择 2-3 个简单场景试点
+│   ├── 输出路径推断
+│   └── 默认值填充
+└── 收集准确率数据
+
+阶段 2：Elicitation（2-3周）
+├── 实现 Elicitation 框架
+├── 处理关键参数场景
+│   ├── 收件人确认
+│   └── 删除操作确认
+└── 设计友好的交互界面
+
+阶段 3：混合模式（3-4周）
+├── 整合推断和 Elicitation
+├── 实现置信度评估
+├── 设计确认界面
+└── 配置阈值参数
+
+阶段 4：优化迭代（持续）
+├── 基于使用数据优化
+├── 调整阈值
+├── 扩展场景覆盖
+└── 提升推断准确率
+</code></pre></div>
+
+<h3 id="52">5.2 关键配置参数</h3>
+<div class="codehilite"><pre><span></span><code><span class="nt">execution_intelligence</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">inference</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">model</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;qwen3:4b&quot;</span><span class="w">  </span><span class="c1"># 轻量级模型</span>
+<span class="w">    </span><span class="nt">max_tokens</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">200</span>
+<span class="w">    </span><span class="nt">temperature</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.1</span>
+
+<span class="w">  </span><span class="nt">elicitation</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">timeout_seconds</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">300</span>
+<span class="w">    </span><span class="nt">retry_count</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3</span>
+
+<span class="w">  </span><span class="nt">hybrid</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">auto_execute_threshold</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.85</span>
+<span class="w">    </span><span class="nt">confirm_threshold</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.60</span>
+<span class="w">    </span><span class="nt">countdown_seconds</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5</span>
+
+<span class="w">  </span><span class="nt">param_classification</span><span class="p">:</span>
+<span class="w">    </span><span class="c1"># 参数重要性分级</span>
+<span class="w">    </span><span class="nt">critical</span><span class="p">:</span><span class="w">  </span><span class="c1"># 必须 Elicitation</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">recipient</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">file_path</span>
+<span class="w">    </span><span class="nt">important</span><span class="p">:</span><span class="w">  </span><span class="c1"># 混合模式</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">subject</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">output_format</span>
+<span class="w">    </span><span class="nt">optional</span><span class="p">:</span><span class="w">  </span><span class="c1"># LLM 推断</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">output_path</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">template</span>
+</code></pre></div>
+
+<h3 id="53">5.3 监控指标</h3>
+<div class="codehilite"><pre><span></span><code><span class="c1"># 需要监控的关键指标</span>
+<span class="n">metrics</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="c1"># 推断质量</span>
+    <span class="s1">&#39;inference_accuracy&#39;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>      <span class="c1"># 推断准确率</span>
+    <span class="s1">&#39;inference_confidence_avg&#39;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="c1"># 平均置信度</span>
+
+    <span class="c1"># Elicitation 效果</span>
+    <span class="s1">&#39;elicitation_response_rate&#39;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>  <span class="c1"># 用户响应率</span>
+    <span class="s1">&#39;elicitation_timeout_rate&#39;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>   <span class="c1"># 超时率</span>
+
+    <span class="c1"># 混合模式</span>
+    <span class="s1">&#39;auto_execute_rate&#39;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>       <span class="c1"># 自动执行比例</span>
+    <span class="s1">&#39;confirmation_accept_rate&#39;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="c1"># 确认接受率</span>
+
+    <span class="c1"># 用户体验</span>
+    <span class="s1">&#39;avg_execution_time&#39;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>      <span class="c1"># 平均执行时间</span>
+    <span class="s1">&#39;user_satisfaction&#39;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>       <span class="c1"># 用户满意度</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<hr />
+<h2 id="_9">六、潜在优化空间</h2>
+<h3 id="61">6.1 置信度阈值的动态调整</h3>
+<p>当前设计使用固定阈值（0.85/0.60），但实际应用中，不同场景的最佳阈值可能不同。建议引入动态调整机制：</p>
+<div class="codehilite"><pre><span></span><code><span class="nt">threshold_adaptation</span><span class="p">:</span>
+<span class="w">  </span><span class="c1"># 不同类型节点使用不同阈值</span>
+<span class="w">  </span><span class="nt">per_node_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">  </span><span class="nt">node_thresholds</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">file_operation</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">auto_execute</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.80</span>
+<span class="w">      </span><span class="nt">confirm</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.55</span>
+<span class="w">    </span><span class="nt">email_operation</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">auto_execute</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.90</span>
+<span class="w">      </span><span class="nt">confirm</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.70</span>
+<span class="w">    </span><span class="nt">delete_operation</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">auto_execute</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.95</span>
+<span class="w">      </span><span class="nt">confirm</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.80</span>
+
+<span class="w">  </span><span class="c1"># 基于历史数据动态调整</span>
+<span class="w">  </span><span class="nt">learning_enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">  </span><span class="nt">learning_rate</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.1</span>
+<span class="w">  </span><span class="nt">adjustment_window</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">100</span><span class="w">  </span><span class="c1"># 基于最近100次决策调整</span>
+
+<span class="w">  </span><span class="c1"># 用户偏好设置</span>
+<span class="w">  </span><span class="nt">user_preference</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">options</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;prefer_auto&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;prefer_confirm&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;prefer_ask&quot;</span><span class="p p-Indicator">]</span>
+<span class="w">    </span><span class="nt">default</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;prefer_confirm&quot;</span>
+<span class="w">    </span><span class="nt">impact</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">prefer_auto</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">-0.10</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">-0.10</span><span class="p p-Indicator">]</span><span class="w">  </span><span class="c1"># 降低阈值，更多自动执行</span>
+<span class="w">      </span><span class="nt">prefer_confirm</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">0</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">0</span><span class="p p-Indicator">]</span><span class="w">        </span><span class="c1"># 使用默认阈值</span>
+<span class="w">      </span><span class="nt">prefer_ask</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">0.10</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">0.10</span><span class="p p-Indicator">]</span><span class="w">      </span><span class="c1"># 提高阈值，更多询问</span>
+
+<span class="w">  </span><span class="c1"># 根据上下文复杂程度调整</span>
+<span class="w">  </span><span class="nt">context_sensitive</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">  </span><span class="nt">complexity_factors</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">param_count</span><span class="w">        </span><span class="c1"># 参数数量</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">data_ambiguity</span><span class="w">     </span><span class="c1"># 数据歧义度</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">user_history_match</span><span class="w"> </span><span class="c1"># 用户历史匹配度</span>
+</code></pre></div>
+
+<p><strong>动态调整算法示例</strong>：</p>
+<div class="codehilite"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">AdaptiveThresholdManager</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;自适应阈值管理器&quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">base_thresholds</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;auto_execute&#39;</span><span class="p">:</span> <span class="mf">0.85</span><span class="p">,</span>
+            <span class="s1">&#39;confirm&#39;</span><span class="p">:</span> <span class="mf">0.60</span>
+        <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">adjustment_history</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_adjusted_threshold</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node_type</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">user_preference</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;获取调整后的阈值&quot;&quot;&quot;</span>
+        <span class="n">thresholds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_thresholds</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+        <span class="c1"># 1. 节点类型调整</span>
+        <span class="k">if</span> <span class="n">node_type</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">node_thresholds</span><span class="p">:</span>
+            <span class="n">thresholds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">node_thresholds</span><span class="p">[</span><span class="n">node_type</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+        <span class="c1"># 2. 用户偏好调整</span>
+        <span class="n">pref_adjustment</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_preference_adjustment</span><span class="p">(</span><span class="n">user_preference</span><span class="p">)</span>
+        <span class="n">thresholds</span><span class="p">[</span><span class="s1">&#39;auto_execute&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">pref_adjustment</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">thresholds</span><span class="p">[</span><span class="s1">&#39;confirm&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">pref_adjustment</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="c1"># 3. 上下文复杂度调整</span>
+        <span class="n">complexity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calculate_context_complexity</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
+        <span class="n">complexity_adjustment</span> <span class="o">=</span> <span class="n">complexity</span> <span class="o">*</span> <span class="mf">0.05</span>  <span class="c1"># 复杂度影响</span>
+        <span class="n">thresholds</span><span class="p">[</span><span class="s1">&#39;auto_execute&#39;</span><span class="p">]</span> <span class="o">-=</span> <span class="n">complexity_adjustment</span>
+        <span class="n">thresholds</span><span class="p">[</span><span class="s1">&#39;confirm&#39;</span><span class="p">]</span> <span class="o">-=</span> <span class="n">complexity_adjustment</span>
+
+        <span class="c1"># 4. 历史学习调整</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">learning_enabled</span><span class="p">:</span>
+            <span class="n">history_adjustment</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">learn_from_history</span><span class="p">(</span><span class="n">node_type</span><span class="p">)</span>
+            <span class="n">thresholds</span><span class="p">[</span><span class="s1">&#39;auto_execute&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">history_adjustment</span>
+            <span class="n">thresholds</span><span class="p">[</span><span class="s1">&#39;confirm&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">history_adjustment</span>
+
+        <span class="k">return</span> <span class="n">thresholds</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">calculate_context_complexity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;计算上下文复杂度&quot;&quot;&quot;</span>
+        <span class="n">factors</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c1"># 参数数量</span>
+        <span class="n">param_count</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">context</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;missing_params&#39;</span><span class="p">,</span> <span class="p">[]))</span>
+        <span class="n">factors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">param_count</span> <span class="o">/</span> <span class="mi">5</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">))</span>  <span class="c1"># 归一化</span>
+
+        <span class="c1"># 数据歧义度</span>
+        <span class="n">ambiguity</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;data_ambiguity&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">factors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ambiguity</span><span class="p">)</span>
+
+        <span class="c1"># 用户历史匹配度</span>
+        <span class="n">history_match</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;user_history_match&#39;</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">)</span>
+        <span class="n">factors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">history_match</span><span class="p">)</span>  <span class="c1"># 匹配度低则复杂度高</span>
+
+        <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="n">factors</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">factors</span><span class="p">)</span>
+</code></pre></div>
+
+<h3 id="62-elicitation-llm">6.2 Elicitation 与 LLM 推断的细腻衔接</h3>
+<p>当前设计在低置信度时直接触发 Elicitation，但中间可以增加"部分推断+部分询问"的混合形态：</p>
+<div class="codehilite"><pre><span></span><code>置信度分层处理：
+
+置信度 85%+ ：
+└── 自动执行（可配置静默或通知）
+
+置信度 60%-85% ：
+└── 展示推断结果，请求确认
+    ├── 用户确认 → 执行
+    ├── 用户修改 → 更新参数后执行
+    └── 超时 → 默认确认执行
+
+置信度 30%-60% ：【新增：部分推断模式】
+├── 对确定性高的参数进行推断（预填写）
+├── 对确定性低的参数标记为待填写
+├── 生成&quot;预填写表单&quot;
+└── 用户确认+补充后执行
+
+置信度 0%-30% ：
+└── 完全 Elicitation（全部询问用户）
+</code></pre></div>
+
+<p><strong>部分推断模式实现</strong>：</p>
+<div class="codehilite"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">PartialInferenceMode</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;部分推断模式：预填写表单&quot;&quot;&quot;</span>
+
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">missing_params</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+        <span class="c1"># 1. 对每个缺失参数单独评估置信度</span>
+        <span class="n">param_inferences</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">missing_params</span><span class="p">:</span>
+            <span class="n">inference</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">infer_single_param</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">context</span><span class="p">)</span>
+            <span class="n">param_inferences</span><span class="p">[</span><span class="n">param</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="n">inference</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">],</span>
+                <span class="s1">&#39;confidence&#39;</span><span class="p">:</span> <span class="n">inference</span><span class="p">[</span><span class="s1">&#39;confidence&#39;</span><span class="p">],</span>
+                <span class="s1">&#39;source&#39;</span><span class="p">:</span> <span class="n">inference</span><span class="p">[</span><span class="s1">&#39;source&#39;</span><span class="p">]</span>
+            <span class="p">}</span>
+
+        <span class="c1"># 2. 分类：高置信度预填写 vs 低置信度询问</span>
+        <span class="n">pre_filled</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">to_ask</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">param_name</span><span class="p">,</span> <span class="n">inference</span> <span class="ow">in</span> <span class="n">param_inferences</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">inference</span><span class="p">[</span><span class="s1">&#39;confidence&#39;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mf">0.50</span><span class="p">:</span>  <span class="c1"># 单参数阈值</span>
+                <span class="n">pre_filled</span><span class="p">[</span><span class="n">param_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">inference</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">to_ask</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                    <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="n">param_name</span><span class="p">,</span>
+                    <span class="s1">&#39;suggested_value&#39;</span><span class="p">:</span> <span class="n">inference</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">],</span>  <span class="c1"># 作为建议</span>
+                    <span class="s1">&#39;confidence&#39;</span><span class="p">:</span> <span class="n">inference</span><span class="p">[</span><span class="s1">&#39;confidence&#39;</span><span class="p">]</span>
+                <span class="p">})</span>
+
+        <span class="c1"># 3. 生成预填写表单</span>
+        <span class="n">form</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate_prefilled_form</span><span class="p">(</span><span class="n">pre_filled</span><span class="p">,</span> <span class="n">to_ask</span><span class="p">,</span> <span class="n">context</span><span class="p">)</span>
+
+        <span class="c1"># 4. 请求用户确认和补充</span>
+        <span class="n">user_input</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">show_form_and_wait</span><span class="p">(</span><span class="n">form</span><span class="p">)</span>
+
+        <span class="c1"># 5. 合并用户输入和预填写值</span>
+        <span class="n">final_params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">merge_inputs</span><span class="p">(</span><span class="n">pre_filled</span><span class="p">,</span> <span class="n">user_input</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">final_params</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">generate_prefilled_form</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pre_filled</span><span class="p">,</span> <span class="n">to_ask</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;生成预填写表单&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;partial_inference_form&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="s1">&#39;请确认并补充以下信息&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;sections&#39;</span><span class="p">:</span> <span class="p">[</span>
+                <span class="p">{</span>
+                    <span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="s1">&#39;已自动填写（请确认）&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;fields&#39;</span><span class="p">:</span> <span class="p">[</span>
+                        <span class="p">{</span>
+                            <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="n">name</span><span class="p">,</span>
+                            <span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">],</span>
+                            <span class="s1">&#39;confidence&#39;</span><span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;confidence&#39;</span><span class="p">],</span>
+                            <span class="s1">&#39;editable&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                            <span class="s1">&#39;highlight&#39;</span><span class="p">:</span> <span class="s1">&#39;success&#39;</span> <span class="k">if</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;confidence&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mf">0.7</span> <span class="k">else</span> <span class="s1">&#39;warning&#39;</span>
+                        <span class="p">}</span>
+                        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">pre_filled</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+                    <span class="p">]</span>
+                <span class="p">},</span>
+                <span class="p">{</span>
+                    <span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="s1">&#39;需要您填写&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;fields&#39;</span><span class="p">:</span> <span class="p">[</span>
+                        <span class="p">{</span>
+                            <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="n">field</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">],</span>
+                            <span class="s1">&#39;placeholder&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;建议值: </span><span class="si">{</span><span class="n">field</span><span class="p">[</span><span class="s1">&#39;suggested_value&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                            <span class="s1">&#39;required&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                            <span class="s1">&#39;suggestion&#39;</span><span class="p">:</span> <span class="n">field</span><span class="p">[</span><span class="s1">&#39;suggested_value&#39;</span><span class="p">]</span>
+                        <span class="p">}</span>
+                        <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">to_ask</span>
+                    <span class="p">]</span>
+                <span class="p">}</span>
+            <span class="p">]</span>
+        <span class="p">}</span>
+</code></pre></div>
+
+<p><strong>预填写表单界面示例</strong>：</p>
+<div class="codehilite"><pre><span></span><code>┌─────────────────────────────────────────────┐
+│  请确认并补充以下信息                        │
+├─────────────────────────────────────────────┤
+│                                             │
+│  ✓ 已自动填写（请确认）                      │
+│  ┌─────────────────────────────────────┐   │
+│  │ 输出路径：桌面/报告.pdf              │   │
+│  │ 置信度：78% [编辑]                   │   │
+│  └─────────────────────────────────────┘   │
+│  ┌─────────────────────────────────────┐   │
+│  │ 格式：PDF                            │   │
+│  │ 置信度：92% [编辑]                   │   │
+│  └─────────────────────────────────────┘   │
+│                                             │
+│  ✏️ 需要您填写                              │
+│  ┌─────────────────────────────────────┐   │
+│  │ 收件人：___________                  │   │
+│  │ 💡 建议：张总（来自联系人）          │   │
+│  └─────────────────────────────────────┘   │
+│                                             │
+│  [确认执行]  [全部重新填写]  [取消]         │
+│                                             │
+└─────────────────────────────────────────────┘
+</code></pre></div>
+
+<h3 id="63">6.3 用户信任模型</h3>
+<p>文档关注了单次决策的准确性，但缺少对长期用户信任的考量。建议补充以下维度：</p>
+<h4 id="631">6.3.1 透明性设计</h4>
+<div class="codehilite"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">TransparentInference</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;透明的推断机制&quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">generate_inference_explanation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inference_result</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;生成推断解释&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;inferred_value&#39;</span><span class="p">:</span> <span class="n">inference_result</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;confidence&#39;</span><span class="p">:</span> <span class="n">inference_result</span><span class="p">[</span><span class="s1">&#39;confidence&#39;</span><span class="p">],</span>
+
+            <span class="c1"># 透明性要素</span>
+            <span class="s1">&#39;explanation&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;data_sources&#39;</span><span class="p">:</span> <span class="n">inference_result</span><span class="p">[</span><span class="s1">&#39;sources&#39;</span><span class="p">],</span>  <span class="c1"># 数据来源</span>
+                <span class="s1">&#39;reasoning&#39;</span><span class="p">:</span> <span class="n">inference_result</span><span class="p">[</span><span class="s1">&#39;reasoning&#39;</span><span class="p">],</span>   <span class="c1"># 推断理由</span>
+                <span class="s1">&#39;alternatives&#39;</span><span class="p">:</span> <span class="n">inference_result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;alternatives&#39;</span><span class="p">,</span> <span class="p">[]),</span>  <span class="c1"># 备选方案</span>
+                <span class="s1">&#39;limitations&#39;</span><span class="p">:</span> <span class="n">inference_result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;limitations&#39;</span><span class="p">,</span> <span class="p">[])</span>    <span class="c1"># 局限性</span>
+            <span class="p">},</span>
+
+            <span class="c1"># 可视化</span>
+            <span class="s1">&#39;visualization&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;confidence_bar&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">render_confidence_bar</span><span class="p">(</span><span class="n">inference_result</span><span class="p">[</span><span class="s1">&#39;confidence&#39;</span><span class="p">]),</span>
+                <span class="s1">&#39;source_highlight&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">highlight_source_data</span><span class="p">(</span><span class="n">inference_result</span><span class="p">[</span><span class="s1">&#39;sources&#39;</span><span class="p">])</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+</code></pre></div>
+
+<p><strong>透明性界面示例</strong>：</p>
+<div class="codehilite"><pre><span></span><code>┌─────────────────────────────────────────────┐
+│  推断详情                                    │
+├─────────────────────────────────────────────┤
+│                                             │
+│  推断结果：桌面/报告.pdf                     │
+│  置信度：[████████░░] 78%                   │
+│                                             │
+│  📊 推断依据：                               │
+│  • 输入文件位于桌面目录                      │
+│  • 用户历史偏好：输出到同目录 (12次)         │
+│  • 文件命名习惯：保持原名 (8次)              │
+│                                             │
+│  🔄 备选方案：                               │
+│  • 文档/报告.pdf (15%)                      │
+│  • 下载/报告.pdf (7%)                       │
+│                                             │
+│  ⚠️ 局限性：                                 │
+│  • 桌面可能存在同名文件                      │
+│                                             │
+│  [使用此结果] [选择备选] [手动指定]          │
+└─────────────────────────────────────────────┘
+</code></pre></div>
+
+<h4 id="632">6.3.2 可解释性与错误归因</h4>
+<div class="codehilite"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">ExplainableInference</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;可解释的推断机制&quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">explain_error</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inference_result</span><span class="p">,</span> <span class="n">actual_outcome</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;解释推断错误&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">actual_outcome</span><span class="p">[</span><span class="s1">&#39;success&#39;</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="n">error_analysis</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;predicted&#39;</span><span class="p">:</span> <span class="n">inference_result</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;actual&#39;</span><span class="p">:</span> <span class="n">actual_outcome</span><span class="p">[</span><span class="s1">&#39;expected&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;error_type&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">classify_error</span><span class="p">(</span><span class="n">inference_result</span><span class="p">,</span> <span class="n">actual_outcome</span><span class="p">),</span>
+
+            <span class="s1">&#39;explanation&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate_error_explanation</span><span class="p">(</span>
+                <span class="n">inference_result</span><span class="p">,</span> <span class="n">actual_outcome</span>
+            <span class="p">),</span>
+
+            <span class="s1">&#39;root_cause&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">analyze_root_cause</span><span class="p">(</span>
+                <span class="n">inference_result</span><span class="p">,</span> <span class="n">actual_outcome</span>
+            <span class="p">),</span>
+
+            <span class="s1">&#39;improvement_suggestion&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">suggest_improvement</span><span class="p">(</span>
+                <span class="n">inference_result</span><span class="p">,</span> <span class="n">actual_outcome</span>
+            <span class="p">)</span>
+        <span class="p">}</span>
+
+        <span class="k">return</span> <span class="n">error_analysis</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">classify_error</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inference</span><span class="p">,</span> <span class="n">outcome</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;分类错误类型&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">inference</span><span class="p">[</span><span class="s1">&#39;confidence&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mf">0.8</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s1">&#39;HIGH_CONFIDENCE_ERROR&#39;</span>  <span class="c1"># 高置信度错误</span>
+        <span class="k">elif</span> <span class="n">inference</span><span class="p">[</span><span class="s1">&#39;source&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;user_history&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s1">&#39;HISTORY_MISMATCH&#39;</span>        <span class="c1"># 历史不匹配</span>
+        <span class="k">elif</span> <span class="n">inference</span><span class="p">[</span><span class="s1">&#39;source&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;context&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s1">&#39;CONTEXT_MISUNDERSTANDING&#39;</span> <span class="c1"># 上下文误解</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s1">&#39;INSUFFICIENT_INFORMATION&#39;</span> <span class="c1"># 信息不足</span>
+</code></pre></div>
+
+<h4 id="633">6.3.3 学习机制</h4>
+<div class="codehilite"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">InferenceLearningSystem</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;推断学习系统&quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">correction_history</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">user_patterns</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">record_correction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inference</span><span class="p">,</span> <span class="n">user_correction</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;记录用户修正&quot;&quot;&quot;</span>
+        <span class="n">record</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;timestamp&#39;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(),</span>
+            <span class="s1">&#39;node_type&#39;</span><span class="p">:</span> <span class="n">inference</span><span class="p">[</span><span class="s1">&#39;node_type&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;param_name&#39;</span><span class="p">:</span> <span class="n">inference</span><span class="p">[</span><span class="s1">&#39;param_name&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;inferred_value&#39;</span><span class="p">:</span> <span class="n">inference</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;user_value&#39;</span><span class="p">:</span> <span class="n">user_correction</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;context&#39;</span><span class="p">:</span> <span class="n">inference</span><span class="p">[</span><span class="s1">&#39;context&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;was_different&#39;</span><span class="p">:</span> <span class="n">inference</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="n">user_correction</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">]</span>
+        <span class="p">}</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">correction_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">record</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">record</span><span class="p">[</span><span class="s1">&#39;was_different&#39;</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">update_patterns</span><span class="p">(</span><span class="n">record</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_patterns</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;更新用户模式&quot;&quot;&quot;</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">record</span><span class="p">[</span><span class="s1">&#39;node_type&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">record</span><span class="p">[</span><span class="s1">&#39;param_name&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">user_patterns</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">user_patterns</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;corrections&#39;</span><span class="p">:</span> <span class="p">[],</span>
+                <span class="s1">&#39;preference_score&#39;</span><span class="p">:</span> <span class="p">{}</span>
+            <span class="p">}</span>
+
+        <span class="c1"># 记录修正</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">user_patterns</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s1">&#39;corrections&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+            <span class="s1">&#39;from&#39;</span><span class="p">:</span> <span class="n">record</span><span class="p">[</span><span class="s1">&#39;inferred_value&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;to&#39;</span><span class="p">:</span> <span class="n">record</span><span class="p">[</span><span class="s1">&#39;user_value&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;context&#39;</span><span class="p">:</span> <span class="n">record</span><span class="p">[</span><span class="s1">&#39;context&#39;</span><span class="p">]</span>
+        <span class="p">})</span>
+
+        <span class="c1"># 更新偏好分数</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">user_patterns</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s1">&#39;preference_score&#39;</span><span class="p">][</span><span class="n">record</span><span class="p">[</span><span class="s1">&#39;user_value&#39;</span><span class="p">]]</span> <span class="o">=</span> \
+            <span class="bp">self</span><span class="o">.</span><span class="n">user_patterns</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s1">&#39;preference_score&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">record</span><span class="p">[</span><span class="s1">&#39;user_value&#39;</span><span class="p">],</span> <span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_learned_preference</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node_type</span><span class="p">,</span> <span class="n">param_name</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;获取学习到的偏好&quot;&quot;&quot;</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">node_type</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">param_name</span><span class="si">}</span><span class="s2">&quot;</span>
+
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">user_patterns</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="n">patterns</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">user_patterns</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+
+        <span class="c1"># 基于相似上下文找到最可能的偏好</span>
+        <span class="n">best_match</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">find_best_context_match</span><span class="p">(</span>
+            <span class="n">patterns</span><span class="p">[</span><span class="s1">&#39;corrections&#39;</span><span class="p">],</span> <span class="n">context</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">best_match</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">{</span>
+                <span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="n">best_match</span><span class="p">[</span><span class="s1">&#39;to&#39;</span><span class="p">],</span>
+                <span class="s1">&#39;confidence&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">calculate_pattern_confidence</span><span class="p">(</span><span class="n">patterns</span><span class="p">),</span>
+                <span class="s1">&#39;source&#39;</span><span class="p">:</span> <span class="s1">&#39;learned_preference&#39;</span>
+            <span class="p">}</span>
+
+        <span class="k">return</span> <span class="kc">None</span>
+</code></pre></div>
+
+<h3 id="64">6.4 成本控制的细化</h3>
+<p>实际运行中，LLM 推断的成本需要更精细的管理：</p>
+<div class="codehilite"><pre><span></span><code><span class="nt">cost_control</span><span class="p">:</span>
+<span class="w">  </span><span class="c1"># 单任务推断预算</span>
+<span class="w">  </span><span class="nt">inference_budget_per_task</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">500</span><span class="w">  </span><span class="c1"># tokens</span>
+<span class="w">  </span><span class="nt">budget_exceeded_action</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;fallback_to_rules&quot;</span><span class="w">  </span><span class="c1"># 预算超限时的行为</span>
+
+<span class="w">  </span><span class="c1"># 模型选择策略</span>
+<span class="w">  </span><span class="nt">model_selection</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">strategy</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;confidence_based&quot;</span>
+<span class="w">    </span><span class="nt">rules</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">condition</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;confidence</span><span class="nv"> </span><span class="s">&gt;</span><span class="nv"> </span><span class="s">0.8&quot;</span>
+<span class="w">        </span><span class="nt">model</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;qwen:1.8b&quot;</span><span class="w">      </span><span class="c1"># 高置信度用小模型</span>
+<span class="w">        </span><span class="nt">max_tokens</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">100</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">condition</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;confidence</span><span class="nv"> </span><span class="s">&lt;=</span><span class="nv"> </span><span class="s">0.8</span><span class="nv"> </span><span class="s">and</span><span class="nv"> </span><span class="s">confidence</span><span class="nv"> </span><span class="s">&gt;</span><span class="nv"> </span><span class="s">0.5&quot;</span>
+<span class="w">        </span><span class="nt">model</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;qwen:4b&quot;</span><span class="w">        </span><span class="c1"># 中置信度用中等模型</span>
+<span class="w">        </span><span class="nt">max_tokens</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">200</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">condition</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;confidence</span><span class="nv"> </span><span class="s">&lt;=</span><span class="nv"> </span><span class="s">0.5&quot;</span>
+<span class="w">        </span><span class="nt">model</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;qwen:8b&quot;</span><span class="w">        </span><span class="c1"># 低置信度用大模型</span>
+<span class="w">        </span><span class="nt">max_tokens</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">300</span>
+
+<span class="w">  </span><span class="c1"># 缓存机制</span>
+<span class="w">  </span><span class="nt">cache</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">    </span><span class="nt">strategy</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;semantic_similarity&quot;</span><span class="w">  </span><span class="c1"># 语义相似度匹配</span>
+<span class="w">    </span><span class="nt">similarity_threshold</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.85</span>
+<span class="w">    </span><span class="nt">ttl</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3600</span><span class="w">  </span><span class="c1"># 1小时过期</span>
+<span class="w">    </span><span class="nt">max_entries</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1000</span>
+
+<span class="w">  </span><span class="c1"># 批量优化</span>
+<span class="w">  </span><span class="nt">batch_optimization</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">    </span><span class="nt">max_batch_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5</span>
+<span class="w">    </span><span class="nt">batch_timeout_ms</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">100</span><span class="w">  </span><span class="c1"># 等待批量处理的时间</span>
+
+<span class="w">  </span><span class="c1"># 降级策略</span>
+<span class="w">  </span><span class="nt">fallback</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;rule_based&quot;</span><span class="w">       </span><span class="c1"># 规则推断</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;default_value&quot;</span><span class="w">    </span><span class="c1"># 默认值</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;skip_inference&quot;</span><span class="w">   </span><span class="c1"># 跳过推断，直接询问</span>
+</code></pre></div>
+
+<p><strong>成本监控实现</strong>：</p>
+<div class="codehilite"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">InferenceCostMonitor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;推断成本监控&quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">session_costs</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;total_tokens&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="s1">&#39;total_calls&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="s1">&#39;by_model&#39;</span><span class="p">:</span> <span class="p">{},</span>
+            <span class="s1">&#39;by_node_type&#39;</span><span class="p">:</span> <span class="p">{}</span>
+        <span class="p">}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">track_inference</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">tokens</span><span class="p">,</span> <span class="n">node_type</span><span class="p">,</span> <span class="n">success</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;追踪推断调用&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">session_costs</span><span class="p">[</span><span class="s1">&#39;total_tokens&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">tokens</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">session_costs</span><span class="p">[</span><span class="s1">&#39;total_calls&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="c1"># 按模型统计</span>
+        <span class="k">if</span> <span class="n">model</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">session_costs</span><span class="p">[</span><span class="s1">&#39;by_model&#39;</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">session_costs</span><span class="p">[</span><span class="s1">&#39;by_model&#39;</span><span class="p">][</span><span class="n">model</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;calls&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;tokens&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;successes&#39;</span><span class="p">:</span> <span class="mi">0</span>
+            <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">session_costs</span><span class="p">[</span><span class="s1">&#39;by_model&#39;</span><span class="p">][</span><span class="n">model</span><span class="p">][</span><span class="s1">&#39;calls&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">session_costs</span><span class="p">[</span><span class="s1">&#39;by_model&#39;</span><span class="p">][</span><span class="n">model</span><span class="p">][</span><span class="s1">&#39;tokens&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">tokens</span>
+        <span class="k">if</span> <span class="n">success</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">session_costs</span><span class="p">[</span><span class="s1">&#39;by_model&#39;</span><span class="p">][</span><span class="n">model</span><span class="p">][</span><span class="s1">&#39;successes&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="c1"># 按节点类型统计</span>
+        <span class="k">if</span> <span class="n">node_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">session_costs</span><span class="p">[</span><span class="s1">&#39;by_node_type&#39;</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">session_costs</span><span class="p">[</span><span class="s1">&#39;by_node_type&#39;</span><span class="p">][</span><span class="n">node_type</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;calls&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;tokens&#39;</span><span class="p">:</span> <span class="mi">0</span>
+            <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">session_costs</span><span class="p">[</span><span class="s1">&#39;by_node_type&#39;</span><span class="p">][</span><span class="n">node_type</span><span class="p">][</span><span class="s1">&#39;calls&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">session_costs</span><span class="p">[</span><span class="s1">&#39;by_node_type&#39;</span><span class="p">][</span><span class="n">node_type</span><span class="p">][</span><span class="s1">&#39;tokens&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">tokens</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">check_budget</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">task_id</span><span class="p">,</span> <span class="n">estimated_tokens</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;检查预算&quot;&quot;&quot;</span>
+        <span class="n">current_usage</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">session_costs</span><span class="p">[</span><span class="s1">&#39;total_tokens&#39;</span><span class="p">]</span>
+        <span class="n">budget</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_task_budget</span><span class="p">(</span><span class="n">task_id</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">current_usage</span> <span class="o">+</span> <span class="n">estimated_tokens</span> <span class="o">&gt;</span> <span class="n">budget</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">{</span>
+                <span class="s1">&#39;allowed&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                <span class="s1">&#39;reason&#39;</span><span class="p">:</span> <span class="s1">&#39;budget_exceeded&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;current&#39;</span><span class="p">:</span> <span class="n">current_usage</span><span class="p">,</span>
+                <span class="s1">&#39;budget&#39;</span><span class="p">:</span> <span class="n">budget</span><span class="p">,</span>
+                <span class="s1">&#39;remaining&#39;</span><span class="p">:</span> <span class="n">budget</span> <span class="o">-</span> <span class="n">current_usage</span>
+            <span class="p">}</span>
+
+        <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;allowed&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
+</code></pre></div>
+
+<h3 id="65">6.5 失败处理链的完整性</h3>
+<p>当前设计主要针对"信息缺失"场景，对"推断失败"的处理需要更完善的回退链：</p>
+<div class="codehilite"><pre><span></span><code>推断失败处理链：
+
+LLM 推断失败
+    │
+    ├─ Step 1: 重试机制
+    │   ├─ 重试 1 次（相同参数）
+    │   └─ 重试 1 次（不同模型/参数）
+    │       └─ 成功 → 继续
+    │       └─ 失败 → Step 2
+    │
+    ├─ Step 2: 降级推断
+    │   ├─ 规则推断（如果有预设规则）
+    │   │   └─ 成功 → 继续
+    │   │   └─ 失败 → Step 3
+    │   └─ 默认值填充（如果参数可选）
+    │       └─ 成功 → 继续
+    │       └─ 失败 → Step 3
+    │
+    ├─ Step 3: 轻量级 Elicitation
+    │   ├─ 只询问最关键参数
+    │   ├─ 其他参数使用默认值
+    │   └─ 成功 → 继续
+    │       └─ 失败 → Step 4
+    │
+    └─ Step 4: 最终处理
+        ├─ 记录失败详情
+        ├─ 通知用户
+        └─ 任务降级处理
+            ├─ 跳过当前节点
+            ├─ 使用替代方案
+            └─ 完全取消任务
+</code></pre></div>
+
+<p><strong>失败处理链实现</strong>：</p>
+<div class="codehilite"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">InferenceFailureHandler</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;推断失败处理器&quot;&quot;&quot;</span>
+
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">handle_failure</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">error</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;处理推断失败&quot;&quot;&quot;</span>
+
+        <span class="c1"># Step 1: 重试机制</span>
+        <span class="n">retry_result</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">retry_with_fallback</span><span class="p">(</span><span class="n">error</span><span class="p">,</span> <span class="n">context</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">retry_result</span><span class="o">.</span><span class="n">success</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">retry_result</span>
+
+        <span class="c1"># Step 2: 降级推断</span>
+        <span class="n">fallback_result</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">fallback_inference</span><span class="p">(</span><span class="n">error</span><span class="p">,</span> <span class="n">context</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">fallback_result</span><span class="o">.</span><span class="n">success</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">fallback_result</span>
+
+        <span class="c1"># Step 3: 轻量级 Elicitation</span>
+        <span class="n">elicitation_result</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">lightweight_elicitation</span><span class="p">(</span><span class="n">error</span><span class="p">,</span> <span class="n">context</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">elicitation_result</span><span class="o">.</span><span class="n">success</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">elicitation_result</span>
+
+        <span class="c1"># Step 4: 最终处理</span>
+        <span class="k">return</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">final_handler</span><span class="p">(</span><span class="n">error</span><span class="p">,</span> <span class="n">context</span><span class="p">)</span>
+
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">retry_with_fallback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">error</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;重试机制&quot;&quot;&quot;</span>
+        <span class="c1"># 第一次重试：相同参数</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">retry_inference</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">result</span><span class="o">.</span><span class="n">success</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">result</span>
+
+        <span class="c1"># 第二次重试：切换模型</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">retry_with_different_model</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">result</span><span class="o">.</span><span class="n">success</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">result</span>
+
+        <span class="k">return</span> <span class="n">FailureResult</span><span class="p">(</span><span class="s2">&quot;重试失败&quot;</span><span class="p">)</span>
+
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">fallback_inference</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">error</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;降级推断&quot;&quot;&quot;</span>
+        <span class="c1"># 尝试规则推断</span>
+        <span class="n">rule_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_rules</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">rule_result</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">SuccessResult</span><span class="p">(</span><span class="n">rule_result</span><span class="p">,</span> <span class="n">source</span><span class="o">=</span><span class="s1">&#39;rule&#39;</span><span class="p">)</span>
+
+        <span class="c1"># 尝试默认值</span>
+        <span class="n">default_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_defaults</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">default_result</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">SuccessResult</span><span class="p">(</span><span class="n">default_result</span><span class="p">,</span> <span class="n">source</span><span class="o">=</span><span class="s1">&#39;default&#39;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">FailureResult</span><span class="p">(</span><span class="s2">&quot;降级推断失败&quot;</span><span class="p">)</span>
+
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">lightweight_elicitation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">error</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;轻量级 Elicitation&quot;&quot;&quot;</span>
+        <span class="c1"># 只询问关键参数</span>
+        <span class="n">critical_params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">identify_critical_params</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">critical_params</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">FailureResult</span><span class="p">(</span><span class="s2">&quot;无关键参数需要询问&quot;</span><span class="p">)</span>
+
+        <span class="c1"># 简化的询问界面</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">quick_ask</span><span class="p">(</span><span class="n">critical_params</span><span class="p">,</span> <span class="n">context</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span>
+
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">final_handler</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">error</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;最终处理&quot;&quot;&quot;</span>
+        <span class="c1"># 记录失败</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log_failure</span><span class="p">(</span><span class="n">error</span><span class="p">,</span> <span class="n">context</span><span class="p">)</span>
+
+        <span class="c1"># 根据节点类型决定处理方式</span>
+        <span class="n">node_type</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;node_type&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_skipable</span><span class="p">(</span><span class="n">node_type</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">SkipResult</span><span class="p">(</span><span class="s2">&quot;跳过节点&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_alternative</span><span class="p">(</span><span class="n">node_type</span><span class="p">):</span>
+            <span class="n">alt_result</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">execute_alternative</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">alt_result</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">CancelResult</span><span class="p">(</span><span class="s2">&quot;任务取消&quot;</span><span class="p">,</span> <span class="n">reason</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">error</span><span class="p">))</span>
+</code></pre></div>
+
+<hr />
+<h2 id="_10">七、与其他架构组件的集成</h2>
+<h3 id="71">7.1 与行为树生成器的集成</h3>
+<p>在行为树生成阶段预标记参数的重要性，执行时可直接使用：</p>
+<div class="codehilite"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Action&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;发送邮件&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;actionSendEmail&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;tool&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;email_processor&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;parameters&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;recipient&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;value&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;{{user_input.recipient}}&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;importance&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;critical&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;inference_sources&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;user_input&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;contact_list&quot;</span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;inference_confidence&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.3</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;elicitation_prompt&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;请提供收件人邮箱地址&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">&quot;subject&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;value&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;{{user_input.subject}}&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;importance&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;important&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;inference_sources&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;document_title&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;user_input&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;email_history&quot;</span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;inference_confidence&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.6</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;default_value&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;无主题&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">&quot;body&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;value&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;{{user_input.body}}&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;importance&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;important&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;inference_sources&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;document_content&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;user_input&quot;</span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;inference_confidence&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.4</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">&quot;attachments&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;value&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;{{previous_node.result}}&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;importance&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;optional&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;inference_sources&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;blackboard&quot;</span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;inference_confidence&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.9</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;intelligence_config&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;strategy&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;hybrid&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;enable_inference&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;enable_elicitation&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;confidence_thresholds&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;auto_execute&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.85</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;confirm&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.60</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="72">7.2 与黑板系统的集成</h3>
+<p>在黑板中增加专门的"推断历史"区域：</p>
+<div class="codehilite"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">EnhancedBlackboard</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;增强的黑板系统&quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="p">{}</span>                    <span class="c1"># 常规数据</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">node_results</span> <span class="o">=</span> <span class="p">{}</span>            <span class="c1"># 节点结果</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inference_history</span> <span class="o">=</span> <span class="p">{}</span>       <span class="c1"># 推断历史（新增）</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">user_corrections</span> <span class="o">=</span> <span class="p">{}</span>        <span class="c1"># 用户修正（新增）</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">record_inference</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node_id</span><span class="p">,</span> <span class="n">inference_record</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;记录推断历史&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">node_id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">inference_history</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">inference_history</span><span class="p">[</span><span class="n">node_id</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="n">record</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;timestamp&#39;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+            <span class="s1">&#39;missing_params&#39;</span><span class="p">:</span> <span class="n">inference_record</span><span class="p">[</span><span class="s1">&#39;missing_params&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;inferred_params&#39;</span><span class="p">:</span> <span class="n">inference_record</span><span class="p">[</span><span class="s1">&#39;inferred_params&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;confidence&#39;</span><span class="p">:</span> <span class="n">inference_record</span><span class="p">[</span><span class="s1">&#39;confidence&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;strategy&#39;</span><span class="p">:</span> <span class="n">inference_record</span><span class="p">[</span><span class="s1">&#39;strategy&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;user_confirmed&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>        <span class="c1"># 待用户确认</span>
+            <span class="s1">&#39;user_correction&#39;</span><span class="p">:</span> <span class="kc">None</span>        <span class="c1"># 用户修正值</span>
+        <span class="p">}</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">inference_history</span><span class="p">[</span><span class="n">node_id</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">record</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inference_history</span><span class="p">[</span><span class="n">node_id</span><span class="p">])</span> <span class="o">-</span> <span class="mi">1</span>  <span class="c1"># 返回记录索引</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_inference_result</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node_id</span><span class="p">,</span> <span class="n">record_index</span><span class="p">,</span> <span class="n">user_action</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;更新推断结果&quot;&quot;&quot;</span>
+        <span class="n">record</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inference_history</span><span class="p">[</span><span class="n">node_id</span><span class="p">][</span><span class="n">record_index</span><span class="p">]</span>
+        <span class="n">record</span><span class="p">[</span><span class="s1">&#39;user_confirmed&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">user_action</span><span class="p">[</span><span class="s1">&#39;confirmed&#39;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">user_action</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;correction&#39;</span><span class="p">):</span>
+            <span class="n">record</span><span class="p">[</span><span class="s1">&#39;user_correction&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">user_action</span><span class="p">[</span><span class="s1">&#39;correction&#39;</span><span class="p">]</span>
+
+            <span class="c1"># 同时记录到用户修正历史</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">record_user_correction</span><span class="p">(</span><span class="n">node_id</span><span class="p">,</span> <span class="n">user_action</span><span class="p">[</span><span class="s1">&#39;correction&#39;</span><span class="p">])</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">record_user_correction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node_id</span><span class="p">,</span> <span class="n">correction</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;记录用户修正&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">node_id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">user_corrections</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">user_corrections</span><span class="p">[</span><span class="n">node_id</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">user_corrections</span><span class="p">[</span><span class="n">node_id</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+            <span class="s1">&#39;timestamp&#39;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+            <span class="s1">&#39;original&#39;</span><span class="p">:</span> <span class="n">correction</span><span class="p">[</span><span class="s1">&#39;original&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;corrected&#39;</span><span class="p">:</span> <span class="n">correction</span><span class="p">[</span><span class="s1">&#39;corrected&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;context&#39;</span><span class="p">:</span> <span class="n">correction</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;context&#39;</span><span class="p">)</span>
+        <span class="p">})</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_inference_patterns</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node_type</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;获取推断模式（用于学习）&quot;&quot;&quot;</span>
+        <span class="n">patterns</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">node_id</span><span class="p">,</span> <span class="n">history</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">inference_history</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">node_id</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">node_type</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">record</span> <span class="ow">in</span> <span class="n">history</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">record</span><span class="p">[</span><span class="s1">&#39;user_correction&#39;</span><span class="p">]:</span>
+                        <span class="n">patterns</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                            <span class="s1">&#39;inferred&#39;</span><span class="p">:</span> <span class="n">record</span><span class="p">[</span><span class="s1">&#39;inferred_params&#39;</span><span class="p">],</span>
+                            <span class="s1">&#39;corrected&#39;</span><span class="p">:</span> <span class="n">record</span><span class="p">[</span><span class="s1">&#39;user_correction&#39;</span><span class="p">],</span>
+                            <span class="s1">&#39;context&#39;</span><span class="p">:</span> <span class="n">record</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;context&#39;</span><span class="p">)</span>
+                        <span class="p">})</span>
+
+        <span class="k">return</span> <span class="n">patterns</span>
+</code></pre></div>
+
+<h3 id="73">7.3 与日志监控系统的集成</h3>
+<p>记录每次推断的详细信息，用于后续分析和优化：</p>
+<div class="codehilite"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">InferenceLogger</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;推断日志记录器&quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">log_path</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log_path</span> <span class="o">=</span> <span class="n">log_path</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">session_logs</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">log_inference</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">log_entry</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;记录推断日志&quot;&quot;&quot;</span>
+        <span class="n">full_log</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;timestamp&#39;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+            <span class="s1">&#39;session_id&#39;</span><span class="p">:</span> <span class="n">log_entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;session_id&#39;</span><span class="p">),</span>
+            <span class="s1">&#39;task_id&#39;</span><span class="p">:</span> <span class="n">log_entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;task_id&#39;</span><span class="p">),</span>
+
+            <span class="c1"># 节点信息</span>
+            <span class="s1">&#39;node_id&#39;</span><span class="p">:</span> <span class="n">log_entry</span><span class="p">[</span><span class="s1">&#39;node_id&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;node_type&#39;</span><span class="p">:</span> <span class="n">log_entry</span><span class="p">[</span><span class="s1">&#39;node_type&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;node_name&#39;</span><span class="p">:</span> <span class="n">log_entry</span><span class="p">[</span><span class="s1">&#39;node_name&#39;</span><span class="p">],</span>
+
+            <span class="c1"># 参数信息</span>
+            <span class="s1">&#39;missing_params&#39;</span><span class="p">:</span> <span class="n">log_entry</span><span class="p">[</span><span class="s1">&#39;missing_params&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;available_context&#39;</span><span class="p">:</span> <span class="n">log_entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;available_context&#39;</span><span class="p">,</span> <span class="p">{}),</span>
+
+            <span class="c1"># 推断结果</span>
+            <span class="s1">&#39;inference_result&#39;</span><span class="p">:</span> <span class="n">log_entry</span><span class="p">[</span><span class="s1">&#39;inference_result&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;confidence&#39;</span><span class="p">:</span> <span class="n">log_entry</span><span class="p">[</span><span class="s1">&#39;confidence&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;strategy_used&#39;</span><span class="p">:</span> <span class="n">log_entry</span><span class="p">[</span><span class="s1">&#39;strategy&#39;</span><span class="p">],</span>  <span class="c1"># inference/elicitation/hybrid</span>
+
+            <span class="c1"># 用户交互</span>
+            <span class="s1">&#39;user_action&#39;</span><span class="p">:</span> <span class="n">log_entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;user_action&#39;</span><span class="p">),</span>  <span class="c1"># confirmed/modified/cancelled</span>
+            <span class="s1">&#39;user_modification&#39;</span><span class="p">:</span> <span class="n">log_entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;user_modification&#39;</span><span class="p">),</span>
+
+            <span class="c1"># 性能指标</span>
+            <span class="s1">&#39;latency_ms&#39;</span><span class="p">:</span> <span class="n">log_entry</span><span class="p">[</span><span class="s1">&#39;latency_ms&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;tokens_used&#39;</span><span class="p">:</span> <span class="n">log_entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;tokens_used&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+            <span class="s1">&#39;model_used&#39;</span><span class="p">:</span> <span class="n">log_entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;model_used&#39;</span><span class="p">),</span>
+
+            <span class="c1"># 结果</span>
+            <span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="n">log_entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;success&#39;</span><span class="p">),</span>
+            <span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="n">log_entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;error&#39;</span><span class="p">)</span>
+        <span class="p">}</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">session_logs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">full_log</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">persist_log</span><span class="p">(</span><span class="n">full_log</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">persist_log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">log_entry</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;持久化日志&quot;&quot;&quot;</span>
+        <span class="n">log_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log_path</span><span class="p">,</span> 
+            <span class="sa">f</span><span class="s2">&quot;inference_</span><span class="si">{</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y%m</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">.jsonl&quot;</span>
+        <span class="p">)</span>
+
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">log_file</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">log_entry</span><span class="p">,</span> <span class="n">ensure_ascii</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_statistics</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time_range</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;获取统计信息&quot;&quot;&quot;</span>
+        <span class="n">logs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">filter_logs</span><span class="p">(</span><span class="n">time_range</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;total_inferences&#39;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">logs</span><span class="p">),</span>
+            <span class="s1">&#39;by_strategy&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">group_by</span><span class="p">(</span><span class="n">logs</span><span class="p">,</span> <span class="s1">&#39;strategy_used&#39;</span><span class="p">),</span>
+            <span class="s1">&#39;by_node_type&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">group_by</span><span class="p">(</span><span class="n">logs</span><span class="p">,</span> <span class="s1">&#39;node_type&#39;</span><span class="p">),</span>
+            <span class="s1">&#39;avg_confidence&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">calculate_avg</span><span class="p">(</span><span class="n">logs</span><span class="p">,</span> <span class="s1">&#39;confidence&#39;</span><span class="p">),</span>
+            <span class="s1">&#39;avg_latency_ms&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">calculate_avg</span><span class="p">(</span><span class="n">logs</span><span class="p">,</span> <span class="s1">&#39;latency_ms&#39;</span><span class="p">),</span>
+            <span class="s1">&#39;total_tokens&#39;</span><span class="p">:</span> <span class="nb">sum</span><span class="p">(</span><span class="n">log</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;tokens_used&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="k">for</span> <span class="n">log</span> <span class="ow">in</span> <span class="n">logs</span><span class="p">),</span>
+            <span class="s1">&#39;user_modification_rate&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">calculate_rate</span><span class="p">(</span>
+                <span class="n">logs</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;user_action&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;modified&#39;</span>
+            <span class="p">),</span>
+            <span class="s1">&#39;success_rate&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">calculate_rate</span><span class="p">(</span>
+                <span class="n">logs</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;success&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="kc">True</span>
+            <span class="p">)</span>
+        <span class="p">}</span>
+</code></pre></div>
+
+<p><strong>日志分析仪表板指标</strong>：</p>
+<div class="codehilite"><pre><span></span><code><span class="nt">dashboard_metrics</span><span class="p">:</span>
+<span class="w">  </span><span class="c1"># 推断质量</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;推断准确率&quot;</span>
+<span class="w">    </span><span class="nt">query</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;success_rate</span><span class="nv"> </span><span class="s">WHERE</span><span class="nv"> </span><span class="s">user_action</span><span class="nv"> </span><span class="s">!=</span><span class="nv"> </span><span class="s">&#39;modified&#39;&quot;</span>
+<span class="w">    </span><span class="nt">target</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.85</span>
+
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;平均置信度&quot;</span>
+<span class="w">    </span><span class="nt">query</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;avg_confidence&quot;</span>
+<span class="w">    </span><span class="nt">target</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.75</span>
+
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;用户修正率&quot;</span>
+<span class="w">    </span><span class="nt">query</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;user_modification_rate&quot;</span>
+<span class="w">    </span><span class="nt">target</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;&lt;</span><span class="nv"> </span><span class="s">0.15&quot;</span>
+
+<span class="w">  </span><span class="c1"># 性能指标</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;平均推断延迟&quot;</span>
+<span class="w">    </span><span class="nt">query</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;avg_latency_ms&quot;</span>
+<span class="w">    </span><span class="nt">target</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;&lt;</span><span class="nv"> </span><span class="s">500ms&quot;</span>
+
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Token</span><span class="nv"> </span><span class="s">消耗&quot;</span>
+<span class="w">    </span><span class="nt">query</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;total_tokens</span><span class="nv"> </span><span class="s">/</span><span class="nv"> </span><span class="s">total_inferences&quot;</span>
+<span class="w">    </span><span class="nt">target</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;&lt;</span><span class="nv"> </span><span class="s">150&quot;</span>
+
+<span class="w">  </span><span class="c1"># 策略分布</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;自动执行比例&quot;</span>
+<span class="w">    </span><span class="nt">query</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;count</span><span class="nv"> </span><span class="s">WHERE</span><span class="nv"> </span><span class="s">strategy</span><span class="nv"> </span><span class="s">=</span><span class="nv"> </span><span class="s">&#39;auto_execute&#39;</span><span class="nv"> </span><span class="s">/</span><span class="nv"> </span><span class="s">total&quot;</span>
+<span class="w">    </span><span class="nt">target</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;&gt;</span><span class="nv"> </span><span class="s">0.60&quot;</span>
+
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Elicitation</span><span class="nv"> </span><span class="s">触发率&quot;</span>
+<span class="w">    </span><span class="nt">query</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;count</span><span class="nv"> </span><span class="s">WHERE</span><span class="nv"> </span><span class="s">strategy</span><span class="nv"> </span><span class="s">=</span><span class="nv"> </span><span class="s">&#39;elicitation&#39;</span><span class="nv"> </span><span class="s">/</span><span class="nv"> </span><span class="s">total&quot;</span>
+<span class="w">    </span><span class="nt">target</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;&lt;</span><span class="nv"> </span><span class="s">0.20&quot;</span>
+</code></pre></div>
+
+<hr />
+<h2 id="_11">八、总结</h2>
+<p>执行智能的三种策略代表了自动化与可控性之间的不同权衡：</p>
+<table>
+<thead>
+<tr>
+<th>策略</th>
+<th>核心哲学</th>
+<th>最佳场景</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>LLM 推断</strong></td>
+<td>效率优先</td>
+<td>高可靠推断、低错误成本</td>
+</tr>
+<tr>
+<td><strong>Elicitation</strong></td>
+<td>准确优先</td>
+<td>关键参数、用户意图核心</td>
+</tr>
+<tr>
+<td><strong>混合模式</strong></td>
+<td>平衡之道</td>
+<td>中等重要性、不确定场景</td>
+</tr>
+</tbody>
+</table>
+<p>在实际系统设计中，建议：</p>
+<ol>
+<li><strong>从简单开始</strong>：先实现 LLM 推断，覆盖简单场景</li>
+<li><strong>逐步增强</strong>：添加 Elicitation 处理关键参数</li>
+<li><strong>智能融合</strong>：最终采用混合模式，动态选择策略</li>
+<li><strong>数据驱动</strong>：基于实际使用数据持续优化</li>
+</ol>
+<p>三种策略并非互斥，而是构成了执行智能的连续谱系。优秀的系统设计应该能够根据场景特征动态选择或组合使用这些策略，在效率、准确性和用户体验之间找到最佳平衡点。</p>
+<hr />
+<p><em>文档版本: 1.0</em><br />
+<em>最后更新: 2026-03-08</em></p>
+</body>
+</html>

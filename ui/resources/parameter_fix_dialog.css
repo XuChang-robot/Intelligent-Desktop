@@ -1,0 +1,122 @@
+/* 参数修正对话框样式 */
+.parameter-fix-dialog {
+    background-color: #FFF3E0;
+    border-radius: 10px;
+    border-left: 4px solid #FF9800;
+    padding: 20px;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.parameter-fix-dialog h3 {
+    color: #FF9800;
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-family: "Microsoft YaHei", Arial, sans-serif;
+}
+
+.message {
+    margin-bottom: 20px;
+    font-family: "Microsoft YaHei", Arial, sans-serif;
+    line-height: 1.5;
+}
+
+#parameter-form {
+    margin-bottom: 20px;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    font-family: "Microsoft YaHei", Arial, sans-serif;
+}
+
+.form-group label .required {
+    color: #F44336;
+}
+
+.form-group label .description {
+    font-weight: normal;
+    font-size: 12px;
+    color: #757575;
+    margin-left: 5px;
+}
+
+.form-group input[type="text"],
+.form-group input[type="number"] {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-family: "Microsoft YaHei", Arial, sans-serif;
+    font-size: 14px;
+}
+
+.form-group input[type="checkbox"] {
+    margin-right: 8px;
+}
+
+.buttons {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.buttons button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    font-weight: bold;
+    font-family: "Microsoft YaHei", Arial, sans-serif;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+#confirm-btn {
+    background-color: #4CAF50;
+    color: white;
+    border: 2px solid #388E3C;
+}
+
+#confirm-btn:hover {
+    background-color: #45a049;
+    transform: translateY(-2px);
+}
+
+#reset-btn {
+    background-color: #FF9800;
+    color: white;
+    border: 2px solid #F57C00;
+}
+
+#reset-btn:hover {
+    background-color: #f57c00;
+    transform: translateY(-2px);
+}
+
+#cancel-btn {
+    background-color: #F44336;
+    color: white;
+    border: 2px solid #D32F2F;
+}
+
+#cancel-btn:hover {
+    background-color: #d32f2f;
+    transform: translateY(-2px);
+}
+
+/* 响应式设计 */
+@media (max-width: 480px) {
+    .buttons {
+        flex-direction: column;
+    }
+    
+    .buttons button {
+        width: 100%;
+    }
+}

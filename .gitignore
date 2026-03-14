@@ -47,7 +47,7 @@ test_*.py
 tests/
 
 # Documentation (markdown files, we use HTML)
-*.md
+# *.md  # 注释掉这行，允许提交文档文件
 !README.md
 !README_EN.md
 

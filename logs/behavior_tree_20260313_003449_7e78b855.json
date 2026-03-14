@@ -1,0 +1,22 @@
+{
+  "type": "Sequence",
+  "name": "Root",
+  "children": [
+    {
+      "type": "Action",
+      "name": "查询美国星盾在以伊冲突的表现",
+      "id": "queryUSShieldInYemenConflict",
+      "tool": "network_request",
+      "parameters": {
+        "operation": "GET",
+        "url": "https://api.example.com/us-shield-in-yemen-conflict"
+      },
+      "intelligence_config": {
+        "enabled": false,
+        "strategy": "direct",
+        "auto_execute_threshold": 0.85,
+        "confirm_threshold": 0.6
+      }
+    }
+  ]
+}

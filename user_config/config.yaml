@@ -99,9 +99,9 @@ execution_intelligence:
   # 工具执行模式配置
   tool_intelligent_mode:
     file_operations: "direct"      # 直接执行
-    email_processor: "intelligent"    # 需要确认
+    email_processor: "confirm"    # 需要确认
     weather_query: "infer"        # 自动推断
-    system_command: "confirm"     # 需要确认
+    system_command: "direct"     # 需要确认
     text_processing: "direct"     # 直接执行
     network_request: "direct"     # 直接执行
     system_info: "direct"         # 直接执行
@@ -119,3 +119,7 @@ execution_intelligence:
     temperature: 0.3              # 低温度，更确定性
     max_tokens: 200               # 限制生成长度
     timeout_ms: 5000              # 超时时间（毫秒）
+  
+  # 参数修正最大尝试次数
+  inference:
+    max_attempts: 2               # 参数验证失败时的最大修正尝试次数

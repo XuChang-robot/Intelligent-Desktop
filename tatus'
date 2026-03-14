@@ -1,0 +1,55 @@
+warning: in the working copy of '.gitignore', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'CHANGELOG.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'PROJECT_SUMMARY.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'README.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'frontend/src/App.vue', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'frontend/src/components/ChatArea.vue', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'frontend/src/composables/useChat.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'frontend/src/types/global.d.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'frontend/src/types/index.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'mcp_client/behavior_tree/behavior_tree.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'mcp_client/behavior_tree/tree_executor.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'mcp_client/client.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'mcp_client/intent_parser.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'mcp_client/llm.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'mcp_client/prompt/intent_prompts.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'mcp_server/tools/tool_base.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'requirements.txt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'start.bat', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'start_client.bat', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'user_config/config.yaml', LF will be replaced by CRLF the next time Git touches it
+.gitignore
+CHANGELOG.md
+PROJECT_SUMMARY.md
+README.md
+frontend/src/App.vue
+frontend/src/components/ChatArea.vue
+frontend/src/composables/useChat.ts
+frontend/src/types/global.d.ts
+frontend/src/types/index.ts
+logs/llm_response_raw.txt
+main_pyqt.py
+mcp_client/behavior_tree/behavior_tree.py
+mcp_client/behavior_tree/tree_executor.py
+mcp_client/client.py
+mcp_client/intent_parser.py
+mcp_client/llm.py
+mcp_client/prompt/intent_prompts.py
+mcp_server/tools/tool_base.py
+requirements.txt
+start.bat
+start_client.bat
+start_ui.bat
+ui/__init__.py
+ui/components/parameter_fix.py
+ui/main_window.py
+ui/pyqt_app.py
+ui/pyqt_main_window.py
+ui/resources/parameter_fix_dialog.css
+ui/resources/parameter_fix_dialog.html
+ui/resources/parameter_fix_dialog.js
+ui/resources/pictures/picture_load_fail.png
+ui/utils/html_generator.py
+ui/utils/html_processor.py
+user_config/config.yaml
+verify_cache_fix.py

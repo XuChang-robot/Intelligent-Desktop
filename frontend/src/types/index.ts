@@ -94,6 +94,9 @@ export type PyWebViewEventType =
   | 'stream_end' 
   | 'elicitation_request'
   | 'task_log'
+  | 'task_update'
+  | 'loading'
+  | 'progress'
 
 export interface PyWebViewEventDetail {
   type: PyWebViewEventType

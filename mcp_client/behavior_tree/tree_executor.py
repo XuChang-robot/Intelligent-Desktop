@@ -11,14 +11,16 @@ class TreeExecutor:
     负责执行行为树并管理执行状态。
     """
     
-    def __init__(self, tool_executor: Callable, blackboard: BehaviorTreeBlackboard):
+    def __init__(self, tool_executor: Callable, blackboard: BehaviorTreeBlackboard, progress_callback: Optional[Callable] = None):
         """
         Args:
             tool_executor: 工具执行函数，签名: async def tool_executor(tool_name: str, args: Dict) -> Dict
             blackboard: 黑板实例
+            progress_callback: 进度回调函数，签名: def progress_callback(progress: int, status: str, message: str)
         """
         self.tool_executor = tool_executor
         self.blackboard = blackboard
+        self.progress_callback = progress_callback
         self.logger = logging.getLogger(__name__)
     
     async def execute(self, root: py_trees.behaviour.Behaviour, 
@@ -32,8 +34,6 @@ class TreeExecutor:
         Returns:
             执行结果字典
         """
-        self.logger.info("开始执行行为树")
-        
         # 存储实体到黑板
         if entities:
             self.blackboard.set_entities(entities)
@@ -47,10 +47,19 @@ class TreeExecutor:
             
             # 持续执行行为树直到完成
             tick_count = 0
+            last_progress_update = 0
             while root.status not in [py_trees.common.Status.SUCCESS, py_trees.common.Status.FAILURE]:
                 # 执行一次 tick
                 root.tick_once()
                 tick_count += 1
+                
+                # 每10次tick更新一次进度
+                if tick_count - last_progress_update >= 2 and self.progress_callback:
+                    progress = self._calculate_progress(root)
+                    status = str(root.status)
+                    message = self._get_progress_message(root)
+                    self.progress_callback(progress, status, message)
+                    last_progress_update = tick_count
                 
                 # 检查是否有异步任务需要等待
                 async_tasks = self._get_async_tasks(root)
@@ -59,12 +68,12 @@ class TreeExecutor:
                         await asyncio.gather(*async_tasks, return_exceptions=True)
                     except Exception as e:
                         self.logger.error(f"异步任务执行失败: {e}")
-                    
+
                     # 从任务中获取结果并设置到节点
                     self._set_async_results(root)
                 
                 # 防止无限循环
-                if tick_count > 1000:
+                if tick_count > 10000:
                     self.logger.warning("达到最大 tick 次数")
                     break
             
@@ -175,3 +184,73 @@ class TreeExecutor:
         if hasattr(node, 'children'):
             for child in node.children:
                 self._set_async_results(child)
+    
+    def _calculate_progress(self, root: py_trees.behaviour.Behaviour) -> int:
+        """计算行为树执行进度
+        
+        Args:
+            root: 行为树根节点
+        
+        Returns:
+            进度百分比 (0-100)
+        """
+        def count_nodes(node: py_trees.behaviour.Behaviour) -> tuple[int, int]:
+            """统计节点数量
+            
+            Returns:
+                (总节点数, 已完成节点数)
+            """
+            total = 1
+            completed = 0
+            
+            # 检查当前节点状态
+            if node.status in [py_trees.common.Status.SUCCESS, py_trees.common.Status.FAILURE]:
+                completed = 1
+            
+            # 递归统计子节点
+            if hasattr(node, 'children'):
+                for child in node.children:
+                    child_total, child_completed = count_nodes(child)
+                    total += child_total
+                    completed += child_completed
+            
+            return total, completed
+        
+        total_nodes, completed_nodes = count_nodes(root)
+        
+        if total_nodes == 0:
+            return 0
+        
+        progress = int((completed_nodes / total_nodes) * 100)
+        return min(max(progress, 0), 100)
+    
+    def _get_progress_message(self, root: py_trees.behaviour.Behaviour) -> str:
+        """获取进度消息
+        
+        Args:
+            root: 行为树根节点
+        
+        Returns:
+            进度消息字符串
+        """
+        def find_running_node(node: py_trees.behaviour.Behaviour) -> Optional[py_trees.behaviour.Behaviour]:
+            """查找正在运行的节点"""
+            if node.status == py_trees.common.Status.RUNNING:
+                return node
+            
+            if hasattr(node, 'children'):
+                for child in node.children:
+                    result = find_running_node(child)
+                    if result:
+                        return result
+            
+            return None
+        
+        running_node = find_running_node(root)
+        
+        if running_node:
+            node_name = running_node.name
+            node_type = type(running_node).__name__
+            return f"正在执行: {node_name} ({node_type})"
+        
+        return "行为树执行中..."

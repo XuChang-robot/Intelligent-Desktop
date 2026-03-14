@@ -1,0 +1,24 @@
+{
+  "type": "Sequence",
+  "name": "Root",
+  "children": [
+    {
+      "type": "Action",
+      "name": "发送邮件",
+      "id": "actionSendEmail",
+      "tool": "email_processor",
+      "parameters": {
+        "operation": "send",
+        "recipient": "457911161@qq.com",
+        "subject": "你好",
+        "body": "你好"
+      },
+      "intelligence_config": {
+        "enabled": true,
+        "strategy": "confirm",
+        "auto_execute_threshold": 0.85,
+        "confirm_threshold": 0.6
+      }
+    }
+  ]
+}

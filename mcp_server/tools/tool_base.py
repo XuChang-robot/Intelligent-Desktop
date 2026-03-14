@@ -420,7 +420,12 @@ class ToolBase(ABC):
         
         for key, value in params.items():
             # 为每个参数添加类型注解
-            annotations[key] = str
+            # 如果值为 None，使用 Optional[str] 类型
+            if value is None:
+                from typing import Optional
+                annotations[key] = Optional[str]
+            else:
+                annotations[key] = str
             # 设置默认值
             fields[key] = value
         
@@ -430,13 +435,14 @@ class ToolBase(ABC):
             **fields
         })
     
-    async def _confirm_with_errors(self, ctx: Optional[Context], error: str, params: Dict[str, Any]) -> Dict[str, Any]:
+    async def _confirm_with_errors(self, ctx: Optional[Context], error: str, params: Dict[str, Any], attempt: int = 0) -> Dict[str, Any]:
         """参数错误时触发用户修正
         
         Args:
             ctx: FastMCP上下文
             error: 错误信息
             params: 当前参数
+            attempt: 当前尝试次数（用于防止无限递归）
             
         Returns:
             执行结果
@@ -444,13 +450,19 @@ class ToolBase(ABC):
         if not ctx:
             return ToolResult.config_error(error).build()
         
+        # 获取最大尝试次数配置
+        from user_config.config import get_config
+        max_attempts = get_config('execution_intelligence.inference.max_attempts', 3)
+        
+        # 检查是否超过最大尝试次数
+        if attempt >= max_attempts:
+            return ToolResult.error(f"参数验证失败，已达最大尝试次数({max_attempts})").build()
+        
         # 创建参数修正模型
         fix_model = self._create_parameter_fix_model(params)
         
         # 构建修正消息
-        message = f"""参数验证失败: {error}
-
-请修正以下参数："""
+        message = f"""参数验证失败: {error}\n请修正以下参数（第 {attempt + 1}/{max_attempts} 次尝试）："""
         
         # 触发参数修正界面
         result = await ctx.elicit(
@@ -472,8 +484,8 @@ class ToolBase(ABC):
         validated_params, validation_error = self.validate_parameters(**corrected_params)
         
         if validation_error:
-            # 参数仍有问题，再次触发修正
-            return await self._confirm_with_errors(ctx, validation_error, corrected_params)
+            # 参数仍有问题，再次触发修正（递归调用，尝试次数+1）
+            return await self._confirm_with_errors(ctx, validation_error, corrected_params, attempt + 1)
         
         # 参数验证通过，执行工具
         return await self.execute(ctx=ctx, **validated_params)

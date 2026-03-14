@@ -1,0 +1,46 @@
+{
+  "type": "Sequence",
+  "name": "转换文档并发送邮件",
+  "id": "sequenceConvertAndSendEmail",
+  "children": [
+    {
+      "type": "Action",
+      "name": "转换文档为语音",
+      "id": "actionConvertDocToAudio",
+      "tool": "text_processing",
+      "parameters": {
+        "operation": "to_audio",
+        "input_file": "桌面/说明.docx",
+        "output_path": "桌面/说明.mp3",
+        "voice": "zh",
+        "rate": 200,
+        "volume": 1.0
+      },
+      "intelligence_config": {
+        "enabled": false,
+        "strategy": "direct",
+        "auto_execute_threshold": 0.85,
+        "confirm_threshold": 0.6
+      }
+    },
+    {
+      "type": "Action",
+      "name": "发送邮件",
+      "id": "actionSendEmail",
+      "tool": "email_processor",
+      "parameters": {
+        "operation": "send",
+        "recipient": "jimingjiangnet@126.com",
+        "subject": "为你好",
+        "body": "为你好",
+        "attachments": "桌面/说明.mp3"
+      },
+      "intelligence_config": {
+        "enabled": true,
+        "strategy": "confirm",
+        "auto_execute_threshold": 0.85,
+        "confirm_threshold": 0.6
+      }
+    }
+  ]
+}

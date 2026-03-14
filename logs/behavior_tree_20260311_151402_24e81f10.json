@@ -1,0 +1,44 @@
+{
+  "type": "Sequence",
+  "name": "创建并发送文件邮件",
+  "id": "sequenceCreateAndSendEmail",
+  "children": [
+    {
+      "type": "Action",
+      "name": "创建文件",
+      "id": "actionCreateFile",
+      "tool": "file_operations",
+      "parameters": {
+        "operation": "write",
+        "path": "桌面/无憾最棒.txt",
+        "content": "无憾最棒",
+        "overwrite": true
+      },
+      "intelligence_config": {
+        "enabled": false,
+        "strategy": "direct",
+        "auto_execute_threshold": 0.85,
+        "confirm_threshold": 0.6
+      }
+    },
+    {
+      "type": "Action",
+      "name": "发送邮件",
+      "id": "actionSendEmail",
+      "tool": "email_processor",
+      "parameters": {
+        "operation": "send",
+        "recipient": "1982503644@qq.com",
+        "subject": "无憾最棒文件",
+        "body": "无憾最棒文件",
+        "attachments": "桌面/无憾最棒.txt"
+      },
+      "intelligence_config": {
+        "enabled": false,
+        "strategy": "direct",
+        "auto_execute_threshold": 0.85,
+        "confirm_threshold": 0.6
+      }
+    }
+  ]
+}

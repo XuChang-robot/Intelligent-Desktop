@@ -6,10 +6,13 @@
 
 - **现代化界面**：基于PyQt6的美观聊天界面，支持消息气泡、交互式确认对话框等
 - **AI驱动**：集成LLM（大语言模型）进行意图解析和任务执行
+- **行为树架构**：基于LLM生成行为树的任务规划系统，高效、可控、低成本
+- **执行智能**：支持四种执行模式（direct/infer/confirm/intelligent），智能处理缺失参数
 - **安全可靠**：包含用户确认机制，确保敏感操作的安全性
 - **实时反馈**：任务执行过程中的实时状态更新和日志显示
 - **线程安全**：采用信号槽机制确保跨线程操作的安全性
 - **可扩展**：支持自定义工具和模型集成
+- **行为树自动修复**：执行失败时自动通过LLM分析并修复行为树配置
 
 ## 系统架构
 
@@ -19,8 +22,10 @@
    - 位置: `mcp_server/`
    - 功能: 提供工具执行服务，包括Python代码执行和系统命令执行
    - 主要文件:
-     - [start_server.py](mcp_server/start_server.py) - 服务器启动脚本，处理HTTP请求
+     - [server.py](mcp_server/server.py) - MCP服务器主文件，使用FastMCP
      - [sandbox.py](mcp_server/sandbox.py) - 代码执行沙箱，提供安全的代码执行环境
+     - [tools/tool_base.py](mcp_server/tools/tool_base.py) - 工具基类，统一接口
+     - [tools/tool_llm_client.py](mcp_server/tools/tool_llm_client.py) - 工具专用LLM客户端
 
 2. **MCP Client** (客户端)
    - 位置: `mcp_client/`
@@ -28,19 +33,38 @@
    - 主要文件:
      - [client.py](mcp_client/client.py) - 客户端核心逻辑，处理用户意图和任务规划
      - [llm.py](mcp_client/llm.py) - LLM集成模块，处理与Ollama的通信
+     - [intent_parser.py](mcp_client/intent_parser.py) - 意图解析器
+     - [hybrid_cache.py](mcp_client/hybrid_cache.py) - 混合缓存系统
 
-3. **User Interface** (用户界面)
+3. **行为树系统** (Behavior Tree)
+   - 位置: `mcp_client/behavior_tree/`
+   - 功能: 任务执行引擎，支持复杂执行逻辑
+   - 主要文件:
+     - [behavior_tree.py](mcp_client/behavior_tree/behavior_tree.py) - 行为树门面类
+     - [nodes.py](mcp_client/behavior_tree/nodes.py) - 行为树节点实现
+     - [tree_builder.py](mcp_client/behavior_tree/tree_builder.py) - 行为树构建器
+     - [tree_executor.py](mcp_client/behavior_tree/tree_executor.py) - 行为树执行器
+     - [tree_repair.py](mcp_client/behavior_tree/tree_repair.py) - 行为树自动修复
+     - [intelligence/](mcp_client/behavior_tree/intelligence/) - 执行智能模块
+
+4. **User Interface** (用户界面)
    - 位置: `ui/`
    - 功能: 提供美观的聊天界面，显示任务执行过程
    - 主要文件:
      - [pyqt_main_window.py](ui/pyqt_main_window.py) - 主窗口界面，包含聊天区域和任务显示
      - [pyqt_app.py](ui/pyqt_app.py) - UI主程序，处理事件循环和线程管理
 
-4. **配置和工具**
-   - 位置: `config/`
-   - 功能: 系统配置、错误处理等
+5. **Web前端** (Frontend)
+   - 位置: `frontend/`
+   - 功能: Vue3 + Vite 构建的现代化Web界面
+   - 主要技术: Vue 3, TypeScript, Element Plus
+
+6. **配置和工具**
+   - 位置: `user_config/`, `system_config/`
+   - 功能: 系统配置、用户配置、错误处理等
    - 主要文件:
-     - [config.py](config/config.py) - 配置加载模块，处理系统配置
+     - [user_config/config.yaml](user_config/config.yaml) - 用户配置文件
+     - [user_config/config.py](user_config/config.py) - 配置加载模块
 
 ### 架构图
 
@@ -101,10 +125,29 @@
 - **模型选择**: 支持不同LLM模型的切换
 - **鼠标悬停效果**: 按钮鼠标悬停时显示手形光标
 
-### 6. 系统集成
-- **MCP协议**: 基于最新的MCP 2025-11-25协议
+### 6. 行为树系统
+- **任务规划**: 基于LLM生成行为树配置，一次调用完成规划
+- **执行引擎**: 确定性执行，零LLM调用，响应速度快
+- **节点类型**: 支持Sequence、Selector、Parallel、Action、Condition等
+- **黑板系统**: 节点间数据共享和状态管理
+- **可视化**: 支持ASCII、DOT、HTML等多种格式可视化
+
+### 7. 执行智能系统
+- **四种模式**: direct（直接）、infer（推断）、confirm（确认）、intelligent（智能）
+- **LLM推断**: 基于上下文自动推断缺失参数
+- **Elicitation**: 引导用户补充关键信息
+- **智能决策**: 根据置信度自动选择执行策略
+- **成本控制**: 使用轻量级模型，限制token消耗
+
+### 8. 缓存系统
+- **两层匹配**: 哈希精确匹配 + FAISS语义匹配
+- **持久化存储**: SQLite + FAISS，重启后缓存仍然有效
+- **智能清理**: 自动清理过期缓存，支持TTL配置
+- **性能提升**: 缓存命中时响应速度提升770倍以上
+
+### 9. 系统集成
+- **MCP协议**: 基于最新的MCP 1.26协议
 - **Streamable HTTP**: 支持流式HTTP通信，提高响应速度
-- **WebSocket**: 实时双向通信，确保系统状态及时更新
 - **线程安全**: 采用信号槽机制确保跨线程操作的安全性
 
 ## 工作流程

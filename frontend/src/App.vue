@@ -56,6 +56,16 @@
           </div>
         </div>
       </el-container>
+      
+      <!-- 状态栏 -->
+      <StatusBar
+        :is-dark-mode="isDarkMode"
+        :status-message="statusMessage"
+        :is-loading="isLoading"
+        :progress="progress"
+        :show-progress="showProgress"
+        :debug-info="debugInfo"
+      />
     </el-container>
     
     <!-- 参数修正对话框 -->
@@ -78,6 +88,7 @@ import TaskPanel from './components/TaskPanel.vue'
 import ParameterFixDialog from './components/ParameterFixDialog.vue'
 import TitleBar from './components/TitleBar.vue'
 import ResizeHandles from './components/ResizeHandles.vue'
+import StatusBar from './components/StatusBar.vue'
 import { useChat } from './composables/useChat'
 import { useTheme } from './composables/useTheme'
 import { useWindow } from './composables/useWindow'
@@ -126,7 +137,18 @@ const {
   handleFixParams
 } = useChat()
 
-const { setStatus } = useStatus()
+const {
+  statusMessage,
+  isLoading,
+  debugInfo,
+  setStatus,
+  setLoading
+} = useStatus()
+
+// ==================== 进度条状态 ====================
+
+const progress = ref(0)
+const showProgress = ref(false)
 
 const { waitForReady } = usePyWebView()
 
@@ -155,6 +177,22 @@ const handleParamReset = () => {
 watch(loading, (newValue) => {
   setStatus(newValue ? '正在执行...' : '就绪')
 })
+
+// ==================== 全局状态管理函数 ====================
+
+// 暴露给全局使用的状态管理函数
+window.setStatus = setStatus
+window.setLoading = (isLoading: boolean, message?: string) => {
+  setLoading(isLoading, message)
+}
+window.setProgress = (value: number) => {
+  progress.value = value
+  showProgress.value = true
+  // 3秒后隐藏进度条
+  setTimeout(() => {
+    showProgress.value = false
+  }, 3000)
+}
 
 // ==================== 初始化 ====================
 

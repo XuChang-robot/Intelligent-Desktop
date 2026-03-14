@@ -6,12 +6,14 @@
 
 - 🧠 **智能意图识别**：自动理解用户需求，支持三种意图类型（task/chat/cannot_execute）
 - 📋 **任务规划**：基于行为树的任务规划系统，支持复杂任务的自动分解和执行
+- 🎯 **执行智能**：支持四种执行模式（direct/infer/confirm/intelligent），智能处理缺失参数
 - 🚀 **高效缓存**：基于FAISS向量搜索的混合缓存系统，支持哈希精确匹配和语义匹配
 - 🔒 **安全沙箱**：文件系统操作安全边界，路径限制、操作白名单、危险操作确认
 - 🧩 **易于扩展**：模块化设计，支持自定义工具
 - ☁️ **天气查询**：实时天气信息查询和预警通知
 - 📄 **批量文档处理**：支持批量文件转换和通配符匹配
 - 💭 **LLM思考过程**：可折叠的思考过程显示
+- 🔧 **行为树自动修复**：执行失败时自动通过LLM分析并修复行为树配置
 
 ## 🚀 快速开始
 
@@ -39,7 +41,7 @@ ollama pull qwen3:8b
 ollama pull nomic-embed-text
 
 # 5. 启动系统
-python main.py
+python main_webview.py
 ```
 
 ## 📚 文档
@@ -58,6 +60,8 @@ python main.py
 - 🏗️ [LLM生成行为树架构的优势](docs/LLM生成行为树架构的优势.md) - 核心架构设计理念与优势分析
 - ⚙️ [系统配置说明](system_config/README.md) - 系统配置文件说明
 - 🚀 [混合缓存系统说明](docs/cache_system.md) - 缓存系统工作原理
+- 🎯 [执行智能模式实现指南](docs/执行智能模式实现指南.md) - 执行智能模式的配置和使用
+- 🧠 [执行智能的三种策略](docs/执行智能的三种策略.md) - LLM推断、Elicitation和混合模式详解
 
 ## 🎯 主要功能
 
@@ -194,31 +198,108 @@ python main.py
 - **用户确认**：危险操作需要用户确认，防止误操作
 - **灵活配置**：支持多种安全策略级别，满足不同用户需求
 
+#### 执行智能系统
+
+执行智能系统是行为树执行阶段的高级功能，允许工具根据配置智能地处理缺失参数。
+
+##### 执行模式
+
+系统支持四种执行模式：
+
+1. **direct（直接执行）**
+   - 完全禁用执行智能，直接执行工具
+   - 适用于：低风险、确定性操作
+
+2. **infer（仅推断）**
+   - 允许 LLM 基于上下文推断缺失参数
+   - 不对用户进行确认，自动填充参数
+   - 适用于：有充分上下文的场景
+
+3. **confirm（仅确认）**
+   - 危险操作前请求用户确认
+   - 不进行 LLM 推断
+   - 适用于：高风险操作（删除、发送邮件等）
+
+4. **intelligent（智能模式）**
+   - 结合推断和确认的智能决策
+   - 高置信度时自动执行，低置信度时请求确认
+   - 适用于：大多数场景
+
+##### 配置方式
+
+在 `user_config/config.yaml` 中配置工具的默认执行模式：
+
+```yaml
+execution_intelligence:
+  tool_intelligent_mode:
+    file_operations: "direct"
+    email_processor: "confirm"
+    weather_query: "infer"
+    system_command: "intelligent"
+```
+
+##### 执行智能的好处
+
+- **灵活性**：根据工具特性选择最适合的执行模式
+- **安全性**：危险操作自动触发用户确认
+- **智能化**：LLM 自动推断缺失参数，减少用户输入
+- **可配置性**：支持全局配置和节点级别覆盖
+
 ## 📁 项目结构
 
 ```
 Intelligence_Desktop/
 ├── mcp_client/              # MCP客户端
+│   ├── behavior_tree/       # 行为树系统
+│   │   ├── behavior_tree.py    # 行为树门面类
+│   │   ├── nodes.py            # 行为树节点实现
+│   │   ├── tree_builder.py     # 行为树构建器
+│   │   ├── tree_executor.py    # 行为树执行器
+│   │   ├── tree_repair.py      # 行为树自动修复
+│   │   ├── tree_cache.py       # 行为树缓存
+│   │   ├── blackboard.py       # 黑板系统
+│   │   ├── intelligence/       # 执行智能模块
+│   │   │   ├── execution_manager.py   # 执行智能管理器
+│   │   │   ├── inference_service.py   # LLM推断服务
+│   │   │   ├── elicitation_service.py # Elicitation服务
+│   │   │   ├── learning_system.py     # 学习系统
+│   │   │   └── config.yaml            # 执行智能配置
+│   │   └── visualizer/         # 行为树可视化
+│   │       ├── tree_visualizer.py
+│   │       └── visualize_behavior_tree.py
 │   ├── intent_parser.py      # 意图解析
-│   ├── task_planner.py      # 任务规划
-│   ├── hybrid_cache.py      # 混合缓存
-│   └── llm.py            # LLM客户端
-├── mcp_server/            # MCP服务器
-│   └── tools/            # 工具集合
+│   ├── hybrid_cache.py       # 混合缓存
+│   ├── llm.py                # LLM客户端
+│   ├── client.py             # MCP客户端主文件
+│   └── elicitation.py        # Elicitation管理器
+├── mcp_server/              # MCP服务器
+│   └── tools/               # 工具集合
+│       ├── tool_base.py          # 工具基类
+│       ├── tool_llm_client.py    # 工具专用LLM客户端
 │       ├── document_converter.py
 │       ├── file_operations.py
 │       ├── pdf_processor.py
 │       ├── text_processing.py
 │       ├── email_processor.py
 │       ├── network_request.py
-│       ├── security_sandbox.py  # 安全沙箱
-│       └── query/          # 查询工具
+│       ├── security_sandbox.py   # 安全沙箱
+│       ├── condition_evaluator.py # 条件评估器
+│       └── query/                # 查询工具
 │           └── weather_query.py  # 天气查询工具
-├── system_config/         # 系统配置（用户不应该修改）
-├── user_config/           # 用户配置
-├── cache/                # 缓存目录
-├── docs/                 # 文档
-└── main.py              # 主程序
+├── frontend/                # Web前端（Vue3 + Vite）
+│   ├── src/
+│   │   ├── components/      # Vue组件
+│   │   ├── composables/     # 组合式函数
+│   │   └── utils/           # 工具函数
+│   └── package.json
+├── system_config/           # 系统配置（用户不应该修改）
+├── user_config/             # 用户配置
+│   ├── config.yaml          # 主配置文件
+│   └── config.py            # 配置加载器
+├── cache/                   # 缓存目录
+├── logs/                    # 日志目录
+├── docs/                    # 文档
+└── main.py                  # 主程序
 ```
 
 ## ⚙️ 配置

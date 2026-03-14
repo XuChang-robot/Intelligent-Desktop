@@ -18,16 +18,16 @@ if %errorlevel% neq 0 (
 )
 
 echo [1/2] Checking dependencies...
-pip show PyQt6 >nul 2>&1
+pip show webview >nul 2>&1
 if %errorlevel% neq 0 (
     echo Installing dependencies...
-    pip install PyQt6 websockets pyyaml python-dotenv
+    pip install pywebview websockets pyyaml python-dotenv
 )
 
 echo.
 echo [2/2] Starting user interface...
 cd /d %~dp0
-python main_pyqt.py
+python main_webview.py
 
 echo.
 echo Client closed

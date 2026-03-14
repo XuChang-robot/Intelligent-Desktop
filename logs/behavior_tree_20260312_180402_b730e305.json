@@ -1,0 +1,24 @@
+{
+  "type": "Sequence",
+  "name": "Root",
+  "children": [
+    {
+      "type": "Action",
+      "name": "查询明天北京天气",
+      "id": "queryBeijingTomorrowWeather",
+      "tool": "weather_query",
+      "parameters": {
+        "operation": "domestic_weather",
+        "province": "北京",
+        "city": "北京",
+        "day": 2
+      },
+      "intelligence_config": {
+        "enabled": true,
+        "strategy": "infer",
+        "auto_execute_threshold": 0.85,
+        "confirm_threshold": 0.6
+      }
+    }
+  ]
+}

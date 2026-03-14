@@ -125,7 +125,7 @@ class IntentParser:
                 return {
                     "type": "error",
                     "user_input": user_input,
-                    "error": "意图解析失败：无法理解您的输入，请重新表述"
+                    "error": "意图解析失败：无法理解您的输入，请重新表述或更换模型"
                 }
             
             # 检查是否是连接错误

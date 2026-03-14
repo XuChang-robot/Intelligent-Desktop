@@ -46,8 +46,54 @@ export function useChat() {
       case 'task_log':
         handleTaskLog(data.description)
         break
+      case 'task_update':
+        handleTaskUpdate(data)
+        break
+      case 'loading':
+        handleLoading(data)
+        break
+      case 'progress':
+        handleProgress(data)
+        break
       default:
         console.log('未知事件类型:', type)
+    }
+  }
+
+  /**
+   * 处理任务更新
+   */
+  const handleTaskUpdate = (data: any) => {
+    if (data.description) {
+      // 调用全局状态管理
+      if (window.setStatus) {
+        window.setStatus(data.description)
+      }
+      // 也添加到任务日志
+      handleTaskLog(data.description)
+    }
+  }
+
+  /**
+   * 处理加载状态
+   */
+  const handleLoading = (data: any) => {
+    const isLoading = data.loading !== undefined ? data.loading : (data === true || (data && data[0] === true))
+    const message = data.message || (typeof data === 'string' ? data : (data && data[1]) || '正在处理...')
+    
+    if (window.setLoading) {
+      window.setLoading(isLoading, message)
+    }
+  }
+
+  /**
+   * 处理进度更新
+   */
+  const handleProgress = (data: any) => {
+    const progress = data.progress !== undefined ? data.progress : (typeof data === 'number' ? data : (data && data[1]) || 0)
+    
+    if (window.setProgress) {
+      window.setProgress(progress)
     }
   }
 

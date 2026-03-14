@@ -39,19 +39,21 @@ class BehaviorTree:
     统筹所有行为树组件，提供简洁的对外接口。
     """
     
-    def __init__(self, tool_executor: Optional[Callable] = None):
+    def __init__(self, tool_executor: Optional[Callable] = None, progress_callback: Optional[Callable] = None):
         """
         Args:
             tool_executor: 工具执行函数，签名: async def tool_executor(tool_name: str, args: Dict) -> Dict
+            progress_callback: 进度回调函数，签名: def progress_callback(progress: int, status: str, message: str)
         """
         self.tool_executor = tool_executor
+        self.progress_callback = progress_callback
         self.logger = logging.getLogger(__name__)
         
         # 初始化内部组件
         self.blackboard = BehaviorTreeBlackboard()
         self.node_factory = NodeFactory(tool_executor, self.blackboard)
         self.tree_builder = TreeBuilder(self.node_factory)
-        self.tree_executor = TreeExecutor(tool_executor, self.blackboard)
+        self.tree_executor = TreeExecutor(tool_executor, self.blackboard, progress_callback)
         
         # 行为树根节点
         self.root: Optional[py_trees.behaviour.Behaviour] = None
@@ -245,7 +247,8 @@ class BehaviorTree:
         else:
             raise ValueError(f"不支持的格式: {format}，支持的格式: ascii, dot, html")
     
-    def build_node_schema(self, tools=None):
+    @staticmethod
+    def build_node_schema(tools=None):
         """动态构建行为树节点的JSON schema
         
         Args:
@@ -254,6 +257,8 @@ class BehaviorTree:
         Returns:
             行为树节点的JSON schema
         """
+        import logging
+        logger = logging.getLogger(__name__)
         
         # 首先创建一个带有$defs的基础schema结构
         behavior_tree_node_schema = {
@@ -483,7 +488,7 @@ class BehaviorTree:
             "$defs": behavior_tree_node_schema["$defs"]
         }
         
-        self.logger.debug(f"行为树节点schema构建完成，包含{len(all_branches)}个分支")
+        logger.debug(f"行为树节点schema构建完成，包含{len(all_branches)}个分支")
         return final_schema
     
     def __repr__(self) -> str:

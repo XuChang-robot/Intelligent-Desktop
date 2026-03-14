@@ -1,0 +1,39 @@
+{
+  "type": "Sequence",
+  "name": "删除说明文件",
+  "id": "sequenceDeleteNoteFile",
+  "children": [
+    {
+      "type": "Action",
+      "name": "检查文件是否存在",
+      "id": "actionCheckFileExist",
+      "tool": "file_operations",
+      "parameters": {
+        "operation": "check_permission",
+        "path": "桌面/说明.txt"
+      },
+      "intelligence_config": {
+        "enabled": false,
+        "strategy": "direct",
+        "auto_execute_threshold": 0.85,
+        "confirm_threshold": 0.6
+      }
+    },
+    {
+      "type": "Action",
+      "name": "删除文件",
+      "id": "actionDeleteFile",
+      "tool": "file_operations",
+      "parameters": {
+        "operation": "delete",
+        "path": "桌面/说明.txt"
+      },
+      "intelligence_config": {
+        "enabled": false,
+        "strategy": "direct",
+        "auto_execute_threshold": 0.85,
+        "confirm_threshold": 0.6
+      }
+    }
+  ]
+}

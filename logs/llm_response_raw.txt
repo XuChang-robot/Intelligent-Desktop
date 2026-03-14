@@ -3,15 +3,12 @@
   "confidence": 0.95,
   "tree_config": {
     "type": "Action",
-    "name": "发送邮件",
-    "id": "actionSendEmail",
-    "tool": "email_processor",
+    "name": "下载图片",
+    "id": "downloadImage",
+    "tool": "network_request",
     "parameters": {
-      "operation": "send",
-      "recipient": "用户指定的邮箱地址",
-      "subject": "用户指定的主题",
-      "body": "用户指定的邮件正文",
-      "attachments": "用户指定的附件路径"
+      "operation": "GET",
+      "url": "https://www.baidu.com/picutre.jpg"
     }
   }
 }

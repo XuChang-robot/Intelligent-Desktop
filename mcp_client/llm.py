@@ -9,6 +9,7 @@ from typing import Dict, Any, Optional, Callable
 from user_config.config import load_config, get_config
 from mcp_client.behavior_tree.prompt.config_prompts import BEHAVIOR_TREE_CONFIG_PRINCIPLES
 from mcp_client.prompt.intent_prompts import INTENT_PARSE_PROMPT
+from .behavior_tree import BehaviorTree
 
 class LLMClient:
     def __init__(self):
@@ -31,9 +32,8 @@ class LLMClient:
         # 确保日志目录存在
         os.makedirs(self.log_dir, exist_ok=True)
         
-        # 创建BehaviorTree实例，用于构建行为树节点schema
-        from .behavior_tree import BehaviorTree
-        self.behavior_tree = BehaviorTree()
+        # 移除BehaviorTree实例，直接使用静态方法
+        pass
         
         # Ollama默认连接到http://localhost:11434
         # 注意：如果需要自定义Ollama服务地址，请设置环境变量 OLLAMA_HOST
@@ -43,6 +43,10 @@ class LLMClient:
         """更新模型名称"""
         self.model = model_name
         self.logger.info(f"模型已更新为: {model_name}")
+    
+    def set_model(self, model):
+        """设置模型"""
+        self.update_model(model)
     
     def get_current_model(self):
         """获取当前模型名称"""
@@ -84,18 +88,17 @@ class LLMClient:
                 return models
             else:
                 self.logger.error(f"获取模型列表失败: {response.status_code}")
-                return ["qwen3:30b", "qwen3:7b", "llama2:7b"]
+                return []
         except Exception as e:
             self.logger.error(f"获取模型列表异常: {e}")
-            return ["qwen3:30b", "qwen3:7b", "llama2:7b"]
+            return []
     
-    async def generate(self, prompt: str, system_prompt: Optional[str] = None, timeout: int = 120, stream_callback: Optional[Callable] = None) -> Dict[str, Any]:
+    async def generate(self, prompt: str, system_prompt: Optional[str] = None, stream_callback: Optional[Callable] = None, bool_think_content: Optional[bool] = True) -> Dict[str, Any]:
         """生成LLM响应
         
         Args:
             prompt: 提示词
             system_prompt: 系统提示词
-            timeout: 超时时间
             stream_callback: 流式输出回调函数，接收chunk数据
             
         Returns:
@@ -129,53 +132,102 @@ class LLMClient:
                     # 使用ollama的流式生成
                     # 添加keep_alive参数，避免上下文缓存
                     chunk_count = 0
-                    for chunk in ollama.generate(
-                        model=self.model,
-                        prompt=prompt,
-                        system=system_prompt,
-                        options=options,
-                        stream=True,
-                        keep_alive=0,  # 不保留上下文
-                        context=None,  # 明确不传递上下文
-                        think=True  # 启用思考功能
-                    ):
-                        chunk_count += 1
-                        # 获取chunk数据
-                        chunk_response = chunk.get("response", "")
-                        chunk_thinking = chunk.get("thinking", "")
+                    # 尝试启用思考功能
+                    try:
+                        for chunk in ollama.generate(
+                            model=self.model,
+                            prompt=prompt,
+                            system=system_prompt,
+                            options=options,
+                            stream=True,
+                            keep_alive=0,  # 不保留上下文
+                            context=None,  # 明确不传递上下文
+                            think=True  # 启用思考功能
+                        ):
+                            chunk_count += 1
+                            # 获取chunk数据
+                            chunk_response = chunk.get("response", "")
+                            chunk_thinking = chunk.get("thinking", "")
+                            
+                            # 确保是字符串类型
+                            if chunk_response is None:
+                                chunk_response = ""
+                            if chunk_thinking is None:
+                                chunk_thinking = ""
+
+                            # 累加到完整响应
+                            full_response += chunk_response
+                            if chunk_thinking:
+                                full_thinking += chunk_thinking
+                            
+                            # 调用回调函数（同步调用）
+                            if stream_callback:
+                                stream_callback({
+                                    "response": chunk_response,
+                                    "thinking": chunk_thinking if bool_think_content else "",
+                                    "done": False
+                                })
                         
-                        # 确保是字符串类型
-                        if chunk_response is None:
-                            chunk_response = ""
-                        if chunk_thinking is None:
-                            chunk_thinking = ""
+                        #self.logger.info(f"流式生成完成，共收到 {chunk_count} 个 chunk，总长度: {len(full_response)}")
                         
-                        # 调试信息：打印每个chunk的内容
-                        # if chunk_count <= 5 or chunk_count % 10 == 0:
-                        #     self.logger.info(f"Chunk {chunk_count}: response='{chunk_response}', thinking='{chunk_thinking}', done={chunk.get('done', False)}")
-                        
-                        # 累加到完整响应
-                        full_response += chunk_response
-                        if chunk_thinking:
-                            full_thinking += chunk_thinking
-                        
-                        # 调用回调函数（同步调用）
+                        # 完成时调用回调
                         if stream_callback:
                             stream_callback({
-                                "response": chunk_response,
-                                "thinking": chunk_thinking,
-                                "done": False
+                                "response": "",
+                                "thinking": "",
+                                "done": True
                             })
-                    
-                    #self.logger.info(f"流式生成完成，共收到 {chunk_count} 个 chunk，总长度: {len(full_response)}")
-                    
-                    # 完成时调用回调
-                    if stream_callback:
-                        stream_callback({
-                            "response": "",
-                            "thinking": "",
-                            "done": True
-                        })
+                    except Exception as e:
+                        # 处理模型不支持思考功能的情况
+                        if "does not support thinking" in str(e):
+                            self.logger.warning(f"模型 {self.model} 不支持思考功能，将禁用思考模式重新尝试")
+                            # 重新尝试不使用思考模式
+                            chunk_count = 0
+                            full_response = ""
+                            full_thinking = ""
+                            for chunk in ollama.generate(
+                                model=self.model,
+                                prompt=prompt,
+                                system=system_prompt,
+                                options=options,
+                                stream=True,
+                                context=None,  # 明确不传递上下文
+                                think=False  # 禁用思考功能
+                            ):
+                                chunk_count += 1
+                                # 获取chunk数据
+                                chunk_response = chunk.get("response", "")
+                                chunk_thinking = chunk.get("thinking", "")
+                                
+                                # 确保是字符串类型
+                                if chunk_response is None:
+                                    chunk_response = ""
+                                if chunk_thinking is None:
+                                    chunk_thinking = ""
+                                
+                                # 累加到完整响应
+                                full_response += chunk_response
+                                if chunk_thinking:
+                                    full_thinking += chunk_thinking
+                                
+                                # 调用回调函数（同步调用）
+                                if stream_callback:
+                                    stream_callback({
+                                        "response": chunk_response,
+                                        "thinking": chunk_thinking,
+                                        "done": False
+                                    })
+                            
+                            # 完成时调用回调
+                            if stream_callback:
+                                stream_callback({
+                                    "response": "",
+                                    "thinking": "",
+                                    "done": True
+                                })
+                        else:
+                            # 其他错误，抛出异常
+                            raise
                 except Exception as e:
                     self.logger.error(f"流式生成失败: {e}")
                     import traceback
@@ -211,7 +263,7 @@ class LLMClient:
             
             return {
                 "response": full_response,
-                "thinking": thinking
+                "thinking": thinking if bool_think_content else ""
             }
         except Exception as e:
             self.logger.error(f"LLM生成失败: {e}")
@@ -317,7 +369,8 @@ class LLMClient:
             tools_info = "\n\n" + self.format_tools_for_llm(tools)
         
         # 动态构建行为树节点的JSON schema
-        behavior_tree_node_schema = self.behavior_tree.build_node_schema(tools)
+
+        behavior_tree_node_schema = BehaviorTree.build_node_schema(tools)
         
         # 构建完整的JSON schema，包含所有配置字段
         intent_schema = {
@@ -408,7 +461,7 @@ class LLMClient:
             )
             end_time = time.time()
             elapsed_time = end_time - start_time
-            self.logger.info(f"LLM生成响应耗时: {elapsed_time:.2f}秒")
+            self.logger.info(f"LLM解析意图耗时: {elapsed_time:.2f}秒")
             
             # 获取响应内容
             response_content = response.get("response", "")

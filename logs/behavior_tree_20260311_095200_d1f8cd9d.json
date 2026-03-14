@@ -1,0 +1,59 @@
+{
+  "type": "Sequence",
+  "name": "转换文档为语音",
+  "id": "sequenceConvertDocToAudio",
+  "children": [
+    {
+      "type": "Action",
+      "name": "检查文件是否存在",
+      "id": "actionCheckFileExists",
+      "tool": "file_operations",
+      "parameters": {
+        "operation": "check_permission",
+        "path": "桌面/说明.docx"
+      },
+      "intelligence_config": {
+        "enabled": false,
+        "strategy": "direct",
+        "auto_execute_threshold": 0.85,
+        "confirm_threshold": 0.6
+      }
+    },
+    {
+      "type": "Action",
+      "name": "读取文档内容",
+      "id": "actionReadDocContent",
+      "tool": "file_operations",
+      "parameters": {
+        "operation": "read",
+        "path": "桌面/说明.docx"
+      },
+      "intelligence_config": {
+        "enabled": false,
+        "strategy": "direct",
+        "auto_execute_threshold": 0.85,
+        "confirm_threshold": 0.6
+      }
+    },
+    {
+      "type": "Action",
+      "name": "转文本为语音",
+      "id": "actionTextToAudio",
+      "tool": "text_processing",
+      "parameters": {
+        "operation": "to_audio",
+        "text": "{{actionReadDocContent.result}}",
+        "output_path": "桌面/说明.mp3",
+        "voice": "zh",
+        "rate": 200,
+        "volume": 1.0
+      },
+      "intelligence_config": {
+        "enabled": false,
+        "strategy": "direct",
+        "auto_execute_threshold": 0.85,
+        "confirm_threshold": 0.6
+      }
+    }
+  ]
+}

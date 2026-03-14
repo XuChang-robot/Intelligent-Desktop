@@ -23,6 +23,9 @@ declare global {
         register_callback?: (name: string, callback: (event_type: string, data: any) => void) => void
       }
     }
+    setStatus?: (message: string) => void
+    setLoading?: (isLoading: boolean, message?: string) => void
+    setProgress?: (value: number) => void
   }
 }
 

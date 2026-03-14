@@ -1,0 +1,21 @@
+{
+  "type": "Sequence",
+  "name": "Root",
+  "children": [
+    {
+      "type": "Action",
+      "name": "多输出点",
+      "id": "multiOutputPoints",
+      "tool": "text_processing",
+      "parameters": {
+        "operation": "count"
+      },
+      "intelligence_config": {
+        "enabled": false,
+        "strategy": "direct",
+        "auto_execute_threshold": 0.85,
+        "confirm_threshold": 0.6
+      }
+    }
+  ]
+}

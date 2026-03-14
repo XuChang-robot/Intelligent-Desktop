@@ -1,0 +1,97 @@
+docs: 同步文档与代码实现，完善项目文档体系，添加Vue前端
+
+本次提交包含文档全面更新、代码优化和全新的Vue前端：
+
+## 文档更新
+
+### 1. README.md
+- 添加执行智能系统特性说明（四种执行模式：direct/infer/confirm/intelligent）
+- 添加行为树自动修复特性说明
+- 完善项目结构，添加 behavior_tree、ui、frontend 等目录
+- 新增执行智能系统详细说明章节
+
+### 2. docs/DEVELOPER_GUIDE.md
+- 添加执行智能系统核心特性
+- 完善项目结构，添加所有子模块（intelligence、visualizer、tool_base 等）
+- 添加执行智能系统详细说明（策略、组件、配置）
+- 添加工具基类（ToolBase）说明
+- 添加工具专用LLM客户端说明
+- 添加执行智能流程和行为树自动修复流程
+
+### 3. docs/USER_GUIDE.md
+- 添加执行智能配置章节
+- 添加行为树自动修复配置章节
+- 扩展常见问题（Q6-Q8）
+
+### 4. CHANGELOG.md
+- 添加 [2026-03-14] 文档更新记录
+
+### 5. PROJECT_SUMMARY.md
+- 添加行为树架构、执行智能、行为树自动修复到项目概述
+- 完善核心组件说明
+- 添加行为树系统、执行智能系统、缓存系统的技术特性
+
+## 代码优化
+
+- mcp_client/behavior_tree/tree_executor.py - 行为树执行优化
+- mcp_client/client.py - 客户端逻辑优化
+- mcp_client/intent_parser.py - 意图解析优化
+- mcp_client/llm.py - LLM集成优化
+- mcp_client/prompt/intent_prompts.py - 提示词优化
+- mcp_server/tools/tool_base.py - 工具基类优化
+- user_config/config.yaml - 配置更新
+
+## 全新Vue前端 (frontend/)
+
+### 技术栈
+- Vue 3 + TypeScript
+- Vite 构建工具
+- Element Plus UI组件库
+
+### 主要功能
+- ChatArea.vue - 聊天区域组件
+- InputArea.vue - 输入区域组件
+- TaskPanel.vue - 任务面板组件
+- SystemConfirm.vue - 系统确认对话框
+- ParameterConfirm.vue - 参数确认组件
+- ParameterFixDialog.vue - 参数修复对话框
+- DynamicForm.vue - 动态表单组件
+- TitleBar.vue - 自定义标题栏
+- ResizeHandles.vue - 窗口调整大小手柄
+
+### Composables
+- useChat - 聊天功能组合式函数
+- useElicitation - Elicitation交互处理
+- useMessage - 消息管理
+- useStream - 流式响应处理
+- useTaskLog - 任务日志管理
+- useWindow - 窗口管理
+- useTheme - 主题管理
+- useLayout - 布局管理
+- useModel - 模型管理
+- useStatus - 状态管理
+- usePyWebView - PyWebView桥接
+
+### 特性
+- 现代化UI设计
+- 响应式布局
+- 深色/浅色主题支持
+- 流式消息显示
+- 任务执行可视化
+- 参数确认和修复交互
+- 窗口拖拽和调整大小
+
+## 配置更新
+
+### .gitignore
+- 注释掉 *.md 排除规则，允许提交文档文件
+
+## 主要发现的不一致点已修复
+
+1. 执行智能系统 - 代码中有完整实现，文档现已充分说明
+2. 行为树修复功能 - 代码中有 tree_repair.py，文档现已提及
+3. 工具LLM客户端 - 代码中有 tool_llm_client.py，文档现已说明
+4. 项目结构 - 文档中的项目结构已完善
+5. Vue前端 - 全新的现代化Web界面
+
+所有文档现已与代码保持同步，项目包含完整的PyQt6和Vue3双前端支持。

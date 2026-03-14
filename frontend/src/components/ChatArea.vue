@@ -139,7 +139,7 @@ const renderContent = (content: string) => {
   return content
     .replace(/```(\w+)?\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>')
     .replace(/`([^`]+)`/g, '<code>$1</code>')
-    .replace(/(https?:\/\/[^\s]+?\.(jpg|jpeg|png|gif|webp|svg))/gi, '<img src="$1" alt="" onerror="this.onerror=null;this.outerHTML=\'$1\'">')
+    .replace(/(https?:\/\/[^\s]+?\.(jpg|jpeg|png|gif|webp|svg))/gi, '<img src="$1" alt="" onerror="this.onerror=null;this.src=\'/src/assets/pictures/picture_load_fail.png\'">')
     .replace(/\n/g, '<br>')
 }
 

@@ -1,0 +1,24 @@
+{
+  "type": "Sequence",
+  "name": "Root",
+  "children": [
+    {
+      "type": "Action",
+      "name": "发送消息",
+      "id": "sendMessage",
+      "tool": "email_processor",
+      "parameters": {
+        "operation": "send",
+        "recipient": "123",
+        "subject": "发大水",
+        "body": "发大水"
+      },
+      "intelligence_config": {
+        "enabled": false,
+        "strategy": "direct",
+        "auto_execute_threshold": 0.85,
+        "confirm_threshold": 0.6
+      }
+    }
+  ]
+}

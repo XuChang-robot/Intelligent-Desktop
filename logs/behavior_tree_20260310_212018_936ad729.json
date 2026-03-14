@@ -1,0 +1,43 @@
+{
+  "type": "Sequence",
+  "name": "将桌面上的说明.docx转语音",
+  "id": "sequenceConvertDocxToAudio",
+  "children": [
+    {
+      "type": "Action",
+      "name": "检查文件是否存在",
+      "id": "actionCheckFileExist",
+      "tool": "file_operations",
+      "parameters": {
+        "operation": "check_permission",
+        "path": "桌面/说明.docx"
+      },
+      "intelligence_config": {
+        "enabled": false,
+        "strategy": "direct",
+        "auto_execute_threshold": 0.85,
+        "confirm_threshold": 0.6
+      }
+    },
+    {
+      "type": "Action",
+      "name": "转换文档为语音",
+      "id": "actionConvertDocxToAudio",
+      "tool": "text_processing",
+      "parameters": {
+        "operation": "to_audio",
+        "input_file": "桌面/说明.docx",
+        "output_path": "桌面/说明.mp3",
+        "voice": "zh",
+        "rate": 200,
+        "volume": 1.0
+      },
+      "intelligence_config": {
+        "enabled": false,
+        "strategy": "direct",
+        "auto_execute_threshold": 0.85,
+        "confirm_threshold": 0.6
+      }
+    }
+  ]
+}

@@ -245,7 +245,7 @@ class MCPClient:
         self.intent_parser = IntentParser(self.llm_client)
         
         # 初始化行为树系统
-        self.behavior_tree = BehaviorTree()
+        self.behavior_tree = BehaviorTree(progress_callback=self._on_behavior_tree_progress)
         
         # 获取日志目录配置
         log_config = self.config.get('logging', {})
@@ -337,6 +337,19 @@ class MCPClient:
     def set_ui_callback(self, callback):
         """设置UI回调"""
         self.ui_callback = callback
+    
+    def _on_behavior_tree_progress(self, progress: int, status: str, message: str):
+        """行为树进度回调
+        
+        Args:
+            progress: 进度百分比 (0-100)
+            status: 状态字符串
+            message: 进度消息
+        """
+        if self.ui_callback:
+            # 发送进度更新
+            self.ui_callback("progress", {"progress": progress})
+
     
     def interrupt(self):
         """中断执行"""
@@ -500,8 +513,8 @@ class MCPClient:
                     # 执行行为树
                     try:
                         if self.ui_callback:
-                            self.ui_callback("loading", True, "行为树配置生成完成...")
-                            self.ui_callback("progress", True, 30)
+                            self.ui_callback("loading", {"loading": True, "message": "行为树配置生成完成..."})
+                            self.ui_callback("progress", {"progress": 0})
                         
                         # 定义工具执行回调（异步）
                         async def async_tool_executor(tool_name: str, parameters: Dict[str, Any]) -> Dict[str, Any]:
@@ -519,14 +532,17 @@ class MCPClient:
                         execution_result = await self.behavior_tree.execute()
                         
                         if self.ui_callback:
-                            self.ui_callback("loading", True, "任务执行完成...")
-                            self.ui_callback("progress", True, 100)
+                            self.ui_callback("loading", {"loading": True, "message": "任务执行完成..."})
+                            self.ui_callback("progress", {"progress": 100})
                             self.ui_callback("task_update", {"description": "🎉 任务执行完成！", "status": "完成"})
+                            # 任务完成后重置加载状态
+                            self.ui_callback("loading", {"loading": False})
                         
                         # 格式化执行结果
                         summary = self._format_tree_execution_result(execution_result)
                         
                         return {
+                            "type": "task",
                             "summary": summary,
                             "tree_config": tree_config,
                             "execution_result": execution_result,
@@ -539,6 +555,7 @@ class MCPClient:
                         import traceback
                         traceback.print_exc()
                         return {
+                            "type": "task",
                             "summary": f"任务执行失败: {str(e)}",
                             "tree_config": tree_config,
                             "error": str(e)
@@ -551,7 +568,7 @@ class MCPClient:
             # 第二步：使用 LLM 解析用户意图   
             # 检查是否中断
             if self.interrupted:
-                return {"summary": "任务已被用户中断", "plan": {}}
+                return {"type": "chat", "summary": "任务已被用户中断", "plan": {}}
             
             intent = await self.intent_parser.parse(query, self.tools)
             
@@ -570,12 +587,13 @@ class MCPClient:
                             "thinking": chunk.get("thinking", ""),
                             "done": chunk.get("done", False)
                         })
-                
-                response_dict = await self.llm_client.generate(query, stream_callback=llm_stream_callback)
+                query += "\n 你的角色的是智能聊天助手，名叫CosmicNova"
+                response_dict = await self.llm_client.generate(query, stream_callback=llm_stream_callback, bool_think_content=True)
                 response = response_dict.get("response", "")
                 thinking = response_dict.get("thinking", "")
                 
                 return {
+                    "type": "chat",
                     "summary": response,
                     "thinking": thinking,
                     "plan": {}
@@ -585,7 +603,7 @@ class MCPClient:
                 
                 # 检查intent中是否包含行为树配置
                 if "tree_config" not in intent:
-                    self.ui_callback("task_update", True, "行为树配置生成失败！")
+                    self.ui_callback("task_update", {"description": "行为树配置生成失败！"})
                     self.logger.error("行为树配置生成失败！")
                     return
                 
@@ -593,9 +611,8 @@ class MCPClient:
                 self.logger.debug(f"使用行为树配置: {tree_config}")
                 
                 if self.ui_callback:
-                    self.ui_callback("task_update", {"description": f"行为树配置生成完成"})
-                    self.ui_callback("loading", True, "行为树配置生成完成...")
-                    self.ui_callback("progress", True, 30)
+                    self.ui_callback("loading", {"loading": True, "message": "行为树配置生成完成..."})
+                    self.ui_callback("progress", {"progress": 30})
                 
                 # 定义工具执行回调（异步）
                 async def async_tool_executor(tool_name: str, parameters: Dict[str, Any]) -> Dict[str, Any]:
@@ -619,9 +636,11 @@ class MCPClient:
                     execution_result = await self.behavior_tree.execute()
                     
                     if self.ui_callback:
-                        self.ui_callback("loading", True, "任务执行完成...")
-                        self.ui_callback("progress", True, 100)
+                        self.ui_callback("loading", {"loading": True, "message": "任务执行完成..."})
+                        self.ui_callback("progress", {"progress": 100})
                         self.ui_callback("task_update", {"description": "🎉 任务执行完成！", "status": "完成"})
+                        # 任务完成后重置加载状态
+                        self.ui_callback("loading", {"loading": False})
                     
                     # 检查行为树执行是否成功
                     if execution_result.get("success", False):
@@ -634,6 +653,7 @@ class MCPClient:
                         summary = self._format_tree_execution_result(execution_result)
                         
                         return {
+                            "type": "task",
                             "summary": summary,
                             "tree_config": tree_config,
                             "execution_result": execution_result
@@ -645,6 +665,7 @@ class MCPClient:
                         summary = self._format_tree_execution_result(execution_result)
                         
                         return {
+                            "type": "task",
                             "summary": summary,
                             "tree_config": tree_config,
                             "execution_result": execution_result
@@ -678,8 +699,8 @@ class MCPClient:
                                 try:
                                     if self.ui_callback:
                                         self.ui_callback("task_update", {"description": f"行为树修复成功，重新执行... (尝试 {attempt + 1}/{self.max_repair_attempts})"})
-                                        self.ui_callback("loading", True, "行为树修复成功，重新执行...")
-                                        self.ui_callback("progress", True, 40)
+                                        self.ui_callback("loading", {"loading": True, "message": "行为树修复成功，重新执行..."})
+                                        self.ui_callback("progress", {"progress": 40})
                                     
                                     # 从修复后的配置构建树
                                     self.behavior_tree.build_from_config(repaired_config)
@@ -688,9 +709,11 @@ class MCPClient:
                                     execution_result = await self.behavior_tree.execute()
                                     
                                     if self.ui_callback:
-                                        self.ui_callback("loading", True, "修复后任务执行完成...")
-                                        self.ui_callback("progress", True, 100)
+                                        self.ui_callback("loading", {"loading": True, "message": "修复后任务执行完成..."})
+                                        self.ui_callback("progress", {"progress": 100})
                                         self.ui_callback("task_update", {"description": "🎉 修复后任务执行完成！", "status": "完成"})
+                                        # 任务完成后重置加载状态
+                                        self.ui_callback("loading", {"loading": False})
                                     
                                     # 检查行为树执行是否成功
                                     if execution_result.get("success", False):
@@ -724,12 +747,14 @@ class MCPClient:
                     
                     # 如果无法修复或修复失败，返回原始错误
                     return {
+                        "type": "task",
                         "summary": f"任务执行失败: {str(e)}",
                         "tree_config": tree_config,
                         "error": str(e)
                     }
             elif intent["type"] == "cannot_execute":
                 return {
+                    "type": "task",
                     "summary": intent.get("reason", ""),
                     "plan": {}
                 }
@@ -739,10 +764,11 @@ class MCPClient:
                 self.logger.error(f"意图解析错误: {error_msg}")
                 
                 if self.ui_callback:
-                    self.ui_callback("loading", False)
+                    self.ui_callback("loading", {"loading": False})
                     self.ui_callback("task_update", {"description": f"❌ {error_msg}"})
                 
                 return {
+                    "type": "error",
                     "summary": f"❌ {error_msg}",
                     "plan": {}
                 }
@@ -753,7 +779,7 @@ class MCPClient:
             traceback.print_exc()
             
             if self.ui_callback:
-                self.ui_callback("loading", False)
+                self.ui_callback("loading", {"loading": False})
                 self.ui_callback("task_update", {"description": f"❌ 处理出错: {str(e)}"})
             
             return {
@@ -828,5 +854,13 @@ class MCPClient:
                 return result
         
         return "✅ 任务执行完成"
+    
+    def get_available_models(self):
+        """获取可用的模型列表"""
+        return self.llm_client.get_available_models()
+    
+    def set_model(self, model):
+        """设置模型"""
+        self.llm_client.set_model(model)
     
        

@@ -1,0 +1,22 @@
+{
+  "type": "Sequence",
+  "name": "Root",
+  "children": [
+    {
+      "type": "Action",
+      "name": "下载图片",
+      "id": "downloadImage",
+      "tool": "network_request",
+      "parameters": {
+        "operation": "GET",
+        "url": "https://www.baidu.com/picutre.jpg"
+      },
+      "intelligence_config": {
+        "enabled": false,
+        "strategy": "direct",
+        "auto_execute_threshold": 0.85,
+        "confirm_threshold": 0.6
+      }
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "type": "Sequence",
+  "name": "发送邮件",
+  "id": "sequenceSendEmail",
+  "children": [
+    {
+      "type": "Action",
+      "name": "创建邮件内容",
+      "id": "actionCreateEmailContent",
+      "tool": "email_processor",
+      "parameters": {
+        "operation": "send",
+        "recipient": "cxywangkang@163.com",
+        "subject": "凯哥优秀",
+        "body": "凯哥优秀",
+        "attachments": "桌面/说明.mp3"
+      },
+      "intelligence_config": {
+        "enabled": false,
+        "strategy": "direct",
+        "auto_execute_threshold": 0.85,
+        "confirm_threshold": 0.6
+      }
+    }
+  ]
+}
